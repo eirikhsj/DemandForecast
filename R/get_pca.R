@@ -23,7 +23,7 @@
 #'
 
 get_pca = function(X_mat, I_train, I_test, p_comps, NWP=NA,  U = NA, mu = NA){
-    print('get_pca')
+    print('------- Running get_pca -------')
     if (length(U) == 1){
 
         X_train = X_mat[I_train,]

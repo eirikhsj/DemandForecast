@@ -22,6 +22,11 @@ get_pre_trained_PC_ERA = function(file='~/Desktop/Master2023/Data/PC_ERA', X_mat
                                   start_test = '2014-01-01', stop_test='2014-12-31',
                                   NWP=NA,run_again =FALSE){
 
+    if (start_train <date_demand[1,date]){
+        print(paste0('Error: Start date provided is earlier than earliest temp observations: ',date_demand[1,date]))
+        return('Either change start date or load appropriate X_mat temperature observations.')
+        }
+
     train_start = date_demand[(date ==start_train & hour == 1),I]
     train_stop = date_demand[(date ==stop_train & hour == 24),I]
     I_train = seq(from = train_start, to = train_stop)
