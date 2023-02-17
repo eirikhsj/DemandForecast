@@ -28,13 +28,17 @@ First: How can we make improvements on a structural model of energy demand by us
 Our results show that by using a gam pca approach we can achieve subtantial improvements (a skill of 0.17 for a 30 day forecast period) compared to a climatology approach. 
 This result holds for a structural model (e.g. under the assumption that we know the future temperature).
 
-The functions used for this problem is demand_forecast.R. 
+The main functions used for this problem is demand_forecast.R, which is a rolling cv function which enables the testing and comparison of a host of different energy demand forecast models. 
+A detailed breakdown of tests run are found in the RMarkdown documents: 
+-
+-
 
-Of course, in real life we don't, which lead us into the second problem.
+Of course, in real life we don't know the future temperatures, which lead us into the second problem.
 
 Second: Can we utilize different temperature forecasts as inputs to our demand model?
-Here we focus on three different sub-seasonal(??) forecasting models. Our period of interest is 0-30 days. 
+Here we focus on five different sub-seasonal(??) forecasting models, where our period of interest is the range 0-30 days. 
 
+The models are:
 1) NWP forecast model
 2) Reweighted NWP forecast model 
 3) Stratospheric Wind model
