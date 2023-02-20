@@ -5,7 +5,7 @@ output: html_notebook
 
 # Best Baseline Test
 
-This document tries to find the best baseline model to predict the demand volume in problem 1 of the thesis. 
+This document tries to find the best baseline model to predict the demand volume as part of problem 1 of the thesis. 
 
 Main conclusions: 
 
@@ -93,26 +93,33 @@ How should we find the best baseline?
 First look at which of the 4 configurations of each of the 5 time covariates perform best. So use these in combination before tweaking. 
 
 We have a simple continuous, spline, as.factor(), and sinusoidal. 
+# 1) Climatology
+```{r}
+Climatology = demand_forecast(forc_start = ' 2014-02-01', forc_end = '2021-09-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+                    p_comps = 0,  reg_form = "volume ~ 1", incl_climatology = TRUE)
+```
+
+
 
 # 2) Single covariates
 ```{r, eval = FALSE}
 Year1 = demand_forecast(forc_start = '2014-02-01', forc_end = '2021-09-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ year")
+                    p_comps = 0,  reg_form = "volume ~ year", incl_climatology = FALSE)
 Year2 = demand_forecast(forc_start = '2014-02-01', forc_end = '2021-09-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ as.factor(year)")
+                    p_comps = 0,  reg_form = "volume ~ as.factor(year)", incl_climatology = FALSE)
 ```
 
 ```{r, eval = FALSE}
 Wday1 = demand_forecast(forc_start = '2014-02-01', forc_end = '2021-09-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ w_day")
+                    p_comps = 0,  reg_form = "volume ~ w_day", incl_climatology = FALSE)
 Wday2 = demand_forecast(forc_start = '2014-02-01', forc_end = '2021-09-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ as.factor(w_day)")
+                    p_comps = 0,  reg_form = "volume ~ as.factor(w_day)", incl_climatology = FALSE)
 Wday3 = demand_forecast(forc_start = '2014-02-01', forc_end = '2021-09-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ w_day1 + w_day2")
+                    p_comps = 0,  reg_form = "volume ~ w_day1 + w_day2", incl_climatology = FALSE)
 Wday4 = demand_forecast(forc_start = '2014-02-01', forc_end = '2021-09-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ as.factor(w_day):season")
+                    p_comps = 0,  reg_form = "volume ~ as.factor(w_day):season", incl_climatology = FALSE)
 Wday5 = demand_forecast(forc_start = '2014-02-01', forc_end = '2021-09-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ as.factor(w_day):month")
+                    p_comps = 0,  reg_form = "volume ~ as.factor(w_day):month", incl_climatology = FALSE)
 ```
 
 
@@ -181,80 +188,81 @@ Hour11 = demand_forecast(forc_start = '2014-02-01', forc_end = '2021-09-01', pre
 
 ### Save models
 ```{r, eval = FALSE}
-save(Hour1, file = 'model_output_best_baseline/Hour1.Rda')
-save(Hour2, file = 'model_output_best_baseline/Hour2.Rda')
-save(Hour3, file = 'model_output_best_baseline/Hour3.Rda')
-save(Hour4, file = 'model_output_best_baseline/Hour4.Rda')
-save(Hour5, file = 'model_output_best_baseline/Hour5.Rda')
-save(Hour6, file = 'model_output_best_baseline/Hour6.Rda')
-save(Hour7, file = 'model_output_best_baseline/Hour7.Rda')
-save(Hour8, file = 'model_output_best_baseline/Hour8.Rda')
-save(Hour9, file = 'model_output_best_baseline/Hour9.Rda')
-save(Hour10, file = 'model_output_best_baseline/Hour10.Rda')
+save(Hour1, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Hour1.Rda')
+save(Hour2, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Hour2.Rda')
+save(Hour3, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Hour3.Rda')
+save(Hour4, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Hour4.Rda')
+save(Hour5, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Hour5.Rda')
+save(Hour6, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Hour6.Rda')
+save(Hour7, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Hour7.Rda')
+save(Hour8, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Hour8.Rda')
+save(Hour9, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Hour9.Rda')
+save(Hour10, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Hour10.Rda')
+save(Hour11, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Hour11.Rda')
 
-save(Week1, file = 'model_output_best_baseline/Week1.Rda')
-save(Week2, file = 'model_output_best_baseline/Week2.Rda')
-save(Week3, file = 'model_output_best_baseline/Week3.Rda')
-save(Week4, file = 'model_output_best_baseline/Week4.Rda')
-save(Week5, file = 'model_output_best_baseline/Week5.Rda')
-save(Week6, file = 'model_output_best_baseline/Week6.Rda')
-save(Week7, file = 'model_output_best_baseline/Week7.Rda')
+save(Week1, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Week1.Rda')
+save(Week2, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Week2.Rda')
+save(Week3, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Week3.Rda')
+save(Week4, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Week4.Rda')
+save(Week5, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Week5.Rda')
+save(Week6, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Week6.Rda')
+save(Week7, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Week7.Rda')
 
-save(Month1, file = 'model_output_best_baseline/Month1.Rda')
-save(Month2, file = 'model_output_best_baseline/Month2.Rda')
-save(Month3, file = 'model_output_best_baseline/Month3.Rda')
-save(Month4, file = 'model_output_best_baseline/Month4.Rda')
-#save(Month5, file = 'model_output_best_baseline/Month5.Rda')
-save(Month6, file = 'model_output_best_baseline/Month6.Rda')
-save(Month7, file = 'model_output_best_baseline/Month6.Rda')
+save(Month1, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Month1.Rda')
+save(Month2, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Month2.Rda')
+save(Month3, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Month3.Rda')
+save(Month4, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Month4.Rda')
+#save(Month5, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Month5.Rda')
+save(Month6, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Month6.Rda')
+save(Month7, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Month6.Rda')
 
-save(Year1, file = 'model_output_best_baseline/Year1.Rda')
-save(Year2, file = 'model_output_best_baseline/Year2.Rda')
+save(Year1, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Year1.Rda')
+save(Year2, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Year2.Rda')
 
-save(Wday1, file = 'model_output_best_baseline/Wday1.Rda')
-save(Wday2, file = 'model_output_best_baseline/Wday2.Rda')
-save(Wday3, file = 'model_output_best_baseline/Wday3.Rda')
-save(Wday4, file = 'model_output_best_baseline/Wday4.Rda')
-save(Wday5, file = 'model_output_best_baseline/Wday5.Rda')
+save(Wday1, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Wday1.Rda')
+save(Wday2, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Wday2.Rda')
+save(Wday3, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Wday3.Rda')
+save(Wday4, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Wday4.Rda')
+save(Wday5, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Wday5.Rda')
 
 ```
 
 ```{r, cache = TRUE}
-load(file = 'model_output_best_baseline/Hour1.Rda')
-load(file = 'model_output_best_baseline/Hour2.Rda')
-load(file = 'model_output_best_baseline/Hour3.Rda')
-load(file = 'model_output_best_baseline/Hour4.Rda')
-load(file = 'model_output_best_baseline/Hour5.Rda')
-load(file = 'model_output_best_baseline/Hour6.Rda')
-load(file = 'model_output_best_baseline/Hour7.Rda')
-load(file = 'model_output_best_baseline/Hour8.Rda')
-load(file = 'model_output_best_baseline/Hour9.Rda')
-load(file = 'model_output_best_baseline/Hour10.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Hour1.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Hour2.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Hour3.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Hour4.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Hour5.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Hour6.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Hour7.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Hour8.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Hour9.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Hour10.Rda')
 
-load(file = 'model_output_best_baseline/Week1.Rda')
-load(file = 'model_output_best_baseline/Week2.Rda')
-load(file = 'model_output_best_baseline/Week3.Rda')
-load(file = 'model_output_best_baseline/Week4.Rda')
-load(file = 'model_output_best_baseline/Week5.Rda')
-load(file = 'model_output_best_baseline/Week6.Rda')
-load(file = 'model_output_best_baseline/Week7.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Week1.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Week2.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Week3.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Week4.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Week5.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Week6.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Week7.Rda')
 
-load(file = 'model_output_best_baseline/Month1.Rda')
-load(file = 'model_output_best_baseline/Month2.Rda')
-load(file = 'model_output_best_baseline/Month3.Rda')
-load(file = 'model_output_best_baseline/Month4.Rda')
-#load(file = 'model_output_best_baseline/Month5.Rda')
-load(file = 'model_output_best_baseline/Month6.Rda')
-load(file = 'model_output_best_baseline/Month7.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Month1.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Month2.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Month3.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Month4.Rda')
+#load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Month5.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Month6.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Month7.Rda')
 
-load(file = 'model_output_best_baseline/Year1.Rda')
-load(file = 'model_output_best_baseline/Year2.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Year1.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Year2.Rda')
 
-load(file = 'model_output_best_baseline/Wday1.Rda')
-load(file = 'model_output_best_baseline/Wday2.Rda')
-load(file = 'model_output_best_baseline/Wday3.Rda')
-load(file = 'model_output_best_baseline/Wday4.Rda')
-load(file = 'model_output_best_baseline/Wday5.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Wday1.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Wday2.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Wday3.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Wday4.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Wday5.Rda')
 
 ```
 
@@ -275,7 +283,7 @@ lines(Hour7$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date])
 lines(Hour8$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date])
 lines(Hour9$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date])
 lines(Hour10$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date])
-lines(Hour11$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], col = 'red')
+#lines(Hour11$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], col = 'red')
 
 plot(Hour1$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)], type = 'l', ylim = c(2000, 13700))
 lines(Hour2$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)])
@@ -287,7 +295,7 @@ lines(Hour7$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)])
 lines(Hour8$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)])
 lines(Hour9$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)])
 lines(Hour10$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)])
-lines(Hour11$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)], col = 'red')
+#lines(Hour11$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)], col = 'red')
 
 Hour1$Result[,sqrt(mean((volume - pred_1)^2))]
 Hour2$Result[,sqrt(mean((volume - pred_1)^2))]
@@ -299,7 +307,7 @@ Hour7$Result[,sqrt(mean((volume - pred_1)^2))]
 Hour8$Result[,sqrt(mean((volume - pred_1)^2))]
 Hour9$Result[,sqrt(mean((volume - pred_1)^2))]
 Hour10$Result[,sqrt(mean((volume - pred_1)^2))] 
-Hour11$Result[,sqrt(mean((volume - pred_1)^2))] #Best
+#Hour11$Result[,sqrt(mean((volume - pred_1)^2))] #Best
 ```
 
 ## Looking at week
@@ -461,33 +469,33 @@ Best2_comb$Results = rbind(Best2a$Results, Best2b$Results,Best2$Results)
 
 
 ```{r, eval = FALSE}
-save(Naive, file = 'model_output_best_baseline/Naive.Rda')
-save(Combo1, file = 'model_output_best_baseline/Combo1.Rda')
-save(Combo2, file = 'model_output_best_baseline/Combo2.Rda')
-save(Combo3, file = 'model_output_best_baseline/Combo3.Rda')
-save(Combo4, file = 'model_output_best_baseline/Combo4.Rda')
-save(Combo5, file = 'model_output_best_baseline/Combo5.Rda')
-save(Combo6, file = 'model_output_best_baseline/Combo6.Rda')
-save(Best, file = 'model_output_best_baseline/Best.Rda')
-save(Best2_comb, file = 'model_output_best_baseline/Best2_comb.Rda')
+save(Naive, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Naive.Rda')
+save(Combo1, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Combo1.Rda')
+save(Combo2, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Combo2.Rda')
+save(Combo3, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Combo3.Rda')
+save(Combo4, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Combo4.Rda')
+save(Combo5, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Combo5.Rda')
+save(Combo6, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Combo6.Rda')
+save(Best, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Best.Rda')
+save(Best2_comb, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Best2_comb.Rda')
 
 
-save(Baseline5, file = 'model_output_best_baseline/Baseline5.Rda')
-save(Baseline_old, file = 'model_output_best_baseline/Baseline_old.Rda')
+save(Baseline5, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Baseline5.Rda')
+save(Baseline_old, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Baseline_old.Rda')
 ```
 
 ```{r, cache=TRUE}
-load(file = 'model_output_best_baseline/Combo1.Rda')
-load(file = 'model_output_best_baseline/Combo2.Rda')
-load(file = 'model_output_best_baseline/Combo3.Rda')
-load(file = 'model_output_best_baseline/Combo4.Rda')
-load(file = 'model_output_best_baseline/Combo5.Rda')
-load(file = 'model_output_best_baseline/Combo6.Rda')
-load(file = 'model_output_best_baseline/Best.Rda')
-load(file = 'model_output_best_baseline/Best2.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Combo1.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Combo2.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Combo3.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Combo4.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Combo5.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Combo6.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Best.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Best2.Rda')
 
-load(file = 'model_output_best_baseline/Baseline5.Rda')
-load(file = 'model_output_best_baseline/Baseline_old.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Baseline5.Rda')
+load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Baseline_old.Rda')
 ```
 
 
@@ -498,6 +506,7 @@ plot(Combo5$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], type = 
 #lines(Combo2$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date],)
 #lines(Combo3$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date],)
 #lines(Combo4$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date],)
+lines(Climatology$Result[,sqrt(mean((volume - clima_pred)^2)), keyby = init_date], col = 'orange', lty = 3)
 
 lines(Best$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date], col = 'blue', lty = 3)
 lines(Best$Result[,sqrt(mean((volume - pred_3)^2)), keyby = init_date], col = 'purple')

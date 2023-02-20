@@ -7,10 +7,11 @@
 #' @param pred_lag Days after initialization day the prediction window begins, default is 15.
 #' @param train_y Years of training data.
 #' @param reg_form Regression formula before PC covariates have been added.
-#' @param p_comps Number of pc-comps in model.
+#' @param p_comps Integer. Number of pc-comps in model.
 #' @param other_mods List of other models to run or default is NULL.
-#' @param comb FALSE allows specific combination of PCs to be run without running all combinations.
-#' @param custom specifies a custom pc bases model.
+#' @param comb Boolean. FALSE allows specific combination of PCs to be run without running all combinations.
+#' @param custom Boolean.Specifies a custom pc bases model.
+#' @param incl_climatology Boolean.Includes climatology model.
 #'
 #' @return A data.table with actual and predicted demand values.
 #' @export
@@ -22,7 +23,9 @@
 #'
 #'
 
-demand_forecast = function(forc_start, forc_end, pred_win = 30, pred_lag= 15, train_y=5, reg_form, p_comps, other_mods= NULL, comb = TRUE, custom = FALSE){
+demand_forecast = function(forc_start, forc_end, pred_win = 30, pred_lag= 15, train_y=5,
+                           reg_form, p_comps, other_mods= NULL, comb = TRUE, custom = FALSE,
+                           incl_climatology = TRUE){
 
     last_poss_pred = range(date_demand$date)[2] - pred_win - pred_lag
     detailed_results = list()
@@ -32,6 +35,8 @@ demand_forecast = function(forc_start, forc_end, pred_win = 30, pred_lag= 15, tr
     end = as.Date(forc_end)
     all_days = seq(start, end,  by = '1 days')
     init_days = all_days[mday(all_days)==1]
+    leap_done = FALSE
+
     for (i in seq_along(init_days)){
 
         start_time = Sys.time()
@@ -61,7 +66,7 @@ demand_forecast = function(forc_start, forc_end, pred_win = 30, pred_lag= 15, tr
 
         ## ***** Step 2: Train models ****
         mods = list()
-        mods[[1]] = gam(as.formula(reg_form), data = dt_train) #Climatology models
+        mods[[1]] = gam(as.formula(reg_form), data = dt_train) #Just Time covariate models
 
         j = 1
         if (p_comps > 0){                              #PC GAM MODELS
@@ -85,6 +90,21 @@ demand_forecast = function(forc_start, forc_end, pred_win = 30, pred_lag= 15, tr
             MAE = sum(abs(dt_test$volume - pred_demand_test))/n
             print(sprintf("RMSE mod_%i for initalization %s is %f", mod, format(init_day,"%Y-%m-%d"), RMSE))
             results[,paste0('pred_',mod) := pred_demand_test]
+        }
+        # Do climatology
+        if(incl_climatology == TRUE){
+            climatology = dt_train[, .(ave_vol = mean(volume)), by = .(month_day = format(date, format ="%m-%d"), hour)]
+
+            if ("02-29" %in% format(dt_test$date, format ="%m-%d") & leap_done == FALSE){ #Leap year issue
+                print('yes')
+                leap = climatology[month_day=="02-28",]
+                leap[,month_day:=  rep("02-29", 24)]
+                climatology = rbind(climatology, leap)
+                leap_done = TRUE
+            }
+            clima_pred = climatology[month_day %in% format(dt_test$date, format ="%m-%d"), ave_vol]
+            results[,'clima_pred' := clima_pred]
+            print(paste0("Climatology: ", sqrt(sum((dt_test$volume - clima_pred)^2)/n)))
         }
 
         ## **** Step 4: Register Results ****

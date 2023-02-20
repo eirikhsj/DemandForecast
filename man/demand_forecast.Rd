@@ -14,7 +14,8 @@ demand_forecast(
   p_comps,
   other_mods = NULL,
   comb = TRUE,
-  custom = FALSE
+  custom = FALSE,
+  incl_climatology = TRUE
 )
 }
 \arguments{
@@ -30,13 +31,15 @@ demand_forecast(
 
 \item{reg_form}{Regression formula before PC covariates have been added.}
 
-\item{p_comps}{Number of pc-comps in model.}
+\item{p_comps}{Integer. Number of pc-comps in model.}
 
 \item{other_mods}{List of other models to run or default is NULL.}
 
-\item{comb}{FALSE allows specific combination of PCs to be run without running all combinations.}
+\item{comb}{Boolean. FALSE allows specific combination of PCs to be run without running all combinations.}
 
-\item{custom}{specifies a custom pc bases model.}
+\item{custom}{Boolean.Specifies a custom pc bases model.}
+
+\item{incl_climatology}{Boolean.Includes climatology model.}
 }
 \value{
 A data.table with actual and predicted demand values.
