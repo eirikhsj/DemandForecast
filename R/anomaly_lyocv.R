@@ -8,10 +8,9 @@
 #' @param dt_all  data.table with input data.
 #'
 #' @return data.table
-#' @export
 #'
 #' @examples mod_21_30_inter_nao = anomaly_lyocv(21, 30,form = "anomaly_future ~ FL_anomaly + FL_anomaly_30 + as.factor(month) * nao1_past")
-
+#' @export
 anomaly_lyocv = function(choose_days_ahead = 21,mslp_lag = 30, plotting =FALSE, dt_all = dt_all,
                          form = "anomaly_future ~ FL_anomaly + FL_anomaly_30 + as.factor(month) * nao1_past"){
 

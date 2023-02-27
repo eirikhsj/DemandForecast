@@ -5,22 +5,16 @@
 #' @return Returns a matrix with grid temperature data and a data.table with demand data.
 #' @import ncdf4
 #' @import data.table
-#' @export
+
+#' @examples prep = prep_demand_temp_data(include_na_volume = TRUE,path = "~/NR/ClimateFutures/RenewableEnergy/Data/DemandForecasting/")
+#' @examples prep = prep_demand_temp_data(include_na_volume = TRUE,path = "/Users/Eirik/Desktop/Master2023/Data/")
 #'
-#' @examples prep = prep_demand_temp_data(include_na_volume = TRUE)
-prep_demand_temp_data = function(include_na_volume = TRUE){
+#' @export
+prep_demand_temp_data = function(include_na_volume = TRUE, path = "/mn/kadingir/datascience_000000/eirikhsj/data"){
 
-    ##----- 1) Determine which root directory to use -----
-    root_dir_alex = "~/NR/ClimateFutures/RenewableEnergy/Data/DemandForecasting/" ## Alex
-    root_dir_eirik = "/Users/Eirik/Desktop/Master2023/Data/Prob1_data/"           ## Eirik
-
-    if(file.exists(root_dir_alex)){ root_dir = root_dir_alex
-    }else{                          root_dir = root_dir_eirik
-    }
-
-    ##----- 2) Load and extract temperature data -----
-    #f_nc = paste0(root_dir, "/temperature_data.nc4") #Old dataset 2013-2021 only
-    f_nc = paste0(root_dir, "/era_historical_data.nc4") #New dataset 1978-2023
+    ##----- 1) Load and extract temperature data -----
+    #f_nc = paste0(path, "/temperature_data.nc4") #Old dataset 2013-2021 only
+    f_nc = paste0(path, "/era_historical_data.nc4") #New dataset 1978-2023
     nc = nc_open(f_nc)
     X = ncvar_get(nc, "2m_temperature")
     hours = 1:24
@@ -34,12 +28,12 @@ prep_demand_temp_data = function(include_na_volume = TRUE){
 
     dt_date = data.table(expand.grid(hour = hours,date = days)) #track of dates for temp data
 
-    ##----- 3) Load and extract demand volume data -----
+    ##----- 2) Load and extract demand volume data -----
     f_demand = paste0(root_dir, "/nordpool_elspot_volumes.csv") #2013-2021
     dt_demand = fread(f_demand)
     dt_demand[, hour := hour + 1]
 
-    ##----- 4) Debug Demand volume (Summer/Winter time problem)-----
+    ##----- 3) Debug Demand volume (Summer/Winter time problem)-----
     nas = which(is.na(dt_demand$volume))           #Find missing bc we skip 1 hour ahead -> summertime
     dt_demand[, rowCount:= .N, by = .(date, hour)] #Find doubles bc we jump back 1 h -> wintertime
     doubles= which(dt_demand$rowCount >1)[seq(from = 1, to = length(which(dt_demand$rowCount >1)), by = 2)]
@@ -59,7 +53,7 @@ prep_demand_temp_data = function(include_na_volume = TRUE){
     dt_demand = data.table(volume, date, hour)
     date_demand = dt_demand[dt_date, on=c("hour", "date")]  #Combine information
 
-    ##----- 5) Debug Temperature Data (X) -----
+    ##----- 4) Debug Temperature Data (X) -----
     n_nas = rowSums(is.nan(X_temp))
     if(any(n_nas > 0)){
         w_missing = which(n_nas > 0)
@@ -68,7 +62,6 @@ prep_demand_temp_data = function(include_na_volume = TRUE){
     }else{
         X_mat = X_temp
     }
-
 
     if (nrow(date_demand) == nrow(X_mat)){
         print('We are good to go!')
@@ -82,7 +75,7 @@ prep_demand_temp_data = function(include_na_volume = TRUE){
 
     date_demand[,I:= 1:.N] #set index
 
-    ##----- 6) Do we want to return NA volume observations? -----
+    ##----- 5) Do we want to return NA volume observations? -----
     out = list()
     if (include_na_volume== FALSE){
         d_d = date_demand[!is.na(volume)] #Select only rows with volume obs
@@ -92,7 +85,7 @@ prep_demand_temp_data = function(include_na_volume = TRUE){
         out$X_mat = X_mat
         out$date_demand = date_demand
     }
-    ##----- 7) Final Check and Print-----
+    ##----- 6) Final Check and Print-----
     if (nrow(out$date_demand) == nrow(out$X_mat)){
         print(paste0('Demand volume data from ', dt_demand[1,date], ' to ', dt_demand[dim(dt_demand)[1],date],'.' ))
         print(paste0('Temperature data from ', out$date_demand[1,date], ' to ', out$date_demand[dim(out$date_demand)[1],date],'.'))
@@ -100,4 +93,3 @@ prep_demand_temp_data = function(include_na_volume = TRUE){
     }
     return(out)
 }
-
