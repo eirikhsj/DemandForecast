@@ -24,9 +24,9 @@
 #' @examples  Mod1 = demand_forecast(forc_start ='2014-01-01',forc_end = '2021-03-01',pred_win = 30, train_y = 5, pred_lag = 15,reg_form = "volume ~ as.factor(hour) + as.factor(month) + year", p_comps = 3, other_mods= NULL,comb = TRUE)
 #'
 #'
-demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 30, pred_lag= 15, train_y=5,
-                           reg_form, p_comps, other_mods= NULL, comb = TRUE, custom = FALSE,
-                           incl_climatology = TRUE, cores = 4){
+demand_forecast = function(X_mat1, date_demand1, forc_start1, forc_end1, pred_win1 = 30, pred_lag1= 15, train_y1=5,
+                           reg_form1, p_comps1, other_mods1= NULL, comb1 = TRUE, custom1 = FALSE,
+                           incl_climatology1 = TRUE, cores = 4){
 
     last_poss_pred = range(date_demand$date)[2] - pred_win - pred_lag
 
@@ -34,22 +34,22 @@ demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 
     start = as.Date(forc_start)
     end = as.Date(forc_end)
     all_days = seq(start, end,  by = '1 days')
-    init_days = all_days[mday(all_days)==1]
+    init_days1 = all_days[mday(all_days)==1]
 
 
     ## **** Run parallel cores ****
-    # detailed_results = mclapply(seq_along(init_days),
-    #                   "Rolling",
-    #                   X_mat = X_mat, date_demand = date_demand,init_days= init_days, pred_win = pred_win, pred_lag= pred_lag, train_y=train_y,
-    #                   reg_form= reg_form, p_comps= p_comps, other_mods= other_mods, comb = comb, custom = custom,
-    #                   incl_climatology = incl_climatology,
-    #                   mc.cores = cores)
+    detailed_results = mclapply(seq_along(init_days1),
+                      "Rolling",
+                      X_mat = X_mat1, date_demand = date_demand1,init_days= init_days1, pred_win = pred_win1, pred_lag= pred_lag1, train_y=train_y1,
+                      reg_form= reg_form1, p_comps= p_comps1, other_mods= other_mods1, comb = comb1, custom = custom1,
+                      incl_climatology = incl_climatology1,
+                      mc.cores = cores)
 
-    detailed_results = lapply(seq_along(init_days),
-                                "Rolling",
-                                X_mat = X_mat, date_demand = date_demand,init_days= init_days, pred_win = pred_win, pred_lag= pred_lag, train_y=train_y,
-                                reg_form= reg_form, p_comps= p_comps, other_mods= other_mods, comb = comb, custom = custom,
-                                incl_climatology = incl_climatology)
+    # detailed_results = lapply(seq_along(init_days),
+    #                             "Rolling",
+    #                             X_mat = X_mat, date_demand = date_demand,init_days= init_days, pred_win = pred_win, pred_lag= pred_lag, train_y=train_y,
+    #                             reg_form= reg_form, p_comps= p_comps, other_mods= other_mods, comb = comb, custom = custom,
+    #                             incl_climatology = incl_climatology)
 
     Results = rbindlist(detailed_results)
 

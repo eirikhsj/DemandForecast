@@ -5,19 +5,19 @@
 \title{Rolling CV forecast model for energy demand.}
 \usage{
 demand_forecast(
-  X_mat,
-  date_demand,
-  forc_start,
-  forc_end,
-  pred_win = 30,
-  pred_lag = 15,
-  train_y = 5,
-  reg_form,
-  p_comps,
-  other_mods = NULL,
-  comb = TRUE,
-  custom = FALSE,
-  incl_climatology = TRUE,
+  X_mat1,
+  date_demand1,
+  forc_start1,
+  forc_end1,
+  pred_win1 = 30,
+  pred_lag1 = 15,
+  train_y1 = 5,
+  reg_form1,
+  p_comps1,
+  other_mods1 = NULL,
+  comb1 = TRUE,
+  custom1 = FALSE,
+  incl_climatology1 = TRUE,
   cores = 4
 )
 }
