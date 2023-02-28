@@ -43,7 +43,7 @@ demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 
         ## ***** Step 1: Form the training and test datasets ****
         init_day = init_days[i]
         target_days = seq(init_day+ pred_lag, length.out = pred_win,  by = '1 days')
-        print(paste('Forecast made on:', init_day))
+        #print(paste('Forecast made on:', init_day))
 
         train_cutoff = seq(init_day,  length.out = 2, by = paste0('-',train_y, ' year'))[2]
 
@@ -58,7 +58,7 @@ demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 
             dt_train = date_demand[I_train, ]
             dt_test  = date_demand[I_test, ]
         }
-        print(paste('We are training on:', dim(dt_train)[1], 'observations'))
+        #print(paste('We are training on:', dim(dt_train)[1], 'observations'))
         max_year_train = dt_train[, max(year)]
         dt_test = dt_test[year > max_year_train, year := max_year_train] #pretend that new year is last year to avoid factor error
         n = nrow(dt_test)
