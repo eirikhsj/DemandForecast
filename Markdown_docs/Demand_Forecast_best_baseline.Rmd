@@ -98,7 +98,7 @@ First look at which of the 4 configurations of each of the 5 time covariates per
 We have a simple continuous, spline, as.factor(), and sinusoidal. 
 # 1) Climatology
 ```{r}
-Climatology = DemandForecast::demand_forecast(forc_start = '2014-02-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5,
+Climatology = demand_forecast(forc_start = '2014-02-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5,
                               p_comps = 0,  reg_form = "volume ~ 1", incl_climatology = TRUE, custom = FALSE,
                               X_mat=X_mat, date_demand = date_demand, cores = 8)
 ```
