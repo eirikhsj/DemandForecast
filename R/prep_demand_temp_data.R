@@ -29,7 +29,7 @@ prep_demand_temp_data = function(include_na_volume = TRUE, path = "/mn/kadingir/
     dt_date = data.table(expand.grid(hour = hours,date = days)) #track of dates for temp data
 
     ##----- 2) Load and extract demand volume data -----
-    f_demand = paste0(root_dir, "/nordpool_volume.csv") #2013-2021
+    f_demand = paste0(path, "/nordpool_volume.csv") #2013-2021
     dt_demand = fread(f_demand)
     dt_demand[, hour := hour + 1]
 

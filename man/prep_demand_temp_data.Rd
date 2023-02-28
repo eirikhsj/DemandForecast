@@ -6,7 +6,7 @@
 \usage{
 prep_demand_temp_data(
   include_na_volume = TRUE,
-  path = "/mn/kadingir/datascience_000000/eirikhsj/data"
+  path = "/mn/kadingir/datascience_000000/eirikhsj/"
 )
 }
 \arguments{

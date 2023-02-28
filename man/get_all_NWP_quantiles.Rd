@@ -27,7 +27,7 @@ get_all_NWP_quantiles(
 
 \item{forc_months}{Number of forecast months from start}
 
-\item{PC_ERA}{List of matrices containing PC of ERA tempearture.}
+\item{PC_ERA}{List of matrices containing PC of ERA temperature.}
 
 \item{pc_comp}{Integer. Number of pca components.}
 

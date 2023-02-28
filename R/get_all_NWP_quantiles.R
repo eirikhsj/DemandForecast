@@ -8,7 +8,7 @@
 #' @param start_month Start month.
 #' @param start_year Start year.
 #' @param forc_months Number of forecast months from start
-#' @param PC_ERA List of matrices containing PC of ERA tempearture.
+#' @param PC_ERA List of matrices containing PC of ERA temperature.
 #' @param pc_comp Integer. Number of pca components.
 #' @param reweight Boolean.
 #'
@@ -78,7 +78,6 @@ get_all_NWP_quantiles = function(path = "~/Desktop/Master2023/Data/NWP_monthly",
     } else{
         NWP_all_quantiles_rew = NA
     }
-
 
     out = c()
     out$NWP = NWP_all_quantiles
