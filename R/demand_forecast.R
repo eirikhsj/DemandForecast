@@ -23,9 +23,9 @@
 #' @examples  Mod1 = demand_forecast(forc_start ='2014-01-01',forc_end = '2021-03-01',pred_win = 30, train_y = 5, pred_lag = 15,reg_form = "volume ~ as.factor(hour) + as.factor(month) + year", p_comps = 3, other_mods= NULL,comb = TRUE)
 #'
 #'
-demand_forecast = function(forc_start, forc_end, pred_win = 30, pred_lag= 15, train_y=5,
+demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 30, pred_lag= 15, train_y=5,
                            reg_form, p_comps, other_mods= NULL, comb = TRUE, custom = FALSE,
-                           incl_climatology = TRUE, X_mat, date_demand, cores = 8){
+                           incl_climatology = TRUE, cores = 8){
 
     last_poss_pred = range(date_demand$date)[2] - pred_win - pred_lag
 
@@ -35,9 +35,9 @@ demand_forecast = function(forc_start, forc_end, pred_win = 30, pred_lag= 15, tr
     all_days = seq(start, end,  by = '1 days')
     init_days = all_days[mday(all_days)==1]
 
-    Rolling = function(i,pred_win, pred_lag, train_y,
-                       reg_form, p_comps, other_mods, comb, custom,
-                       incl_climatology, X_mat, date_demand){
+    Rolling = function(i,X_mat, date_demand, pred_win, pred_lag, train_y,
+                       reg_form, p_comps, other_mods, comb, custom,incl_climatology
+                       ){
 
         ## ***** Step 1: Form the training and test datasets ****
         init_day = init_days[i]
@@ -112,11 +112,10 @@ demand_forecast = function(forc_start, forc_end, pred_win = 30, pred_lag= 15, tr
     ## **** Step 5: Run paralell cores ****
     detailed_results = mclapply(seq_along(init_days),
                       "Rolling",
-                      pred_win = pred_win, pred_lag= pred_lag, train_y=train_y,
+                      X_mat = X_mat, date_demand = date_demand,pred_win = pred_win, pred_lag= pred_lag, train_y=train_y,
                       reg_form= reg_form, p_comps= p_comps, other_mods= other_mods, comb = comb, custom = custom,
-                      incl_climatology = incl_climatology, X_mat = X_mat, date_demand = date_demand,
-                      mc.cores = cores,
-                      mc.silent = FALSE)
+                      incl_climatology = incl_climatology,
+                      mc.cores = cores)
 
     Results = rbindlist(detailed_results)
 
