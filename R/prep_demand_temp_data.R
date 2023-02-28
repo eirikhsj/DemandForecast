@@ -10,7 +10,7 @@
 #' @examples prep = prep_demand_temp_data(include_na_volume = TRUE,path = "/Users/Eirik/Desktop/Master2023/Data/")
 #'
 #' @export
-prep_demand_temp_data = function(include_na_volume = TRUE, path = "/mn/kadingir/datascience_000000/eirikhsj/data"){
+prep_demand_temp_data = function(include_na_volume = TRUE, path = "/mn/kadingir/datascience_000000/eirikhsj/"){
 
     ##----- 1) Load and extract temperature data -----
     #f_nc = paste0(path, "/temperature_data.nc4") #Old dataset 2013-2021 only
@@ -29,7 +29,7 @@ prep_demand_temp_data = function(include_na_volume = TRUE, path = "/mn/kadingir/
     dt_date = data.table(expand.grid(hour = hours,date = days)) #track of dates for temp data
 
     ##----- 2) Load and extract demand volume data -----
-    f_demand = paste0(root_dir, "/nordpool_elspot_volumes.csv") #2013-2021
+    f_demand = paste0(root_dir, "/nordpool_volume.csv") #2013-2021
     dt_demand = fread(f_demand)
     dt_demand[, hour := hour + 1]
 
@@ -42,7 +42,7 @@ prep_demand_temp_data = function(include_na_volume = TRUE, path = "/mn/kadingir/
         volume = dt_demand$volume[-nas]
         date = dt_demand$date[-doubles]
         hour = dt_demand$hour[-doubles]
-    } else if ( length(nas) == length(doubles) + 1 ){ #if ata-cutoff in summer
+    } else if ( length(nas) == length(doubles) + 1 ){ #if data-cutoff in summer
         volume = dt_demand$volume[-nas]
         date = dt_demand$date[-c(doubles, length(dt_demand$date))]
         hour = dt_demand$hour[-c(doubles, length(dt_demand$date))]
