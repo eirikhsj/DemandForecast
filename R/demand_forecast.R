@@ -38,12 +38,18 @@ demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 
 
 
     ## **** Run parallel cores ****
-    detailed_results = mclapply(seq_along(init_days),
-                      "Rolling",
-                      X_mat = X_mat, date_demand = date_demand,init_days= init_days, pred_win = pred_win, pred_lag= pred_lag, train_y=train_y,
-                      reg_form= reg_form, p_comps= p_comps, other_mods= other_mods, comb = comb, custom = custom,
-                      incl_climatology = incl_climatology,
-                      mc.cores = cores)
+    # detailed_results = mclapply(seq_along(init_days),
+    #                   "Rolling",
+    #                   X_mat = X_mat, date_demand = date_demand,init_days= init_days, pred_win = pred_win, pred_lag= pred_lag, train_y=train_y,
+    #                   reg_form= reg_form, p_comps= p_comps, other_mods= other_mods, comb = comb, custom = custom,
+    #                   incl_climatology = incl_climatology,
+    #                   mc.cores = cores)
+
+    detailed_results = lapply(seq_along(init_days),
+                                "Rolling",
+                                X_mat = X_mat, date_demand = date_demand,init_days= init_days, pred_win = pred_win, pred_lag= pred_lag, train_y=train_y,
+                                reg_form= reg_form, p_comps= p_comps, other_mods= other_mods, comb = comb, custom = custom,
+                                incl_climatology = incl_climatology)
 
     Results = rbindlist(detailed_results)
 
@@ -62,7 +68,7 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
     ## ***** Step 1: Form the training and test datasets ****
     init_day = init_days[i]
     target_days = seq(init_day+ pred_lag, length.out = pred_win,  by = '1 days')
-    #print(paste('Forecast made on:', init_day))
+    print(paste('Forecast made on:', init_day))
 
     train_cutoff = seq(init_day,  length.out = 2, by = paste0('-',train_y, ' year'))[2]
 

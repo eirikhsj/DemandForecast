@@ -58,6 +58,8 @@ library(parallel)
 library(mgcv)
 
 prep = prep_demand_temp_data(include_na_volume = FALSE, path = "~/Desktop/Master2023/Data/")
+#prep = prep_demand_temp_data(include_na_volume = FALSE)
+
 #
 X_mat = prep$X_mat #Temperature field
 date_demand = prep$date_demand
