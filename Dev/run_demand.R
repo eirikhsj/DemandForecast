@@ -37,7 +37,7 @@ forc_start = '2014-02-01'; forc_end = '2021-09-01'; pred_win = 30; pred_lag = 15
 p_comps = 0;  reg_form = "volume ~ as.factor(hour) + as.factor(month) + year"
 
 
-Best2 = demand_forecast(x_mat = X_mat, date_demand = date_demand, forc_start = '2015-06-01', forc_end = '2021-09-01', pred_win = 30, pred_lag = 15, train_y = 5,
+Best2 = demand_forecast(X_mat = X_mat, date_demand = date_demand, forc_start = '2015-06-01', forc_end = '2021-09-01', pred_win = 30, pred_lag = 15, train_y = 5,
                         p_comps = 6,  reg_form = "volume ~ as.factor(hour):as.factor(month) + as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year")
 
 save(Best2, file = 'Best2.RData')
