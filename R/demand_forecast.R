@@ -90,7 +90,7 @@ demand_forecast = function(forc_start, forc_end, pred_win = 30, pred_lag= 15, tr
             print(sprintf("RMSE mod_%i for initalization %s is %f", mod, format(init_day,"%Y-%m-%d"), RMSE))
             results[,paste0('pred_',mod) := pred_demand_test]
         }
-        # Do climatology
+        ## **** Step 4: Climatology ****
         if(incl_climatology == TRUE){
             climatology = dt_train[, .(ave_vol = mean(volume)), by = .(month_day = format(date, format ="%m-%d"), hour)]
 
@@ -106,7 +106,7 @@ demand_forecast = function(forc_start, forc_end, pred_win = 30, pred_lag= 15, tr
             print(paste0("Climatology: ", sqrt(sum((dt_test$volume - clima_pred)^2)/n)))
         }
 
-        ## **** Step 4: Register Results ****
+        ## **** Step 5: Register Results ****
         detailed_results[[i]] = results
         diff = round(difftime(Sys.time(),start_time, units="secs"),4)
         print(paste0('This round took ', diff, ' seconds. Only ', round((length(init_days)-i)*diff/60,3), ' minutes left'))

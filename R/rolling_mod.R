@@ -1,14 +1,16 @@
 #' @title Rolling model
 #'
-#' @param q Quantile of interest.
-#' @param ERA_NWP Data of ERA observations and quantiles of NWP forecasts.
-#' @param predictors Number of NWP predictors.
-#' @param model Specify type of model, e.g. qreg, qgam, etc.
-#' @param window Max number of forecast days from initialization.
+#' @param q Float. Quantile of interest.
+#' @param ERA_NWP Data.table. Data of ERA observations and quantiles of NWP forecasts.
+#' @param predictors Integer. Number of NWP predictors.
+#' @param model String. Specify type of model, e.g. qreg, qgam, etc.
+#' @param window Integer. Max number of forecast days from initialization.
+#' @param reweight Boolean. Use reweighted data.
 #' @param hour_v Boolean. Include hour covariate.
 #' @param week_v Boolean. Include week covariate.
 #' @param month_v Boolean. Include month covariate.
 #' @param year_v Boolean. Include year covariate.
+#' @param incl_climatology Boolean. Include climatology model
 #'
 #' @return Model output with predictions, loss and model coefficients.
 #' @export
@@ -20,21 +22,19 @@
 #' @name rolling_mod
 
 
-q = 0.9
-predictors = 1
-model = 'reg'
-window = 60
-hour_v=TRUE
-week_v = TRUE
-month_v = TRUE
-year_v = TRUE
-reweight = FALSE
+# q = 0.9
+# predictors = 1
+# model = 'reg'
+# window = 60
+# hour_v=TRUE
+# week_v = TRUE
+# month_v = TRUE
+# year_v = TRUE
+# reweight = FALSE
 
 rolling_mod = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2022-05-01'), q, ERA_NWP, predictors, model='reg', window = 60, reweight = FALSE,
-                       hour_v=FALSE, week_v=FALSE, month_v = FALSE, year_v=FALSE){
+                       hour_v=FALSE, week_v=FALSE, month_v = FALSE, year_v=FALSE, incl_climatology =FALSE){
     detailed_results = list()
-
-    #init_date = NWP1 = NWP2 = . = NULL
 
     #1) Fix dates
     start =as.Date(forc_start)
@@ -85,6 +85,7 @@ rolling_mod = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2022-
 
         ## 3b) Split train-test
         train = ERA_NWP_final[date<init_day, .SD, keyby = .(date,hour)]
+
         if (reweight ==TRUE){
             test = ERA_NWP_final[date %in%target_days, .SD, keyby = .(date,hour)] #Here we only use 1 predictor, cant use init_day but no confusion in target_days
         } else{
@@ -97,6 +98,7 @@ rolling_mod = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2022-
             train_l = pinball_loss(q, predict(qreg), train$PC1)
             test_l = pinball_loss(q, predict(qreg, newdata = test), test$PC1)
         }
+
         ## 3d) Register loss
         results = test
         results[,'pred' := predict(qreg, newdata = test)]
@@ -110,6 +112,20 @@ rolling_mod = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2022-
             betas = betas[rep(1,dim(test)[1]),] #unnecessary storage use, expand later
             results = cbind(results, betas)
         }
+        ## 3f) Include Climatology
+        if(incl_climatology == TRUE){
+            climatology = train[, .(quant =quantile(PC1,probs = q)), by = .(month_day = format(date, format ="%m-%d"), hour)]
+
+            if ("02-29" %in% format(test$date, format ="%m-%d") & !("02-29" %in%climatology$month_day)){ #Leap year issue
+                print('Correcting leap year')
+                leap = climatology[month_day=="02-28",]
+                leap[,month_day:=  rep("02-29", 4)]
+                climatology = rbind(climatology, leap)
+            }
+            clima_pred = climatology[month_day %in% format(test$date, format ="%m-%d"), quant]
+            results[,'clima_pred' := clima_pred]
+            #print(paste0("Climatology: ", sqrt(mean((test$PC1 - clima_pred)^2))))
+        }
         detailed_results[[i]] = results
     }
 
@@ -119,4 +135,3 @@ rolling_mod = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2022-
     out$Results = Results
     return(out)
 }
-
