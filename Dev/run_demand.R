@@ -1,8 +1,7 @@
 #Run demand_forecast
 
-#library(DemandForecast)
-source('prep_demand_temp_data.R')
-source('demand_forecast.R')
+library(DemandForecast)
+
 library(data.table)
 library(ncdf4)
 prep = prep_demand_temp_data(include_na_volume = FALSE)
