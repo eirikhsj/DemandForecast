@@ -23,13 +23,13 @@
 #' PC_ERA = PC_ERA_79_92, pc_comp = 1, reweight = FALSE)
 #'
 
-get_all_NWP_quantiles = function(path = "~/Desktop/Master2023/Data/NWP_monthly",
-                                 start_month  = '01', start_year = 1993, forc_months = 355,
+get_all_NWP_quantiles = function(path = "/mn/kadingir/datascience_000000/eirikhsj/sfe_nordic_temperature",
+                                 start_month  = '01', start_year = 1993, forc_months = 362,
                                  PC_ERA = PC_ERA_79_92, pc_comp = 1,
                                  reweight = FALSE){
-    #Forc_months gives total forecast months (including start month) .
+    #Forc_months gives total forecast months (including start month)
 
-    files = list.files(path = path, pattern = '*.nc4', full.names=TRUE)
+    files = list.files(path = path, pattern = '^sfe_nordic_temperature_', full.names=TRUE)
     num_char = nchar(files[1])
 
     add_months = forc_months - 1
@@ -43,8 +43,8 @@ get_all_NWP_quantiles = function(path = "~/Desktop/Master2023/Data/NWP_monthly",
     target_hour = rep(c(6,12,18,24), 125)
 
     #Get indexes for files
-    year_bool = as.numeric(mapply(substring,files, num_char-10, num_char-7)) == start_year
-    month_bool = as.numeric(mapply(substring,files, num_char-5, num_char-4))== as.numeric(start_month)
+    year_bool = as.numeric(mapply(substring,files, num_char-9, num_char-6)) == start_year
+    month_bool = as.numeric(mapply(substring,files, num_char-4, num_char-3)) == as.numeric(start_month)
     start_files_ix = which((year_bool) & (month_bool))[[1]]
     stop_files_ix = start_files_ix + forc_months -1
 

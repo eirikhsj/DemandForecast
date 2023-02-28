@@ -9,10 +9,10 @@ and stores the results of these iterated outputs in a data.table.
 Output can then be merged with ERA-data using a get_ERA_NWP function to be used in prediction tasks.}
 \usage{
 get_all_NWP_quantiles(
-  path = "~/Desktop/Master2023/Data/NWP_monthly",
+  path = "/mn/kadingir/datascience_000000/eirikhsj/sfe_nordic_temperature",
   start_month = "01",
   start_year = 1993,
-  forc_months = 355,
+  forc_months = 362,
   PC_ERA = PC_ERA_79_92,
   pc_comp = 1,
   reweight = FALSE

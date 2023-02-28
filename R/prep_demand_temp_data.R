@@ -14,7 +14,7 @@ prep_demand_temp_data = function(include_na_volume = TRUE, path = "/mn/kadingir/
 
     ##----- 1) Load and extract temperature data -----
     #f_nc = paste0(path, "/temperature_data.nc4") #Old dataset 2013-2021 only
-    f_nc = paste0(path, "/era_historical_data.nc4") #New dataset 1978-2023
+    f_nc = paste0(path, "era_historical_data.nc4") #New dataset 1978-2023
     nc = nc_open(f_nc)
     X = ncvar_get(nc, "2m_temperature")
     hours = 1:24

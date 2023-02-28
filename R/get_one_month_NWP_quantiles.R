@@ -16,16 +16,16 @@
 #' get_one_month_NWP_quantiles(files_i = 'Desktop/Master2023/Data/NWP_monthly/forecast_2022_07.nc4', PC_ERA = PC_ERA_79_92, pc_comp = 1)
 #'
 #' @export
-get_one_month_NWP_quantiles= function(files_i = 'Desktop/Master2023/Data/NWP_monthly/forecast_2022_07.nc4',
+get_one_month_NWP_quantiles= function(files_i = "/mn/kadingir/datascience_000000/eirikhsj/sfe_nordic_temperature/sfe_nordic_temperature_2008_11.nc4",
                                       PC_ERA, pc_comp, rew= FALSE){
 
     #Open nc4, assign file and close nc4
     nc = nc_open(files_i)
     num_char = nchar(files_i)
     forec = ncvar_get(nc, attributes(nc$var)$names[1])
-    year_nwp = substring(files_i, num_char-10, num_char-7) #year
-    month_nwp = substring(files_i, num_char-5, num_char-4) #month
-    forc_name = paste0('forc', year_nwp, '_', month_nwp)
+    year_nwp = substring(files_i, num_char-9, num_char-6) #year
+    month_nwp = as.character(as.numeric(substring(files_i, num_char-4, num_char-3))) #month
+    forc_name = paste0('forc_', year_nwp, '_', month_nwp)
     assign(forc_name, forec)
     print(c(year_nwp,month_nwp))
     nc_close(nc)

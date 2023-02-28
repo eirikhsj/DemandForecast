@@ -19,26 +19,25 @@
 #' @import forecast
 #' @import xgboost
 #' @import glmnet
+#' @import parallel
 #' @examples  Mod1 = demand_forecast(forc_start ='2014-01-01',forc_end = '2021-03-01',pred_win = 30, train_y = 5, pred_lag = 15,reg_form = "volume ~ as.factor(hour) + as.factor(month) + year", p_comps = 3, other_mods= NULL,comb = TRUE)
 #'
 #'
 demand_forecast = function(forc_start, forc_end, pred_win = 30, pred_lag= 15, train_y=5,
                            reg_form, p_comps, other_mods= NULL, comb = TRUE, custom = FALSE,
-                           incl_climatology = TRUE){
+                           incl_climatology = TRUE, X_mat, date_demand, cores = 8){
 
     last_poss_pred = range(date_demand$date)[2] - pred_win - pred_lag
-    detailed_results = list()
 
     #1) Fix dates
     start = as.Date(forc_start)
     end = as.Date(forc_end)
     all_days = seq(start, end,  by = '1 days')
     init_days = all_days[mday(all_days)==1]
-    leap_done = FALSE
 
-    for (i in seq_along(init_days)){
-
-        start_time = Sys.time()
+    Rolling = function(i,pred_win, pred_lag, train_y,
+                       reg_form, p_comps, other_mods, comb, custom,
+                       incl_climatology, X_mat, date_demand){
 
         ## ***** Step 1: Form the training and test datasets ****
         init_day = init_days[i]
@@ -79,7 +78,7 @@ demand_forecast = function(forc_start, forc_end, pred_win = 30, pred_lag= 15, tr
         }
 
         ## **** Step 3: Check fit ****
-        print(paste0("Test : ", dt_test[1,date], " - ", dt_test[length(dt_test$date),date], " "))
+        #print(paste0("Test : ", dt_test[1,date], " - ", dt_test[length(dt_test$date),date], " "))
         results = dt_test
         results[,'init_date' := rep(init_day, length(dt_test$date))]
         results[,'lead_time':= ((as.integer(difftime(date, init_day, units = 'days')))*24)+ hour]
@@ -87,34 +86,43 @@ demand_forecast = function(forc_start, forc_end, pred_win = 30, pred_lag= 15, tr
             pred_demand_test = predict(mods[[mod]], newdata = dt_test)
             RMSE = sqrt(sum((dt_test$volume - pred_demand_test)^2)/n)
             MAE = sum(abs(dt_test$volume - pred_demand_test))/n
-            print(sprintf("RMSE mod_%i for initalization %s is %f", mod, format(init_day,"%Y-%m-%d"), RMSE))
+            #print(sprintf("RMSE mod_%i for initalization %s is %f", mod, format(init_day,"%Y-%m-%d"), RMSE))
             results[,paste0('pred_',mod) := pred_demand_test]
         }
         ## **** Step 4: Climatology ****
         if(incl_climatology == TRUE){
             climatology = dt_train[, .(ave_vol = mean(volume)), by = .(month_day = format(date, format ="%m-%d"), hour)]
 
-            if ("02-29" %in% format(dt_test$date, format ="%m-%d") & leap_done == FALSE){ #Leap year issue
-                print('yes')
+            if ("02-29" %in% format(dt_test$date, format ="%m-%d") & !("02-29" %in%climatology$month_day)){ #Leap year issue
                 leap = climatology[month_day=="02-28",]
                 leap[,month_day:=  rep("02-29", 24)]
                 climatology = rbind(climatology, leap)
-                leap_done = TRUE
             }
             clima_pred = climatology[month_day %in% format(dt_test$date, format ="%m-%d"), ave_vol]
             results[,'clima_pred' := clima_pred]
-            print(paste0("Climatology: ", sqrt(sum((dt_test$volume - clima_pred)^2)/n)))
+            #print(paste0("Climatology: ", sqrt(sum((dt_test$volume - clima_pred)^2)/n)))
         }
 
-        ## **** Step 5: Register Results ****
-        detailed_results[[i]] = results
-        diff = round(difftime(Sys.time(),start_time, units="secs"),4)
-        print(paste0('This round took ', diff, ' seconds. Only ', round((length(init_days)-i)*diff/60,3), ' minutes left'))
 
+        #detailed_results[[i]] = results
+        #diff = round(difftime(Sys.time(),start_time, units="secs"),4)
+        #print(paste0('This round took ', diff, ' seconds. Only ', round((length(init_days)-i)*diff/60,3), ' minutes left'))
+        return(results)
     }
+    ## **** Step 5: Run paralell cores ****
+    detailed_results = mclapply(seq_along(init_days),
+                      "Rolling",
+                      pred_win = pred_win, pred_lag= pred_lag, train_y=train_y,
+                      reg_form= reg_form, p_comps= p_comps, other_mods= other_mods, comb = comb, custom = custom,
+                      incl_climatology = incl_climatology, X_mat = X_mat, date_demand = date_demand,
+                      mc.cores = cores,
+                      mc.silent = FALSE)
+
+    Results = rbindlist(detailed_results)
+
     out = list()
-    out$Results = rbindlist(detailed_results)
-    out$mods = mods
+    out$Results = Results[,.SD, keyby = .(date,hour)]
+    #out$mods = mods
     print('Demand forecast has completed')
     return(out)
 }

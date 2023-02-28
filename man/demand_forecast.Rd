@@ -15,7 +15,10 @@ demand_forecast(
   other_mods = NULL,
   comb = TRUE,
   custom = FALSE,
-  incl_climatology = TRUE
+  incl_climatology = TRUE,
+  X_mat,
+  date_demand,
+  cores = 8
 )
 }
 \arguments{
