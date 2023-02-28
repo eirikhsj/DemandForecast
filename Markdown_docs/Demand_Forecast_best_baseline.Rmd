@@ -54,7 +54,10 @@ d) Should I try all combinations here and see which is best or is the more infor
 library(DemandForecast)
 library(data.table)
 library(ncdf4)
-prep = prep_demand_temp_data(include_na_volume = FALSE,path = "~/Desktop/Master2023/Data/")
+library(parallel)
+library(mgcv)
+
+prep = prep_demand_temp_data(include_na_volume = FALSE, path = "~/Desktop/Master2023/Data/")
 #
 X_mat = prep$X_mat #Temperature field
 date_demand = prep$date_demand
@@ -84,7 +87,7 @@ date_demand[, season:= ifelse(month(date) %in% c(12,1,2), 1,
                             ifelse(month(date) %in% c(6,7,8), 3, 4)))]
 
 forc_start = '2014-02-01'; forc_end = '2023-01-01'; pred_win = 30; pred_lag = 15; train_y = 5;
-p_comps = 0;  reg_form = "volume ~ as.factor(hour) + as.factor(month) + year"; custom = FALSE; incl_climatology=FALSE
+p_comps = 0;  reg_form = "volume ~ as.factor(hour) + as.factor(month) + year"; custom = FALSE; incl_climatology=FALSE; cores = 8
 ```
 
 Best baseline:
@@ -95,31 +98,31 @@ First look at which of the 4 configurations of each of the 5 time covariates per
 We have a simple continuous, spline, as.factor(), and sinusoidal. 
 # 1) Climatology
 ```{r}
-Climatology = demand_forecast(forc_start = '2014-02-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5,
+Climatology = DemandForecast::demand_forecast(forc_start = '2014-02-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5,
                               p_comps = 0,  reg_form = "volume ~ 1", incl_climatology = TRUE, custom = FALSE,
-                              X_mat=X_mat, date_demand = date_demand, cores = 2)
+                              X_mat=X_mat, date_demand = date_demand, cores = 8)
 ```
 
 
 
 # 2) Single covariates
 ```{r, eval = FALSE}
-Year1 = demand_forecast(forc_start = '2014-02-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ year", incl_climatology = FALSE,X_mat=X_mat, date_demand = date_demand)
-Year2 = demand_forecast(forc_start = '2014-02-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ as.factor(year)", incl_climatology = FALSE,X_mat=X_mat, date_demand = date_demand)
+Year1 = DemandForecast::demand_forecast(X_mat,date_demand,forc_start = '2014-02-01', forc_end = '2023-01-01', 
+            pred_win = 30, pred_lag = 15, train_y = 5, p_comps = 0,  reg_form = "volume ~ year", incl_climatology = FALSE)
+Year2 = DemandForecast::demand_forecast(X_mat,date_demand,forc_start = '2014-02-01', forc_end = '2023-01-01', 
+            pred_win = 30, pred_lag = 15, train_y = 5, p_comps = 0,  reg_form = "volume ~ as.factor(year)", incl_climatology = FALSE)
 ```
 
 ```{r, eval = FALSE}
-Wday1 = demand_forecast(forc_start = '2014-02-01', forc_end = '2021-09-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Wday1 = demand_forecast(X_mat,date_demand,forc_start = '2014-02-01', forc_end = '2021-09-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ w_day", incl_climatology = FALSE)
-Wday2 = demand_forecast(forc_start = '2014-02-01', forc_end = '2021-09-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Wday2 = demand_forecast(X_mat,date_demand,forc_start = '2014-02-01', forc_end = '2021-09-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(w_day)", incl_climatology = FALSE)
-Wday3 = demand_forecast(forc_start = '2014-02-01', forc_end = '2021-09-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Wday3 = demand_forecast(X_mat,date_demand,forc_start = '2014-02-01', forc_end = '2021-09-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ w_day1 + w_day2", incl_climatology = FALSE)
-Wday4 = demand_forecast(forc_start = '2014-02-01', forc_end = '2021-09-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Wday4 = demand_forecast(X_mat,date_demand,forc_start = '2014-02-01', forc_end = '2021-09-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(w_day):season", incl_climatology = FALSE)
-Wday5 = demand_forecast(forc_start = '2014-02-01', forc_end = '2021-09-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Wday5 = demand_forecast(X_mat,date_demand,forc_start = '2014-02-01', forc_end = '2021-09-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(w_day):month", incl_climatology = FALSE)
 ```
 

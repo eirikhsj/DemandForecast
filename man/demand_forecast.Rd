@@ -5,6 +5,8 @@
 \title{Rolling CV forecast model for energy demand.}
 \usage{
 demand_forecast(
+  X_mat,
+  date_demand,
   forc_start,
   forc_end,
   pred_win = 30,
@@ -16,9 +18,7 @@ demand_forecast(
   comb = TRUE,
   custom = FALSE,
   incl_climatology = TRUE,
-  X_mat,
-  date_demand,
-  cores = 8
+  cores = 4
 )
 }
 \arguments{

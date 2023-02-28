@@ -20,12 +20,13 @@
 #' @import xgboost
 #' @import glmnet
 #' @import parallel
+#' @import data.table
 #' @examples  Mod1 = demand_forecast(forc_start ='2014-01-01',forc_end = '2021-03-01',pred_win = 30, train_y = 5, pred_lag = 15,reg_form = "volume ~ as.factor(hour) + as.factor(month) + year", p_comps = 3, other_mods= NULL,comb = TRUE)
 #'
 #'
 demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 30, pred_lag= 15, train_y=5,
                            reg_form, p_comps, other_mods= NULL, comb = TRUE, custom = FALSE,
-                           incl_climatology = TRUE, cores = 8){
+                           incl_climatology = TRUE, cores = 4){
 
     last_poss_pred = range(date_demand$date)[2] - pred_win - pred_lag
 
@@ -120,7 +121,7 @@ demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 
     Results = rbindlist(detailed_results)
 
     out = list()
-    out$Results = Results[,.SD, keyby = .(date,hour)]
+    out$Results = Results
     #out$mods = mods
     print('Demand forecast has completed')
     return(out)
