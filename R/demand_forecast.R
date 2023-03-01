@@ -89,17 +89,17 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
 
     ## ***** Step 2: Train models ****
     mods = list()
-    mods[[1]] = gam(as.formula(reg_form), data = dt_train) #Just Time covariate models
-
+    mods[[1]] = mgcv::gam(as.formula(reg_form), data = dt_train) #Just Time covariate models
+    print(length(mods))
     j = 1
     if (p_comps > 0){                              #PC GAM MODELS
         if(custom == FALSE){
             for (j in 2:(p_comps+1)){
                 P = paste0("s(PC", 1:(j-1))
                 PC = paste(P, collapse=') + ')
-                mods[[j]] = gam(as.formula(sprintf("%s + %s)", reg_form, PC)), data = dt_train)
+                mods[[j]] = mgcv::gam(as.formula(sprintf("%s + %s)", reg_form, PC)), data = dt_train)
             }
-        } else{ mods[[2]] = gam(as.formula(sprintf("%s + %s", reg_form, custom)), data = dt_train) }
+        } else{ mods[[2]] = mgcv::gam(as.formula(sprintf("%s + %s", reg_form, custom)), data = dt_train) }
     }
 
     ## **** Step 3: Check fit ****
