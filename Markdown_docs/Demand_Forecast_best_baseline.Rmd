@@ -57,8 +57,8 @@ library(ncdf4)
 library(parallel)
 library(mgcv)
 
-prep = prep_demand_temp_data(include_na_volume = FALSE, path = "~/Desktop/Master2023/Data/")
-#prep = prep_demand_temp_data(include_na_volume = FALSE)
+#prep = prep_demand_temp_data(include_na_volume = FALSE, path = "~/Desktop/Master2023/Data/")
+prep = prep_demand_temp_data(include_na_volume = FALSE)
 
 #
 X_mat = prep$X_mat #Temperature field
@@ -409,46 +409,46 @@ Month7$Result[,sqrt(mean((volume - pred_1)^2))]
 
 # 4) Building best combination model 
 ```{r, eval = FALSE}
-Naive= demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Naive= demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                         p_comps = 0,  reg_form = "volume ~ hour + season + w_day + week + month + year")
 ```
 
 ```{r, eval = FALSE}
-Combo1= demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Combo1= demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(hour):season + as.factor(season) + as.factor(w_day):season + week1 + week2 + month1 + month2 + year")
 
-Combo2= demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Combo2= demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(hour):season + as.factor(season) + as.factor(w_day):season + week1 + week2 + month + year")
 
-Combo3= demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Combo3= demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ s(hour, by = season) + as.factor(season) + as.factor(w_day):season + week1 + week2 + month1 + month2 + year")
 
-Combo4= demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Combo4= demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(hour):season + as.factor(season) + as.factor(w_day):season + s(week1) + s(week2) + month + year")
 
-Combo5= demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Combo5= demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(hour):as.factor(season) + as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year")  #Much slower model and much better!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-Combo5b= demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Combo5b= demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(hour):as.factor(season) + as.factor(season) + s(week1) + s(week2) + month + year") 
 
-Combo5c= demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Combo5c= demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(hour):as.factor(season) + as.factor(w_day):as.factor(season)+ s(week1) + s(week2) + month + year") 
 
-Combo5d= demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Combo5d= demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                         p_comps = 0,  reg_form = "volume ~ as.factor(hour)+ as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year")  
 
-Combo6= demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Combo6= demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(hour):as.factor(month) + as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year")  
 
-Baseline5= demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Baseline5= demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(hour) + week1 + week2 + month + year")
 
-Baseline_old= demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Baseline_old= demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(hour) + as.factor(week) + year")
 
-Best = demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Best = demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 6,  reg_form = "volume ~ as.factor(hour):as.factor(season) + as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year")
 
 #Slight problem with prediction of one month for the below model, therefore had to split up and ommit month of 2014-06 predictions. 
@@ -461,13 +461,13 @@ Best = demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_
 
 Best2_comb = list()
 
-Best2a = demand_forecast(forc_start = '2014-02-01', forc_end = '2014-05-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Best2a = demand_forecast(X_mat, date_demand,forc_start = '2014-02-01', forc_end = '2014-05-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                         p_comps = 2,  reg_form = "volume ~ as.factor(hour):as.factor(month) + as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year")
 #Best2c = demand_forecast(forc_start = '2014-06-01', forc_end = '2014-06-01', pred_win = 30, pred_lag = 15, train_y = 5, 
 #                        p_comps = 2,  reg_form = "volume ~ as.factor(hour):as.factor(month) + as.factor(season) + as.factor(w_day):as.factor(season) + #s(week1) + s(week2) + month + year") 
-Best2b = demand_forecast(forc_start = '2014-07-01', forc_end = '2015-05-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Best2b = demand_forecast(X_mat, date_demand,forc_start = '2014-07-01', forc_end = '2015-05-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                         p_comps = 2,  reg_form = "volume ~ as.factor(hour):as.factor(month) + as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year")
-Best2 = demand_forecast(forc_start = '2015-06-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Best2 = demand_forecast(X_mat, date_demand,forc_start = '2015-06-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                         p_comps = 6,  reg_form = "volume ~ as.factor(hour):as.factor(month) + as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year")
 
 Best2_comb$Results = rbind(Best2a$Results, Best2b$Results,Best2$Results)
@@ -647,31 +647,31 @@ for (i in 2:7){
 
 Spline interaction on pca
 ```{r}
-Best_inter1 = demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Best_inter1 = demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 6,  reg_form = "volume ~ as.factor(hour):as.factor(season) + as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year", custom = 's(PC1, by = month) + s(PC2)')
 ```
 
 ```{r}
-Best_inter2= demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Best_inter2= demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 6,  reg_form = "volume ~ as.factor(hour):as.factor(season) + as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year", custom = 's(PC1, by = as.factor(month)) + s(PC2)')
 
 ```
 
 ```{r}
-Best_inter3 = demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Best_inter3 = demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 6,  reg_form = "volume ~ as.factor(hour):as.factor(season) + as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year", custom = 's(PC1, by = as.factor(season)) + s(PC2)')
 ```
 
 
 
 ```{r}
-Best_inter4 = demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Best_inter4 = demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 6,  reg_form = "volume ~ as.factor(hour):as.factor(season) + as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year", custom = 's(PC1) + s(PC2) + s(PC5)')
 ```
 
 
 ```{r}
-Best_inter5 = demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Best_inter5 = demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 6,  reg_form = "volume ~ as.factor(hour):as.factor(season) + as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year", custom = 's(PC1) + s(PC2) + s(PC5)')
 ```
 
@@ -708,22 +708,22 @@ Have not run inter_5 yet
 
 What quality of the PCA are we leveraging?
 ```{r, eval = FALSE}
-Baseline1 = demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Baseline1 = demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(hour) + as.factor(month) + year")
 
-Baseline2= demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Baseline2= demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(hour) + month1 + month2 + year")
 
-Baseline3= demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Baseline3= demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(hour) + week1 + week2 + year")
 
-Baseline4= demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Baseline4= demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(hour) + week1 + week2 + month1 + month2 + year")
 
-Baseline5= demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Baseline5= demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(hour) + week1 + week2 + month + year")
 
-Baseline6= demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Baseline6= demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ hour1 + hour2 + week1 + week2 + month + year")
 ```
 
@@ -753,7 +753,7 @@ Baseline6$Result[,sqrt(mean((volume - pred_1)^2))]
 
 Comparing with 10 training years 
 ```{r, eval = FALSE}
-Baseline1 = demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 10, 
+Baseline1 = demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 10, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(hour) + as.factor(month) + year")
 
 plot(Baseline1$Results[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], type = 'l')
@@ -764,7 +764,7 @@ plot(Baseline1$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)
 Baseline1$Result[,sqrt(mean((volume - pred_1)^2))]
 
 
-Baseline2= demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 10, 
+Baseline2= demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 10, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(hour) + month1 + month2 + year")
 
 plot(Baseline2$Results[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], type = 'l')
@@ -775,7 +775,7 @@ plot(Baseline2$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)
 Baseline2$Result[,sqrt(mean((volume - pred_1)^2))]
 
 
-Baseline3= demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 10, 
+Baseline3= demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 10, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(hour) + week1 + week2 + year")
 
 plot(Baseline3$Results[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], type = 'l')
@@ -785,7 +785,7 @@ plot(Baseline3$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)
 
 Baseline3$Result[,sqrt(mean((volume - pred_1)^2))]
 
-Baseline4= demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 10, 
+Baseline4= demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 10, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(hour) + week1 + week2 + month1 + month2 + year")
 plot(Baseline4$Results[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], type = 'l')
 
@@ -853,7 +853,7 @@ The best one here is baseline 5 using cosine + sine on the week term.
 
 
 ```{r, eval = FALSE}
-Eight_pca = demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Eight_pca = demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 8,  reg_form = "volume ~ as.factor(hour) + as.factor(month) + year")
 ```
 
@@ -932,13 +932,13 @@ This shows that
 
 
 ```{r, eval = FALSE}
-Three_pca = demand_forecast(forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Three_pca = demand_forecast(X_mat, date_demand,forc_start = '2014-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 3,  reg_form = "volume ~ as.factor(hour) + as.factor(month) + year")
 ```
 
 
 ```{r, eval = FALSE}
-Three_pca = demand_forecast(forc_start = '2019-01-01', forc_end = '2019-09-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Three_pca = demand_forecast(X_mat, date_demand,forc_start = '2019-01-01', forc_end = '2019-09-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 3,  reg_form = "volume ~ as.factor(hour) + as.factor(month) + year")
 ```
 

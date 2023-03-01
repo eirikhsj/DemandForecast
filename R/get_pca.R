@@ -25,7 +25,7 @@
 get_pca = function(X_mat, I_train, I_test, p_comps, NWP=NA,  U = NA, mu = NA){
     print('------- Running get_pca -------')
     if (length(U) == 1){
-
+        print('inside U = 1')
         X_train = X_mat[I_train,]
         ##--- Center the data ---
         mu = colMeans(X_train)
@@ -38,7 +38,7 @@ get_pca = function(X_mat, I_train, I_test, p_comps, NWP=NA,  U = NA, mu = NA){
         Sigma = t(X_center) %*% X_center
         l_svd = svd(Sigma)
         U = l_svd$u[, 1:p_comps]
-
+        print(dim(U))
         ##--- Get the factor loadings for training dataset---
         Fact_train = X_center %*% U
         colnames(Fact_train) = paste0("PC", 1:dim(data.frame(U))[2])
@@ -54,6 +54,7 @@ get_pca = function(X_mat, I_train, I_test, p_comps, NWP=NA,  U = NA, mu = NA){
     } else{  #We do not return dt_train and dt_test
         dt_train = NA
         dt_test = NA
+        print('No train return')
     }
 
     ## ---- Form factor loading of NWP data ---
@@ -77,7 +78,7 @@ get_pca = function(X_mat, I_train, I_test, p_comps, NWP=NA,  U = NA, mu = NA){
     } else{
         NWP_PC_mat = NA
     }
-
+    print('Got pca')
     ##----- Return ---
     out = list()
     out$U = U

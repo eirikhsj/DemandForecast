@@ -102,6 +102,7 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
 
     ## ***** Step 2: Train models ****
     mods = list()
+    print(reg_form)
     mods[[1]] = mgcv::gam(as.formula(reg_form), data = dt_train) #Just Time covariate models
     print(length(mods))
     j = 1
