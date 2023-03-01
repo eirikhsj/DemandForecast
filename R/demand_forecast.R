@@ -62,8 +62,7 @@ demand_forecast = function(X_mat1, date_demand1, forc_start1, forc_end1, pred_wi
 
 #' @export
 Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
-                   reg_form, p_comps, other_mods, comb, custom,incl_climatology
-){
+                   reg_form, p_comps, other_mods, comb, custom,incl_climatology){
 
     ## ***** Step 1: Form the training and test datasets ****
     init_day = init_days[i]
