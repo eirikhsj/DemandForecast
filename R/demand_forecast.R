@@ -111,7 +111,7 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
         pred_demand_test = predict(mods[[mod]], newdata = dt_test)
         RMSE = sqrt(sum((dt_test$volume - pred_demand_test)^2)/n)
         MAE = sum(abs(dt_test$volume - pred_demand_test))/n
-        #print(sprintf("RMSE mod_%i for initalization %s is %f", mod, format(init_day,"%Y-%m-%d"), RMSE))
+        print(sprintf("RMSE mod_%i for initalization %s is %f", mod, format(init_day,"%Y-%m-%d"), RMSE))
         results[,paste0('pred_',mod) := pred_demand_test]
     }
     ## **** Step 4: Climatology ****
@@ -125,7 +125,7 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
         }
         clima_pred = climatology[month_day %in% format(dt_test$date, format ="%m-%d"), ave_vol]
         results[,'clima_pred' := clima_pred]
-        #print(paste0("Climatology: ", sqrt(sum((dt_test$volume - clima_pred)^2)/n)))
+        print(paste0("Climatology: ", sqrt(sum((dt_test$volume - clima_pred)^2)/n)))
     }
 
 
