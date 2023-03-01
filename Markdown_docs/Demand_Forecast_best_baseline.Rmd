@@ -51,6 +51,7 @@ d) Should I try all combinations here and see which is best or is the more infor
 
 1) Set-up
 ```{r, cache=TRUE}
+install.packages('DemandForecast', repos = NULL,type = "source")
 library(DemandForecast)
 library(data.table)
 library(ncdf4)

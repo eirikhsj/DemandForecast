@@ -29,11 +29,12 @@ get_pca = function(X_mat, I_train, I_test, p_comps, NWP=NA,  U = NA, mu = NA){
         X_train = X_mat[I_train,]
         ##--- Center the data ---
         mu = colMeans(X_train)
+        print(dim(X_train))
         X_center = matrix(NA, dim(X_train)[1], dim(X_train)[2])
         for(j in 1:dim(X_train)[2]){
             X_center[, j] = X_train[, j] - mu[j]
         }
-
+        print(dim(X_center))
         ##---- Perform the SVD ---
         Sigma = t(X_center) %*% X_center
         l_svd = svd(Sigma)
