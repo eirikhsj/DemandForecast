@@ -26,7 +26,7 @@
 #'
 demand_forecast = function(X_mat1, date_demand1, forc_start1, forc_end1, pred_win1 = 30, pred_lag1= 15, train_y1=5,
                            reg_form1, p_comps1, other_mods1= NULL, comb1 = TRUE, custom1 = FALSE,
-                           incl_climatology1 = TRUE, cores = 4){
+                           incl_climatology1 = FALSE, cores = 4){
 
     last_poss_pred = range(date_demand$date)[2] - pred_win - pred_lag
 
@@ -82,7 +82,7 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
         dt_train = date_demand[I_train, ]
         dt_test  = date_demand[I_test, ]
     }
-    #print(paste('We are training on:', dim(dt_train)[1], 'observations'))
+    print(paste('We are training on:', dim(dt_train)[1], 'observations'))
     max_year_train = dt_train[, max(year)]
     dt_test = dt_test[year > max_year_train, year := max_year_train] #pretend that new year is last year to avoid factor error
     n = nrow(dt_test)
