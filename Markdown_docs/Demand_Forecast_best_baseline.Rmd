@@ -51,6 +51,8 @@ d) Should I try all combinations here and see which is best or is the more infor
 
 1) Set-up
 ```{r, cache=TRUE}
+#ssh eiriksj@nam-shub-01.uio.no
+
 #module load  R/4.2.0-foss-2021b
 #install.packages('DemandForecast', repos = NULL,type = "source")
 library(DemandForecast)
@@ -59,8 +61,8 @@ library(ncdf4)
 library(parallel)
 library(mgcv)
 
-prep = prep_demand_temp_data(include_na_volume = FALSE, path = "~/Desktop/Master2023/Data/")
-#prep = prep_demand_temp_data(include_na_volume = FALSE)
+#prep = prep_demand_temp_data(include_na_volume = FALSE, path = "~/Desktop/Master2023/Data/")
+prep = prep_demand_temp_data(include_na_volume = FALSE)
 
 #
 X_mat = prep$X_mat #Temperature field
@@ -92,6 +94,8 @@ date_demand[, season:= ifelse(month(date) %in% c(12,1,2), 1,
 
 date_demand[,season1 := cos(2*pi * season/4) ]
 date_demand[,season2 := sin(2*pi * season/4) ]
+
+date_demand[,hourly_mean_grid := rowMeans(X_mat)]
 
 # forc_start = '2016-01-01'; forc_end = '2023-01-01'; pred_win = 30; pred_lag = 15; train_y = 5;
 # p_comps = 0;  reg_form = "volume ~ as.factor(hour) + as.factor(month) + year"; custom = FALSE; incl_climatology=FALSE; cores = 8
@@ -144,19 +148,17 @@ Wday4 = demand_forecast(X_mat,date_demand,forc_start = '2016-01-01', forc_end = 
 #Interaction
 
 Wday5 = demand_forecast(X_mat,date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ s(w_day, by = season) ", incl_climatology = FALSE)
+                    p_comps = 0,  reg_form = "volume ~ s(w_day, by = season, bs = 'cc', k = 7) ", incl_climatology = FALSE)
 Wday6 = demand_forecast(X_mat,date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ s(w_day, by = month) ", incl_climatology = FALSE)
+                    p_comps = 0,  reg_form = "volume ~ s(w_day, by = month, bs = 'cc', k = 7) ", incl_climatology = FALSE)
 Wday7 = demand_forecast(X_mat,date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ s(w_day, by = week) ", incl_climatology = FALSE)
+                    p_comps = 0,  reg_form = "volume ~ s(w_day, by = week, bs = 'cc', k = 7) ", incl_climatology = FALSE)
 
-Wday5 = demand_forecast(X_mat,date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Wday8 = demand_forecast(X_mat,date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(w_day):as.factor(season)", incl_climatology = FALSE)
-Wday6 = demand_forecast(X_mat,date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Wday9 = demand_forecast(X_mat,date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(w_day):as.factor(month)", incl_climatology = FALSE)
-Wday5 = demand_forecast(X_mat,date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ as.factor(w_day):as.factor(season)", incl_climatology = FALSE)
-Wday6 = demand_forecast(X_mat,date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Wday10 = demand_forecast(X_mat,date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(w_day):as.factor(week)", incl_climatology = FALSE)
 ```
 
@@ -232,7 +234,6 @@ save(Hour7, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_fo
 save(Hour8, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Hour8.Rda')
 save(Hour9, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Hour9.Rda')
 save(Hour10, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Hour10.Rda')
-save(Hour11, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Hour11.Rda')
 
 save(Week1, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Week1.Rda')
 save(Week2, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Week2.Rda')
@@ -246,7 +247,7 @@ save(Month1, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_f
 save(Month2, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Month2.Rda')
 save(Month3, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Month3.Rda')
 save(Month4, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Month4.Rda')
-#save(Month5, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Month5.Rda')
+save(Month5, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Month5.Rda')
 save(Month6, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Month6.Rda')
 save(Month7, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Month6.Rda')
 
@@ -395,7 +396,11 @@ lines(Wday2$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date])
 lines(Wday3$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date])
 lines(Wday4$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], col = 'red')
 lines(Wday5$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date])
-lines(Wday6$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date])
+lines(Wday6$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], col = 'red')
+lines(Wday7$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date])
+lines(Wday8$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date])
+lines(Wday9$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date])
+lines(Wday10$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date])
 
 plot(Wday1$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)], type = 'l', ylim = c(2000, 13700))
 lines(Wday2$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)])
@@ -403,6 +408,10 @@ lines(Wday3$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)])
 lines(Wday4$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)], col = 'red')
 lines(Wday5$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)])
 lines(Wday6$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)])
+lines(Wday7$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)])
+lines(Wday8$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)])
+lines(Wday9$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)])
+lines(Wday10$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)])
 
 Wday1$Result[,sqrt(mean((volume - pred_1)^2))]
 Wday2$Result[,sqrt(mean((volume - pred_1)^2))]
@@ -410,6 +419,10 @@ Wday3$Result[,sqrt(mean((volume - pred_1)^2))]
 Wday4$Result[,sqrt(mean((volume - pred_1)^2))]
 Wday5$Result[,sqrt(mean((volume - pred_1)^2))] #Best as.factor(w_day):season
 Wday6$Result[,sqrt(mean((volume - pred_1)^2))]
+Wday7$Result[,sqrt(mean((volume - pred_1)^2))]
+Wday8$Result[,sqrt(mean((volume - pred_1)^2))]
+Wday9$Result[,sqrt(mean((volume - pred_1)^2))]
+Wday10$Result[,sqrt(mean((volume - pred_1)^2))]
 ```
 ## Looking at Year
 ```{r, cache = TRUE}
