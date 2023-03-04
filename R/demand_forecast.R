@@ -104,7 +104,6 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
     mods = list()
     print(reg_form)
     mods[[1]] = mgcv::gam(as.formula(reg_form), data = dt_train) #Just Time covariate models
-    print(length(mods))
     j = 1
     if (p_comps > 0){                              #PC GAM MODELS
         if(custom == FALSE){
@@ -123,10 +122,13 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
     results[,'lead_time':= ((as.integer(difftime(date, init_day, units = 'days')))*24)+ hour]
     for (mod in 1:length(mods)){
         pred_demand_test = predict(mods[[mod]], newdata = dt_test)
+        pred_demand_train = predict(mods[[mod]], newdata = dt_train)
+        RMSE_train = sqrt(mean((dt_train$volume - pred_demand_train)^2))
         RMSE = sqrt(sum((dt_test$volume - pred_demand_test)^2)/n)
         MAE = sum(abs(dt_test$volume - pred_demand_test))/n
         print(sprintf("RMSE mod_%i for initalization %s is %f", mod, format(init_day,"%Y-%m-%d"), RMSE))
         results[,paste0('pred_',mod) := pred_demand_test]
+        results[,paste0('RMSE_train_',mod) := rep(RMSE_train, dim(dt_test)[1])]
     }
     ## **** Step 4: Climatology ****
     if(incl_climatology == TRUE){
