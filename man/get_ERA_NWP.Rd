@@ -2,11 +2,7 @@
 % Please edit documentation in R/get_ERA_NWP.R
 \name{get_ERA_NWP}
 \alias{get_ERA_NWP}
-\title{Loading ERA and NWP data
-This function matches ERA and NWP data and readies data for use in prediction task in rolling_mod function.
-ERA contains the PC of ERA observed temperature (e.g. PC1) .
-NWP contains the PC of NWP forecasted temperature (e.g. NWP_1) .
-In rolling_mod we are building a rolling cross validation of PC1 ~ f(time) + NWP_PC1_t1 + NWP_PC1_t2}
+\title{Loading ERA and NWP data}
 \usage{
 get_ERA_NWP(
   ERA_path = "~/Desktop/Master2023/Data/PC_ERA/PC_ERA_79_92.Rda",
@@ -33,7 +29,6 @@ get_ERA_NWP(
 Data.table with data ready for input in rolling_mod function
 }
 \description{
-Loading ERA and NWP data
 This function matches ERA and NWP data and readies data for use in prediction task in rolling_mod function.
 ERA contains the PC of ERA observed temperature (e.g. PC1) .
 NWP contains the PC of NWP forecasted temperature (e.g. NWP_1) .

@@ -1,4 +1,5 @@
 #' Loading ERA and NWP data
+#'
 #' This function matches ERA and NWP data and readies data for use in prediction task in rolling_mod function.
 #' ERA contains the PC of ERA observed temperature (e.g. PC1) .
 #' NWP contains the PC of NWP forecasted temperature (e.g. NWP_1) .
