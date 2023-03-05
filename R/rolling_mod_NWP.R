@@ -18,7 +18,7 @@
 #' @import data.table
 #' @import stats
 #'
-#' @examples mod = rolling_mod('2007-01-01', '2022-05-01', 0.9, ERA_NWP, 1, model = 'reg', window = 60, reweight=FALSE)
+#' @examples mod = rolling_mod_NWP('2007-01-01', '2022-05-01', 0.9, ERA_NWP, 1, model = 'reg', window = 60, reweight=FALSE)
 #' @name rolling_mod_NWP
 
 
@@ -80,15 +80,16 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
     arg2 = q
     arg3 = init_days
     arg4 = window
-    arg5 = model
-    arg6 = predictors
-    arg7 = incl_climatology
+    arg5 = reweight
+    arg6 = model
+    arg7 = predictors
+    arg8 = incl_climatology
 
     #3) Forecast iteration
     detailed_results = mclapply(seq_along(init_days),
                                 "Rolling_nwp",
-                                ERA_NWP_vars = arg1, q = arg2,init_days= arg3, window = arg4, model= arg5, predictors=arg6,
-                                incl_climatology= arg7,
+                                ERA_NWP_vars = arg1, q = arg2,init_days= arg3, window = arg4, reweight = arg5, model= arg6, predictors=arg7,
+                                incl_climatology= arg8,
                                 mc.cores = 4)
 
     #4) Store and return
@@ -98,7 +99,7 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
     return(out)
 }
 
-Rolling_nwp = function(ERA_NWP_vars, q, init_days, window, reweight, model, predictors,
+Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, predictors,
                        incl_climatology){
 
     ## 3a) Time keeping
