@@ -11,17 +11,18 @@
 #' @param rew Boolean. Whether or not to find reweighted quantiles.
 #' @return Data.table with quantiles 0.1-0.9 and mean of NWP PC of choice.
 #' @export
+#' @import ncdf4
 #'
 #' @examples files = list.files(path = "~/Desktop/Master2023/Data/NWP_monthly/", pattern = '*.nc4', full.names=TRUE)
 #' get_one_month_NWP_quantiles(files_i = 'Desktop/Master2023/Data/NWP_monthly/forecast_2022_07.nc4', PC_ERA = PC_ERA_79_92, pc_comp = 1)
 #'
 #' @export
-get_one_month_NWP_quantiles= function(files_i = "/mn/kadingir/datascience_000000/eirikhsj/sfe_nordic_temperature/sfe_nordic_temperature_2008_11.nc4",
-                                      PC_ERA, pc_comp, rew= FALSE){
+get_one_month_NWP_quantiles= function(files_i = "/mn/kadingir/datascience_000000/eirikhsj/sfe_nordic_temperature/sfe_nordic_temperature_1993_1.nc4",
+                                      PC_ERA, pc_comp, rew= FALSE, nch = num_char){
 
     #Open nc4, assign file and close nc4
     nc = nc_open(files_i)
-    num_char = nchar(files_i)
+    num_char = nch
     forec = ncvar_get(nc, attributes(nc$var)$names[1])
     year_nwp = substring(files_i, num_char-9, num_char-6) #year
     month_nwp = as.character(as.numeric(substring(files_i, num_char-4, num_char-3))) #month
@@ -40,9 +41,15 @@ get_one_month_NWP_quantiles= function(files_i = "/mn/kadingir/datascience_000000
     rm(forecast)
     rm(forc_name)
 
+    if (any(is.na(pc_data$NWP_PC_mat[,pc_comp,]))==TRUE){
+        pc_nwp = t(na.omit(t(pc_data$NWP_PC_mat[,pc_comp,])))
+    } else{
+        pc_nwp = pc_data$NWP_PC_mat[,pc_comp,]
+    }
+
     # Find quantiles
-    mean_pc1 = rowMeans(pc_data$NWP_PC_mat[,pc_comp,])
-    quantiles = t(apply(pc_data$NWP_PC_mat[,pc_comp,], 1, quantile, probs=seq(0.1, 0.9, 0.1)))
+    mean_pc1 = rowMeans(pc_nwp)
+    quantiles = t(apply(pc_nwp, 1, quantile, probs=seq(0.1, 0.9, 0.1)))
     NWP_quantiles = data.table(quantiles,mean_pc1)
     names(NWP_quantiles) = c(paste0('NWP_PC',pc_comp, '_q', seq(10, 90, 10)), 'NWP_PC1_mean')
 

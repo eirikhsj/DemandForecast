@@ -314,7 +314,8 @@ save(Custom_comb10, file = 'Custom_comb10.Rda')
 
 scp eirikhsj@abacus-as.uio.no:~/Custom_comb1.Rda eirikhsj@abacus-as.uio.no:~/Custom_comb2.Rda eirikhsj@abacus-as.uio.no:~/Custom_comb3.Rda eirikhsj@abacus-as.uio.no:~/Custom_comb4.Rda eirikhsj@abacus-as.uio.no:~/Custom_comb5.Rda eirikhsj@abacus-as.uio.no:~/Custom_comb6.Rda eirikhsj@abacus-as.uio.no:~/Custom_comb7.Rda eirikhsj@abacus-as.uio.no:~/Custom_comb8.Rda eirikhsj@abacus-as.uio.no:~/Custom_comb9.Rda eirikhsj@abacus-as.uio.no:~/Custom_comb10.Rda /Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline
 
-scp eirikhsj@abacus-as.uio.no:~/Factor10_inter2.Rda /Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline
+scp /Users/Eirik/Desktop/Master2023/Data/NWP_quant/NWP_quant_rew25_1993_2022.Rda eirikhsj@abacus-as.uio.no:/mn/kadingir/datascience_000000 
+
 
 ```{r, cache = TRUE}
 plot(Custom_comb1$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], type = 'l', ylim = c(2000, 13700))

@@ -25,7 +25,8 @@
 
 get_all_NWP_quantiles = function(path = "/mn/kadingir/datascience_000000/eirikhsj/sfe_nordic_temperature",
                                  start_month  = '01', start_year = 1993, forc_months = 362,
-                                 PC_ERA = PC_ERA_79_92, pc_comp = 1,
+                                 PC_ERA_path = "/mn/kadingir/datascience_000000/eirikhsj/PC_ERA_79_92.Rda",
+                                 pc_comp = 1,
                                  reweight = FALSE){
     #Forc_months gives total forecast months (including start month)
 
@@ -48,12 +49,15 @@ get_all_NWP_quantiles = function(path = "/mn/kadingir/datascience_000000/eirikhs
     start_files_ix = which((year_bool) & (month_bool))[[1]]
     stop_files_ix = start_files_ix + forc_months -1
 
+    assign('PC_name', load(PC_ERA_path))
+    PC_ERA = get(PC_name)
+
     #Loop over monthly forecast files
     col_nr = 0
     NWP_results = list()
     NWP_results_rew = list()
     for (file_ix in c(start_files_ix:stop_files_ix)){
-        out = get_one_month_NWP_quantiles(files[file_ix], PC_ERA, pc_comp, rew = reweight)   #Using get_one_month_NWP_quantiles function
+        out = get_one_month_NWP_quantiles(files[file_ix], PC_ERA, pc_comp, rew = reweight, nch = num_char)   #Using get_one_month_NWP_quantiles function
 
         ix = file_ix - start_files_ix + 1
         print(ix)

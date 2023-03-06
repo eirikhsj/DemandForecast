@@ -28,3 +28,10 @@ for (i in seq_along(init_days_all)){
             reg_form= arg6, p_comps= arg7, other_mods= arg8, comb = arg9, custom = arg10,
             incl_climatology = arg11)
     }
+
+###########
+
+ERA_NWP = get_ERA_NWP(ERA_path = "/mn/kadingir/datascience_000000/eirikhsj/PC_ERA_79_92.Rda", NWP_path ="/mn/kadingir/datascience_000000/eirikhsj/NWP_quant_rew25_1993_2022.Rda",quant = "90", reweight = FALSE)
+library(parallel)
+library(data.table)
+library(quantreg)

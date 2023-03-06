@@ -22,21 +22,21 @@
 #' @name rolling_mod_NWP
 
 
-# q = 0.9
-# predictors = 1
-# model = 'reg'
-# window = 60
-# hour_v=TRUE
-# week_v = TRUE
-# month_v = TRUE
-# year_v = TRUE
-# reweight = FALSE
-# incl_climatology =FALSE
-# forc_start=as.Date('2007-01-01')
-# forc_end=as.Date('2009-05-01')
+q = 0.9
+predictors = 1
+model = 'reg'
+window = 60
+hour_v= TRUE
+week_v = TRUE
+month_v = TRUE
+year_v = TRUE
+reweight = FALSE
+incl_climatology = FALSE
+forc_start= as.Date('2007-01-01')
+forc_end= as.Date('2009-05-01')
 
 rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2022-05-01'), q, ERA_NWP, predictors, model='reg', window = 60, reweight = FALSE,
-                       hour_v=FALSE, week_v=FALSE, month_v = FALSE, year_v=FALSE, incl_climatology =FALSE){
+                       hour_v=FALSE, week_v=FALSE, month_v = FALSE, year_v=FALSE, incl_climatology =FALSE, cores = 4){
     #detailed_results = list()
 
     #1) Fix dates
@@ -54,6 +54,7 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
 
     #2) Build regression formula and fetch variables
     incl_vars = c('date','PC1', 'hour', 'init_date', 'lead_time')
+    pred_vars = c()
     formula = 'PC1 ~ 1'
 
     if (hour_v == TRUE){
@@ -68,7 +69,6 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
         incl_vars = c(incl_vars, 'year')
         formula = paste0(formula, ' + year')}
     if (predictors > 0){
-        pred_vars = c()
         for (l in 1:predictors){
             pred_vars = c(pred_vars, paste0('NWP', l, '_', re, q*100))
             formula = paste0(formula, ' + ', paste0('NWP', l, '_', re, q*100))}
@@ -84,13 +84,15 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
     arg6 = model
     arg7 = predictors
     arg8 = incl_climatology
+    arg9 = formula
+    arg10 = cores
 
     #3) Forecast iteration
     detailed_results = mclapply(seq_along(init_days),
                                 "Rolling_nwp",
-                                ERA_NWP_vars = arg1, q = arg2,init_days= arg3, window = arg4, reweight = arg5, model= arg6, predictors=arg7,
-                                incl_climatology= arg8,
-                                mc.cores = 4)
+                                ERA_NWP_vars = arg1, q = arg2, init_days= arg3, window = arg4, reweight = arg5, model= arg6, predictors=arg7,
+                                incl_climatology= arg8, formula = arg9,
+                                mc.cores = arg10)
 
     #4) Store and return
     Results = rbindlist(detailed_results,use.names=FALSE)
@@ -99,8 +101,9 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
     return(out)
 }
 
+#' @export
 Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, predictors,
-                       incl_climatology){
+                       incl_climatology, formula){
 
     ## 3a) Time keeping
     init_day = init_days[i]
