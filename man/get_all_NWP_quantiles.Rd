@@ -13,7 +13,7 @@ get_all_NWP_quantiles(
   start_month = "01",
   start_year = 1993,
   forc_months = 362,
-  PC_ERA = PC_ERA_79_92,
+  PC_ERA_path = "/mn/kadingir/datascience_000000/eirikhsj/PC_ERA_79_92.Rda",
   pc_comp = 1,
   reweight = FALSE
 )
@@ -27,11 +27,11 @@ get_all_NWP_quantiles(
 
 \item{forc_months}{Number of forecast months from start}
 
-\item{PC_ERA}{List of matrices containing PC of ERA temperature.}
-
 \item{pc_comp}{Integer. Number of pca components.}
 
 \item{reweight}{Boolean.}
+
+\item{PC_ERA}{List of matrices containing PC of ERA temperature.}
 }
 \value{
 Returns quantiles of interest

@@ -6,10 +6,11 @@
 \usage{
 get_one_month_NWP_quantiles(
   files_i =
-    "/mn/kadingir/datascience_000000/eirikhsj/sfe_nordic_temperature/sfe_nordic_temperature_2008_11.nc4",
+    "/mn/kadingir/datascience_000000/eirikhsj/sfe_nordic_temperature/sfe_nordic_temperature_1993_1.nc4",
   PC_ERA,
   pc_comp,
-  rew = FALSE
+  rew = FALSE,
+  nch = num_char
 )
 }
 \arguments{

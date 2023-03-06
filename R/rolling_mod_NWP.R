@@ -21,19 +21,19 @@
 #' @examples mod = rolling_mod_NWP('2007-01-01', '2022-05-01', 0.9, ERA_NWP, 1, model = 'reg', window = 60, reweight=FALSE)
 #' @name rolling_mod_NWP
 
-
-q = 0.9
-predictors = 1
-model = 'reg'
-window = 60
-hour_v= TRUE
-week_v = TRUE
-month_v = TRUE
-year_v = TRUE
-reweight = FALSE
-incl_climatology = FALSE
-forc_start= as.Date('2007-01-01')
-forc_end= as.Date('2009-05-01')
+#
+# q = 0.9
+# predictors = 1
+# model = 'reg'
+# window = 60
+# hour_v= TRUE
+# week_v = TRUE
+# month_v = TRUE
+# year_v = TRUE
+# reweight = FALSE
+# incl_climatology = FALSE
+# forc_start= as.Date('2007-01-01')
+# forc_end= as.Date('2009-05-01')
 
 rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2022-05-01'), q, ERA_NWP, predictors, model='reg', window = 60, reweight = FALSE,
                        hour_v=FALSE, week_v=FALSE, month_v = FALSE, year_v=FALSE, incl_climatology =FALSE, cores = 4){
