@@ -18,13 +18,13 @@
 #'
 #' @export
 get_one_month_NWP_quantiles= function(files_i = "/mn/kadingir/datascience_000000/eirikhsj/sfe_nordic_temperature/sfe_nordic_temperature_1993_1.nc4",
-                                      PC_ERA, pc_comp, rew= FALSE, d = date_check){
+                                      PC_ERA, pc_comp, rew= FALSE, dt = dt_check){
 
     #Open nc4, assign file and close nc4
     nc = nc_open(files_i)
     forec = ncvar_get(nc, attributes(nc$var)$names[1])
-    year_nwp = year(d) #year
-    month_nwp = month(d) #month
+    year_nwp = year(dt) #year
+    month_nwp = month(dt) #month
     forc_name = paste0('forc_', year_nwp, '_', month_nwp)
     assign(forc_name, forec)
     print(c(year_nwp,month_nwp))

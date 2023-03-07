@@ -15,14 +15,8 @@
 #' @return Returns quantiles of interest
 #' @export
 #'
-#' @examples get_all_NWP_quantiles(path = "~/Desktop/MasterNR/Prob2_data",
-#' start_month  = '01', start_year = 1993, forc_months = 4,
+#' @examples get_all_NWP_quantiles(path = "~/Desktop/MasterNR/Prob2_data",start_month  = '01', start_year = 1993, forc_months = 4,
 #' PC_ERA = PC_ERA_79_92, pc_comp = 1,reweight = TRUE)
-#' get_all_NWP_quantiles(path = "~/Desktop/MasterNR/Prob2_data",
-#' start_month  = '01', start_year = 1993, forc_months = 4,
-#' PC_ERA = PC_ERA_79_92, pc_comp = 1, reweight = FALSE)
-#'
-
 
 get_all_NWP_quantiles = function(path = "/mn/kadingir/datascience_000000/eirikhsj/sfe_nordic_temperature/",
                                  pattern = 'sfe_nordic_temperature_',
@@ -57,7 +51,7 @@ get_all_NWP_quantiles = function(path = "/mn/kadingir/datascience_000000/eirikhs
                 c = c + 1
                 print(c)
                 file = paste0(path, pattern,dt_file, '.nc4')
-                out = get_one_month_NWP_quantiles(file, PC_ERA, pc_comp, rew = reweight, d = date_check)   #Using get_one_month_NWP_quantiles function
+                out = get_one_month_NWP_quantiles(file, PC_ERA, pc_comp, rew = reweight, d = dt_check)   #Using get_one_month_NWP_quantiles function
 
                 print(dim(out$NWP_quant_rew))
                 print(dim(out$NWP_quantiles))
