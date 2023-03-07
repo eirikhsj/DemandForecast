@@ -23,18 +23,20 @@
 #' @name rolling_mod_NWP
 
 #
-# q = 0.9
-# predictors = 1
-# model = 'reg'
-# window = 60
-# hour_v= FALSE
-# week_v = FALSE
-# month_v = FALSE
-# year_v = FALSE
-# reweight = FALSE
-# incl_climatology = FALSE
-# forc_start= as.Date('2007-01-01')
-# forc_end= as.Date('2022-05-01')
+q = 0.9
+predictors = 1
+model = 'reg'
+window = 60
+hour_v= FALSE
+week_v = FALSE
+month_v = FALSE
+year_v = FALSE
+reweight = FALSE
+incl_climatology = FALSE
+forc_start= as.Date('2007-01-01')
+forc_end= as.Date('2023-02-01')
+cores = 4
+formula = 'PC1 ~ 1'
 
 #' @export
 rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2022-05-01'), q, ERA_NWP, predictors, model='reg', window = 60, reweight = FALSE,
@@ -104,6 +106,30 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
     return(out)
 }
 
+Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, predictors,
+                       incl_climatology, formula){
+
+    init_day = init_days[i]
+    target_days = seq(init_day, length.out = window,  by = '1 days')
+    print(paste('Forecast made on:', init_day))
+    ERA_NWP_time = ERA_NWP_vars[date <= target_days[length(target_days)],]
+    ERA_NWP_final= na.omit(ERA_NWP_time)
+
+    train = ERA_NWP_final[date<init_day, .SD, keyby = .(date,hour)]
+
+    if (reweight ==TRUE){
+        test = ERA_NWP_final[date %in%target_days, .SD, keyby = .(date,hour)] #Here we only use 1 predictor, cant use init_day but no confusion in target_days
+    } else{
+        test = ERA_NWP_final[init_date == init_day, .SD, keyby = .(date,hour)] #Use of several preds means target_days selects to many dates
+    }
+    max_year_train = max(train$year)
+    test = test[year > max_year_train, year := max_year_train]
+
+    return(test)
+}
+
+
+
 #' @export
 Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, predictors,
                        incl_climatology, formula){
@@ -132,7 +158,8 @@ Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, p
     if (model == 'reg'){
         print(formula)
         print(q)
-
+        print(dim(train))
+        print(find('rq'))
         qreg = rq(formula, data = train, tau = c(q))
         #qreg = gam(as.formula(formula), data = train)
         print(coef(qreg))

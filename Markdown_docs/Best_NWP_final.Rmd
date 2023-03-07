@@ -47,7 +47,6 @@ save(Mod_9_60_NWP2, file = 'Mod_9_60_NWP2.Rda')
 save(Mod_9_60_climatology, file = 'Mod_9_60_climatology.Rda')
 ```
 
-scp eirikhsj@abacus-as.uio.no:~/Mod_9_60_NWP1.Rda eirikhsj@abacus-as.uio.no:~/Mod_9_60_NWP2.Rda eirikhsj@abacus-as.uio.no:~/Mod_9_60_climatology.Rda /Users/Eirik/Desktop/Master2023/Output_data/New_Best_NWP_model_output
 ```{r}
 Mod_9_60_inter = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
                                      window = 60, cores = 48, formula  = 'PC1 ~ 1')
@@ -92,16 +91,24 @@ Mod_9_60_season_sin = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 
 
 
 ```{r}
-plot_func = function(function_list = c(),legend_input= c('Climatology', '1 NWP pred', '2 NWP preds')){
+plot_func = function(function_list = c(),
+                     legend_input= c('Climatology', '1 NWP pred', '2 NWP preds'),
+                     title = '',
+                     climatology_ref = FALSE){
     low = 1
     upp = 240
     ax = pretty(low:upp, 9)
-    cols = c('black', 'brown1', 'dodgerblue1')
+    cols = c('black', 'brown1', 'dodgerblue1', 'orange')
     dat = get(function_list[1])
-    plot_data = dat$Results[, .(mean_test_loss = mean(test_loss)), keyby=.(horizon =lead_time)]
-    print(dat$Results[,mean(test_loss)])
+    if (climatology_ref==TRUE){
+        plot_data = dat$Results[, .(mean_test_loss = mean(clima_loss)), keyby=.(horizon =lead_time)]
+        print(dat$Results[,mean(clima_loss)])
+    } else{
+        plot_data = dat$Results[, .(mean_test_loss = mean(test_loss)), keyby=.(horizon =lead_time)]
+        print(dat$Results[,mean(test_loss)])
+    }
     matplot(low:upp, plot_data[low:upp,mean_test_loss] , type = 'l', ylim = c(0, 25), lty = 1,
-            xaxt = 'n', xlab = 'Horizon (days)', ylab = 'Pinball loss', main = 'Intercept + NWP1 + NWP2 : 60 day window (Test)', col = cols[1])
+            xaxt = 'n', xlab = 'Horizon (days)', ylab = 'Pinball loss', main = paste0(title,': 60 day window (Test)'), col = cols[1])
     legend("left", lty = 1, cex=0.6, col = c('black', 'brown1', 'dodgerblue1'),
            legend = legend_input)
     axis(1, at = ax, labels = ax/4)
@@ -113,11 +120,44 @@ plot_func = function(function_list = c(),legend_input= c('Climatology', '1 NWP p
         matlines(low:upp, plot_data[low:upp,mean_test_loss], col = cols[i], lty = ifelse(i==2, 1, 2))
     }
 }
+
+
+
+plot_month = function(function_list = c(),
+                     legend_input= c('Climatology', '1 NWP pred', '2 NWP preds'),
+                     title = '',
+                     climatology_ref = FALSE){
+    low = 1
+    upp = 12
+    ax = month.abb
+    cols = c('black', 'brown1', 'dodgerblue1', 'orange')
+    dat = get(function_list[1])
+    if (climatology_ref==TRUE){
+        plot_data = dat$Results[lead_time<81, .(mean_test_loss = mean(clima_loss)), keyby=.(horizon =month(date))]
+        print(dat$Results[,mean(clima_loss)])
+    } else{
+        plot_data = dat$Results[, .(mean_test_loss = mean(test_loss)), keyby=.(horizon =month(date))]
+        print(dat$Results[,mean(test_loss)])
+    }
+    matplot(low:upp, plot_data[low:upp,mean_test_loss] , type = 'l', ylim = c(0, 25), lty = 1,
+            xaxt = 'n', xlab = 'Month', ylab = 'Pinball loss', main = paste0(title,': 60 day window (Test)'), col = cols[1])
+    legend("left", lty = 1, cex=0.6, col = c('black', 'brown1', 'dodgerblue1'),
+           legend = legend_input)
+    axis(1, at = 1:12, labels = ax)
+    
+    for (i in 2:length(function_list)){
+        dat = get(function_list[i])
+        plot_data = dat$Results[lead_time<81, .(mean_test_loss = mean(test_loss)), keyby=.(horizon =month(date))]
+        print(dat$Results[,mean(test_loss)])
+        matlines(low:upp, plot_data[low:upp,mean_test_loss], col = cols[i], lty = ifelse(i==2, 1, 2))
+    }
+}
 ```
 
 
 ```{r}
-plot_func(c('Mod_9_60_inter', 'Mod_9_60_year_c', 'Mod_9_60_year_f'))
+plot_func(c('Mod_9_60_inter', 'Mod_9_60_year_c', 'Mod_9_60_year_f'),
+          legend_input = c('Intercept', 'Year (cont)', 'Year (factor)'))
 plot_func(c('Mod_9_60_hour_c', 'Mod_9_60_hour_f', 'Mod_9_60_hour_sin'))
 plot_func(c('Mod_9_60_week_c', 'Mod_9_60_week_f', 'Mod_9_60_week_sin', 'Mod_9_60_week_sin_2','Mod_9_60_week_sin_3'))
 plot_func(c('Mod_9_60_month_c', 'Mod_9_60_month_f', 'Mod_9_60_month_sin'))
@@ -136,15 +176,104 @@ Mod_9_60_NWP1 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, mod
                                       window = 60, cores = 48, formula  = 'PC1 ~ 1')
 Mod_9_60_NWP2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg', 
                                       window = 60, cores = 48, formula  = 'PC1 ~ 1')
-Mod_9_60_climatology = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg', 
+Mod_9_60_climatology = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
                                       window = 60, cores = 48, formula  = 'PC1 ~ 1', incl_climatology = TRUE)
 ```
 
 
 
 ```{r}
-plot_func(c('Mod_9_60_NWP1', 'Mod_9_60_NWP2', 'Mod_9_60_climatology'))
+plot_func(c('Mod_9_60_climatology','Mod_9_60_NWP1', 'Mod_9_60_NWP2'), 
+          title = 'Intercept + NWP1 + NWP2', climatology_ref = TRUE)
+plot_month(c('Mod_9_60_climatology','Mod_9_60_NWP1', 'Mod_9_60_NWP2'), 
+          title = 'Intercept + NWP1 + NWP2', climatology_ref = TRUE) # lead_time< 80
 ```
+
+1) climatology is very good, 
+2) there seems to be pretty good skill
+3) we are doing better in winter than in summer. 
+4) Virtually no skill using information from previous month NWP2. 
+5) Can we improve model with the time covariates?
+
+# Time covariate models
+```{r}
+Mod_9_60_comb_a_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+                                      window = 60, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour) + cos(2*pi * week/52) + sin(2*pi * week/52) + cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year')
+
+Mod_9_60_comb_a_1 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg', 
+                                      window = 60, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour) + cos(2*pi * week/52) + sin(2*pi * week/52) + cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year')
+
+Mod_9_60_comb_a_2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg', 
+                                      window = 60, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour) + cos(2*pi * week/52) + sin(2*pi * week/52) + cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year')
+
+```
+
+
+
+as.factor(month) +  as.factor(season) leads to an undefined matrix, so we have to go with an alternative. 
+
+
+# Interaction models
+```{r}
+Mod_9_60_int_a_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+                                      window = 60, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(season)')
+Mod_9_60_int_b_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+                                      window = 60, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(month)')
+Mod_9_60_int_c_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+                                      window = 60, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(week)')
+```
+
+# Plot
+```{r}
+plot_func(c('Mod_9_60_comb_a_0','Mod_9_60_comb_a_1', 'Mod_9_60_comb_a_2'), 
+          title = 'Time combo + NWP1 + NWP2', climatology_ref = FALSE)
+plot_month(c('Mod_9_60_comb_a_0','Mod_9_60_comb_a_1', 'Mod_9_60_comb_a_2'), 
+          title = 'Time combo + NWP1 + NWP2', climatology_ref = FALSE) # lead_time< 80
+
+plot_func(c('Mod_9_60_int_a_0','Mod_9_60_int_b_0', 'Mod_9_60_int_c_0'), 
+          title = 'Time combo + NWP1 + NWP2', climatology_ref = FALSE)
+plot_month(c('Mod_9_60_int_a_0','Mod_9_60_int_b_0', 'Mod_9_60_int_c_0'), 
+          title = 'Time combo + NWP1 + NWP2', climatology_ref = FALSE) # lead_time< 80
+```
+1) This is a better climatology than using the quantile directly. 
+2) Including the NWP2 very slightly increases the performance of the model.
+3) This increase comes at the beginning, so it seems worth it. 
+
+
+```{r}
+Mod_9_60_comb_int_c_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+                                      window = 60, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(week) + cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year')
+Mod_9_60_comb_int_c_1 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg', 
+                                      window = 60, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(week) + cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year')
+Mod_9_60_comb_int_c_2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg', 
+                                      window = 60, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(week) + cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year')
+
+```
+1) Here we cannot run week and sin(week) together. 
+
+```{r}
+plot_func(c('Mod_9_60_climatology', 'Mod_9_60_comb_int_c_0','Mod_9_60_comb_int_c_1', 'Mod_9_60_comb_int_c_2'), 
+          title = 'Time combo + NWP1 + NWP2', climatology_ref = TRUE)
+plot_month(c('Mod_9_60_climatology', 'Mod_9_60_comb_int_c_0','Mod_9_60_comb_int_c_1', 'Mod_9_60_comb_int_c_2'), 
+          title = 'Time combo + NWP1 + NWP2', climatology_ref = TRUE) # lead_time< 80
+
+
+```
+
+#Interactions worsens the NWP models
+
+
+save(Mod_9_60_comb_int_c_0, file = 'Mod_9_60_comb_int_c_0.Rda')
+save(Mod_9_60_comb_int_c_1, file = 'Mod_9_60_comb_int_c_1.Rda')
+save(Mod_9_60_comb_int_c_2, file = 'Mod_9_60_comb_int_c_2.Rda')
+
+
+
+scp eirikhsj@abacus-as.uio.no:~/Mod_9_60_comb_int_c_0.Rda eirikhsj@abacus-as.uio.no:~/Mod_9_60_comb_int_c_1.Rda eirikhsj@abacus-as.uio.no:~/Mod_9_60_comb_int_c_2.Rda  /Users/Eirik/Desktop/Master2023/Output_data/New_Best_NWP_model_output
+
+
+eirikhsj@abacus-as.uio.no:/mn/kadingir/datascience_000000/eirikhsj
+
 
 
 ```{r}
