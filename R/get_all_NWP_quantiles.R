@@ -64,8 +64,8 @@ get_all_NWP_quantiles = function(path = "/mn/kadingir/datascience_000000/eirikhs
                                      init_date = as.Date(init_date),
                                      hour = target_hour,
                                      out$NWP_quantiles)
-                NWP_results[[file_ix]] = temp_dt
-                NWP_results_rew[[file_ix]] = out$NWP_quant_rew
+                NWP_results[[c]] = temp_dt
+                NWP_results_rew[[c]] = out$NWP_quant_rew
             }
         }
     }
