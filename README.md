@@ -30,6 +30,7 @@ This result holds for a structural model (e.g. under the assumption that we know
 
 The main functions used for this problem is demand_forecast.R, which is a rolling cv function which enables the testing and comparison of a host of different energy demand forecast models. 
 A detailed breakdown of tests run are found in the RMarkdown documents: 
+
 -
 -
 
