@@ -1,5 +1,5 @@
 Package: DemandForecast
-Title: Predicts Energy Demand volume in Norway based on weather data. 
+Title: Predicts Energy Demand Volume in Norway based on weather data. 
 Version: 0.0.0.9000
 Authors@R: 
     person('Eirik', 'Sjåvik', , "eirikhsj@math.uio.no", role = c("aut", "cre"),

@@ -45,11 +45,6 @@ and stores the results of these iterated outputs in a data.table.
 Output can then be merged with ERA-data using a get_ERA_NWP function to be used in prediction tasks.
 }
 \examples{
-get_all_NWP_quantiles(path = "~/Desktop/MasterNR/Prob2_data",
-start_month  = '01', start_year = 1993, forc_months = 4,
+get_all_NWP_quantiles(path = "~/Desktop/MasterNR/Prob2_data",start_month  = '01', start_year = 1993, forc_months = 4,
 PC_ERA = PC_ERA_79_92, pc_comp = 1,reweight = TRUE)
-get_all_NWP_quantiles(path = "~/Desktop/MasterNR/Prob2_data",
-start_month  = '01', start_year = 1993, forc_months = 4,
-PC_ERA = PC_ERA_79_92, pc_comp = 1, reweight = FALSE)
-
 }

@@ -10,10 +10,11 @@
 #' @param week_v Boolean. Include week covariate.
 #' @param month_v Boolean. Include month covariate.
 #' @param year_v Boolean. Include year covariate.
-#' @param incl_climatology Boolean. Include climatology model
+#' @param incl_climatology Boolean. Include climatology model.
+#' @param cores Integer. Number of cores to be used.
+#' @param formula String. Regression formula.
 #'
 #' @return Model output with predictions, loss and model coefficients.
-#' @export
 #' @import quantreg
 #' @import data.table
 #' @import stats
@@ -22,19 +23,20 @@
 #' @name rolling_mod_NWP
 
 #
-q = 0.9
-predictors = 1
-model = 'reg'
-window = 60
-hour_v= FALSE
-week_v = FALSE
-month_v = FALSE
-year_v = FALSE
-reweight = FALSE
-incl_climatology = FALSE
-forc_start= as.Date('2007-01-01')
-forc_end= as.Date('2022-05-01')
+# q = 0.9
+# predictors = 1
+# model = 'reg'
+# window = 60
+# hour_v= FALSE
+# week_v = FALSE
+# month_v = FALSE
+# year_v = FALSE
+# reweight = FALSE
+# incl_climatology = FALSE
+# forc_start= as.Date('2007-01-01')
+# forc_end= as.Date('2022-05-01')
 
+#' @export
 rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2022-05-01'), q, ERA_NWP, predictors, model='reg', window = 60, reweight = FALSE,
                        hour_v=FALSE, week_v=FALSE, month_v = FALSE, year_v=FALSE, incl_climatology =FALSE, cores = 4,
                        formula = 'PC1 ~ 1'){

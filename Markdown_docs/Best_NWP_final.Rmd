@@ -1,0 +1,171 @@
+---
+title: "Best NWP FINAL"
+author: "Eirik Sjåvik"
+date: "2023-03-06"
+output: html_document
+---
+
+
+```{r}
+library(DemandForecast)
+library(data.table)
+library(ncdf4)
+library(parallel)
+library(mgcv)
+library(quantreg)
+
+ERA_NWP = get_ERA_NWP(ERA_path = "/mn/kadingir/datascience_000000/eirikhsj/PC_ERA_79_92.Rda", 
+                      NWP_path ="/mn/kadingir/datascience_000000/eirikhsj/NWP_quant_1993_2023.Rda",
+                      quant = "90", reweight = FALSE)
+
+ERA_NWP[, season:= ifelse(month(date) %in% c(12,1,2), 1, 
+                            ifelse(month(date) %in% c(3,4,5), 2,
+                            ifelse(month(date) %in% c(6,7,8), 3, 4)))]
+```
+
+```{r}
+save(Mod_9_60_inter, file = 'Mod_9_60_inter.Rda')
+save(Mod_9_60_year_c, file = 'Mod_9_60_year_c.Rda')
+save(Mod_9_60_year_f, file = 'Mod_9_60_year_f.Rda')
+save(Mod_9_60_hour_c, file = 'Mod_9_60_hour_c.Rda')
+save(Mod_9_60_hour_f, file = 'Mod_9_60_hour_f.Rda')
+save(Mod_9_60_hour_sin, file = 'Mod_9_60_hour_sin.Rda')
+save(Mod_9_60_week_c, file = 'Mod_9_60_week_c.Rda')
+save(Mod_9_60_week_f, file = 'Mod_9_60_week_f.Rda')
+save(Mod_9_60_week_sin, file = 'Mod_9_60_week_sin.Rda')
+save(Mod_9_60_week_sin_2, file = 'Mod_9_60_week_sin_2.Rda')
+save(Mod_9_60_week_sin_3, file = 'Mod_9_60_week_sin_3.Rda')
+save(Mod_9_60_month_c, file = 'Mod_9_60_month_c.Rda')
+save(Mod_9_60_month_f, file = 'Mod_9_60_month_f.Rda')
+save(Mod_9_60_month_sin, file = 'Mod_9_60_month_sin.Rda')
+save(Mod_9_60_season_c, file = 'Mod_9_60_season_c.Rda')
+save(Mod_9_60_season_f, file = 'Mod_9_60_season_f.Rda')
+save(Mod_9_60_season_sin, file = 'Mod_9_60_season_sin.Rda')
+
+save(Mod_9_60_NWP1, file = 'Mod_9_60_NWP1.Rda')
+save(Mod_9_60_NWP2, file = 'Mod_9_60_NWP2.Rda')
+save(Mod_9_60_climatology, file = 'Mod_9_60_climatology.Rda')
+```
+
+scp eirikhsj@abacus-as.uio.no:~/Mod_9_60_NWP1.Rda eirikhsj@abacus-as.uio.no:~/Mod_9_60_NWP2.Rda eirikhsj@abacus-as.uio.no:~/Mod_9_60_climatology.Rda /Users/Eirik/Desktop/Master2023/Output_data/New_Best_NWP_model_output
+```{r}
+Mod_9_60_inter = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+                                     window = 60, cores = 48, formula  = 'PC1 ~ 1')
+Mod_9_60_year_c = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+                                     window = 60, cores = 48, formula  = 'PC1 ~ year')
+Mod_9_60_year_f = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+                                     window = 60, cores = 48, formula  = 'PC1 ~ as.factor(year)')
+
+Mod_9_60_hour_c = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+                                     window = 60, cores = 48, formula  = 'PC1 ~ hour')
+Mod_9_60_hour_f = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+                                     window = 60, cores = 48, formula  = 'PC1 ~ as.factor(hour)')
+Mod_9_60_hour_sin = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+                                     window = 60, cores = 48, formula  = 'PC1 ~ cos(2*pi * hour/4) + sin(2*pi * hour/4)')
+
+Mod_9_60_week_c = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+                                     window = 60, cores = 48, formula  = 'PC1 ~ week')
+Mod_9_60_week_f = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+                                     window = 60, cores = 48, formula  = 'PC1 ~ as.factor(week)')
+Mod_9_60_week_sin = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+                                     window = 60, cores = 48, formula  = 'PC1 ~ cos(2*pi * week/52) + sin(2*pi * week/52)')
+Mod_9_60_week_sin_2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+                                     window = 60, cores = 48, formula  = 'PC1 ~ cos(2*pi * week/53) + sin(2*pi * week/53)')
+Mod_9_60_week_sin_3 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+                                     window = 60, cores = 48, formula  = 'PC1 ~ cos(2*pi * week/52.5) + sin(2*pi * week/52.5)')
+
+Mod_9_60_month_c = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+                                     window = 60, cores = 48, formula  = 'PC1 ~ month')
+Mod_9_60_month_f = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+                                     window = 60, cores = 48, formula  = 'PC1 ~ as.factor(month)')
+Mod_9_60_month_sin = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+                                     window = 60, cores = 48, formula  = 'PC1 ~ cos(2*pi * month/12) + sin(2*pi * month/12)')
+
+Mod_9_60_season_c = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+                                     window = 60, cores = 48, formula  = 'PC1 ~ season')
+Mod_9_60_season_f = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+                                     window = 60, cores = 48, formula  = 'PC1 ~ as.factor(season)')
+Mod_9_60_season_sin = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+                                     window = 60, cores = 48, formula  = 'PC1 ~ cos(2*pi * season/4) + sin(2*pi * season/4)')
+
+```
+
+
+```{r}
+plot_func = function(function_list = c(),legend_input= c('Climatology', '1 NWP pred', '2 NWP preds')){
+    low = 1
+    upp = 240
+    ax = pretty(low:upp, 9)
+    cols = c('black', 'brown1', 'dodgerblue1')
+    dat = get(function_list[1])
+    plot_data = dat$Results[, .(mean_test_loss = mean(test_loss)), keyby=.(horizon =lead_time)]
+    print(dat$Results[,mean(test_loss)])
+    matplot(low:upp, plot_data[low:upp,mean_test_loss] , type = 'l', ylim = c(0, 25), lty = 1,
+            xaxt = 'n', xlab = 'Horizon (days)', ylab = 'Pinball loss', main = 'Intercept + NWP1 + NWP2 : 60 day window (Test)', col = cols[1])
+    legend("left", lty = 1, cex=0.6, col = c('black', 'brown1', 'dodgerblue1'),
+           legend = legend_input)
+    axis(1, at = ax, labels = ax/4)
+    
+    for (i in 2:length(function_list)){
+        dat = get(function_list[i])
+        plot_data = dat$Results[, .(mean_test_loss = mean(test_loss)), keyby=.(horizon =lead_time)]
+        print(dat$Results[,mean(test_loss)])
+        matlines(low:upp, plot_data[low:upp,mean_test_loss], col = cols[i], lty = ifelse(i==2, 1, 2))
+    }
+}
+```
+
+
+```{r}
+plot_func(c('Mod_9_60_inter', 'Mod_9_60_year_c', 'Mod_9_60_year_f'))
+plot_func(c('Mod_9_60_hour_c', 'Mod_9_60_hour_f', 'Mod_9_60_hour_sin'))
+plot_func(c('Mod_9_60_week_c', 'Mod_9_60_week_f', 'Mod_9_60_week_sin', 'Mod_9_60_week_sin_2','Mod_9_60_week_sin_3'))
+plot_func(c('Mod_9_60_month_c', 'Mod_9_60_month_f', 'Mod_9_60_month_sin'))
+plot_func(c('Mod_9_60_season_c', 'Mod_9_60_season_f', 'Mod_9_60_season_sin'))
+```
+
+1) Continuos year is better 22.44 (Almost same as intercept) 
+2) hour as factor better 22.1 (almost same as intercept)
+3) Cont week is hopeless, as factor good, best is 52 weeks of  9.96
+4) Month as factor is better 10.48
+5) Season as factor 13.48
+
+# Trying climatology and NWP vars
+```{r}
+Mod_9_60_NWP1 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg', 
+                                      window = 60, cores = 48, formula  = 'PC1 ~ 1')
+Mod_9_60_NWP2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg', 
+                                      window = 60, cores = 48, formula  = 'PC1 ~ 1')
+Mod_9_60_climatology = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg', 
+                                      window = 60, cores = 48, formula  = 'PC1 ~ 1', incl_climatology = TRUE)
+```
+
+
+
+```{r}
+plot_func(c('Mod_9_60_NWP1', 'Mod_9_60_NWP2', 'Mod_9_60_climatology'))
+```
+
+
+```{r}
+M_9_60_0       = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', window = 60, cores = 48)
+M_9_60_1       = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg', window = 60, cores = 48)
+M_9_60_2       = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg', window = 60, cores = 48)
+
+M_9_60_0_h     = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', window = 60, hour_v = TRUE, cores = 48)
+M_9_60_1_h     = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg', window = 60, hour_v = TRUE, cores = 48)
+M_9_60_2_h     = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg', window = 60, hour_v = TRUE, cores = 48) 
+
+M_9_60_0_w     = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', window = 60, week_v = TRUE, cores = 48)
+M_9_60_1_w     = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg', window = 60, week_v = TRUE, cores = 48)
+M_9_60_2_w     = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg', window = 60, week_v = TRUE, cores = 48)
+
+M_9_60_0_m     = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', window = 60, month_v = TRUE, cores = 48)
+M_9_60_1_m     = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg', window = 60, month_v = TRUE, cores = 48)
+M_9_60_2_m     = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg', window = 60, month_v = TRUE, cores = 48) 
+
+M_9_60_0_y     = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', window = 60, year_v = TRUE, cores = 48)
+M_9_60_1_y     = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg', window = 60, year_v = TRUE, cores = 48)
+M_9_60_2_y     = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg', window = 60, year_v = TRUE, cores = 48) 
+```
+
