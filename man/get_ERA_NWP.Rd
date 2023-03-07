@@ -6,7 +6,7 @@
 \usage{
 get_ERA_NWP(
   ERA_path = "~/Desktop/Master2023/Data/PC_ERA/PC_ERA_79_92.Rda",
-  NWP_path = "~/Desktop/Master2023/Data/NWP_quant/NWP_quant_rew25_1993_2022.Rda",
+  NWP_path = "~/Desktop/Master2023/Data/NWP_quant/NWP_quant_1993_2022.Rda",
   quant = "90",
   PC = "PC1",
   NWP_preds = 2,

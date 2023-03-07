@@ -10,7 +10,7 @@ get_one_month_NWP_quantiles(
   PC_ERA,
   pc_comp,
   rew = FALSE,
-  nch = num_char
+  d = date_check
 )
 }
 \arguments{

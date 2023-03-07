@@ -9,7 +9,8 @@ and stores the results of these iterated outputs in a data.table.
 Output can then be merged with ERA-data using a get_ERA_NWP function to be used in prediction tasks.}
 \usage{
 get_all_NWP_quantiles(
-  path = "/mn/kadingir/datascience_000000/eirikhsj/sfe_nordic_temperature",
+  path = "/mn/kadingir/datascience_000000/eirikhsj/sfe_nordic_temperature/",
+  pattern = "sfe_nordic_temperature_",
   start_month = "01",
   start_year = 1993,
   forc_months = 362,
@@ -25,7 +26,7 @@ get_all_NWP_quantiles(
 
 \item{start_year}{Start year.}
 
-\item{forc_months}{Number of forecast months from start}
+\item{forc_months}{Number of forecast months from start (including start month)}
 
 \item{pc_comp}{Integer. Number of pca components.}
 

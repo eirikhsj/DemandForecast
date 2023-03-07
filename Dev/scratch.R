@@ -34,6 +34,9 @@ for (i in seq_along(init_days_all)){
 ERA_NWP = get_ERA_NWP(ERA_path = "/mn/kadingir/datascience_000000/eirikhsj/PC_ERA_79_92.Rda",
                       NWP_path ="/mn/kadingir/datascience_000000/eirikhsj/NWP_quant_1993_2023.Rda",
                       quant = "90", reweight = FALSE,NWP_preds = 2)
+library(DemandForecast)
+library(ncdf4)
+library(mgcv)
 library(parallel)
 library(data.table)
 library(quantreg)
