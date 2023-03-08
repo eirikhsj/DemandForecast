@@ -22,27 +22,21 @@
 #' @examples mod = rolling_mod_NWP('2007-01-01', '2022-05-01', 0.9, ERA_NWP, 1, model = 'reg', window = 60, reweight=FALSE)
 #' @name rolling_mod_NWP
 
-#
-q = 0.9
-predictors = 1
-model = 'reg'
-window = 60
-hour_v= FALSE
-week_v = FALSE
-month_v = FALSE
-year_v = FALSE
-reweight = FALSE
-incl_climatology = FALSE
-forc_start= as.Date('2007-01-01')
-forc_end= as.Date('2023-02-01')
-cores = 4
-formula = 'PC1 ~ 1'
+# q = 0.9
+# predictors = 1
+# model = 'reg'
+# window = 60
+# reweight = FALSE
+# incl_climatology = FALSE
+# forc_start= as.Date('2022-07-01')
+# forc_end= as.Date('2023-01-01')
+# cores = 4
+# formula = 'PC1 ~ 1'
 
 #' @export
-rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2022-05-01'), q, ERA_NWP, predictors, model='reg', window = 60, reweight = FALSE,
+rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2023-01-01'), q, ERA_NWP, predictors, model='reg', window = 60, reweight = FALSE,
                        hour_v=FALSE, week_v=FALSE, month_v = FALSE, year_v=FALSE, incl_climatology =FALSE, cores = 4,
                        formula = 'PC1 ~ 1'){
-    #detailed_results = list()
 
     #1) Fix dates
     start =as.Date(forc_start)
@@ -60,19 +54,7 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
     #2) Build regression formula and fetch variables
     incl_vars = c('date','PC1', 'hour', 'week', 'month', 'season', 'year', 'init_date', 'lead_time')
     pred_vars = c()
-    # formula = 'PC1 ~ 1'
-    #
-    # if (hour_v == TRUE){
-    #     formula = paste0(formula, ' + as.factor(hour)')}
-    # if (week_v == TRUE){
-    #     incl_vars = c(incl_vars, 'week')
-    #     formula = paste0(formula, ' + cos(2*pi * week/52.5) + sin(2*pi * week/52.5)')} #works a lot better
-    # if (month_v == TRUE){
-    #     incl_vars = c(incl_vars, 'month')
-    #     formula = paste0(formula, ' + cos(2*pi * month/12) + sin(2*pi * month/12)')}
-    # if (year_v == TRUE){
-    #     incl_vars = c(incl_vars, 'year')
-    #     formula = paste0(formula, ' + year')}
+
     if (predictors > 0){
         for (l in 1:predictors){
             pred_vars = c(pred_vars, paste0('NWP', l, '_', re, q*100))
@@ -106,34 +88,9 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
     return(out)
 }
 
+#This works remote
 Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, predictors,
                        incl_climatology, formula){
-
-    init_day = init_days[i]
-    target_days = seq(init_day, length.out = window,  by = '1 days')
-    print(paste('Forecast made on:', init_day))
-    ERA_NWP_time = ERA_NWP_vars[date <= target_days[length(target_days)],]
-    ERA_NWP_final= na.omit(ERA_NWP_time)
-
-    train = ERA_NWP_final[date<init_day, .SD, keyby = .(date,hour)]
-
-    if (reweight ==TRUE){
-        test = ERA_NWP_final[date %in%target_days, .SD, keyby = .(date,hour)] #Here we only use 1 predictor, cant use init_day but no confusion in target_days
-    } else{
-        test = ERA_NWP_final[init_date == init_day, .SD, keyby = .(date,hour)] #Use of several preds means target_days selects to many dates
-    }
-    max_year_train = max(train$year)
-    test = test[year > max_year_train, year := max_year_train]
-
-    return(test)
-}
-
-
-
-#' @export
-Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, predictors,
-                       incl_climatology, formula){
-
     ## 3a) Time keeping
     init_day = init_days[i]
     target_days = seq(init_day, length.out = window,  by = '1 days')
@@ -143,17 +100,16 @@ Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, p
 
     ## 3b) Split train-test
     train = ERA_NWP_final[date<init_day, .SD, keyby = .(date,hour)]
-
     if (reweight ==TRUE){
         test = ERA_NWP_final[date %in%target_days, .SD, keyby = .(date,hour)] #Here we only use 1 predictor, cant use init_day but no confusion in target_days
     } else{
         test = ERA_NWP_final[init_date == init_day, .SD, keyby = .(date,hour)] #Use of several preds means target_days selects to many dates
     }
+
+    # if (max(train$year) > max(test$year)){
+    #     test = test[year > max(train$year), year := max(train$year)]
+    # }
     print(dim(test))
-
-    max_year_train = train[, max(year)]
-    test = test[year > max_year_train, year := max_year_train] #pretend that new year is last year to avoid factor error
-
     ## 3c) Run qr-reg
     if (model == 'reg'){
         print(formula)
@@ -162,11 +118,76 @@ Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, p
         print(find('rq'))
         qreg = rq(formula, data = train, tau = c(q))
         #qreg = gam(as.formula(formula), data = train)
-        print(coef(qreg))
+        print(qreg)
         train_l = pinball_loss(q, predict(qreg), train$PC1)
         test_l = pinball_loss(q, predict(qreg, newdata = test), test$PC1)
     }
 
+    ## 3d) Register loss
+    results = test
+    results[,'pred' := predict(qreg, newdata = test)]
+    results[,'test_loss' := test_l]
+    print(paste0('Ave pinball loss for ', init_day, ' is = ', mean(test_l)))
+
+    ## 3e) Register Beta coefficients
+    if(predictors >0){
+        betas = data.table(t(coef(qreg)))[,..pred_vars]
+        colnames(betas) = paste0('coef_',pred_vars)
+
+        betas = betas[rep(1,dim(test)[1]),] #unnecessary storage use, expand later
+        results = cbind(results, betas)
+    }
+    ## 3f) Include Climatology
+    if(incl_climatology == TRUE){
+        climatology = train[, .(quant =quantile(PC1,probs = q)), by = .(month_day = format(date, format ="%m-%d"), hour)]
+
+        if ("02-29" %in% format(test$date, format ="%m-%d") & !("02-29" %in%climatology$month_day)){ #Leap year issue
+            print('Correcting leap year')
+            leap = climatology[month_day=="02-28",]
+            leap[,month_day:=  rep("02-29", 4)]
+            climatology = rbind(climatology, leap)
+        }
+        clima_pred = climatology[month_day %in% format(test$date, format ="%m-%d"), quant]
+        results[,'clima_pred' := clima_pred]
+        #print(paste0("Climatology: ", sqrt(mean((test$PC1 - clima_pred)^2))))
+    }
+    return(results)
+}
+
+#This works local
+#' @export
+Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, predictors,
+                       incl_climatology, formula){
+
+    init_day = init_days[i]
+    target_days = seq(init_day, length.out = window,  by = '1 days')
+    print(paste('Forecast made on:', init_day))
+    ERA_NWP_time = ERA_NWP_vars[date <= target_days[length(target_days)],]
+    ERA_NWP_final= na.omit(ERA_NWP_time)
+
+    train = ERA_NWP_final[date<init_day, .SD, keyby = .(date,hour)]
+
+    if (reweight ==TRUE){
+        test = ERA_NWP_final[date %in%target_days, .SD, keyby = .(date,hour)] #Here we only use 1 predictor, cant use init_day but no confusion in target_days
+    } else{
+        test = ERA_NWP_final[init_date == init_day, .SD, keyby = .(date,hour)] #Use of several preds means target_days selects to many dates
+    }
+
+    if (max(train$year) > max(test$year)){
+        test = test[year > max(train$year), year := max(train$year)]
+    }
+
+    if (model == 'reg'){
+        print(formula)
+        #print(q)
+        #print(dim(train))
+        #print(find('rq'))
+        qreg = rq(formula, data = train, tau = q, method="fn")
+        #qreg = gam(as.formula(formula), data = train)
+        print(coef(qreg))
+        train_l = pinball_loss(q, predict(qreg), train$PC1)
+        test_l = pinball_loss(q, predict(qreg, newdata = test), test$PC1)
+    }
     ## 3d) Register loss
     results = test
     results[,'pred' := predict(qreg, newdata = test)]
@@ -199,3 +220,75 @@ Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, p
     }
     return(results)
 }
+
+
+
+
+# Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, predictors,
+#                        incl_climatology, formula){
+#
+#     ## 3a) Time keeping
+#     init_day = init_days[i]
+#     target_days = seq(init_day, length.out = window,  by = '1 days')
+#     print(paste('Forecast made on:', init_day))
+#     ERA_NWP_time = ERA_NWP_vars[date <= target_days[length(target_days)],]
+#     ERA_NWP_final= na.omit(ERA_NWP_time)
+#
+#     ## 3b) Split train-test
+#     train = ERA_NWP_final[date<init_day, .SD, keyby = .(date,hour)]
+#
+#     if (reweight ==TRUE){
+#         test = ERA_NWP_final[date %in%target_days, .SD, keyby = .(date,hour)] #Here we only use 1 predictor, cant use init_day but no confusion in target_days
+#     } else{
+#         test = ERA_NWP_final[init_date == init_day, .SD, keyby = .(date,hour)] #Use of several preds means target_days selects to many dates
+#     }
+#     print(dim(test))
+#
+#     max_year_train = train[, max(year)]
+#     test = test[year > max_year_train, year := max_year_train] #pretend that new year is last year to avoid factor error
+#
+#     ## 3c) Run qr-reg
+#     if (model == 'reg'){
+#         print(formula)
+#         print(q)
+#         print(dim(train))
+#         print(find('rq'))
+#         qreg = rq(formula, data = train, tau = c(q))
+#         #qreg = gam(as.formula(formula), data = train)
+#         print(coef(qreg))
+#         train_l = pinball_loss(q, predict(qreg), train$PC1)
+#         test_l = pinball_loss(q, predict(qreg, newdata = test), test$PC1)
+#     }
+#
+#     ## 3d) Register loss
+#     results = test
+#     results[,'pred' := predict(qreg, newdata = test)]
+#     results[,'test_loss' := test_l]
+#     print(paste0('Ave pinball loss for ', init_day, ' is = ', mean(test_l)))
+#
+#     ## 3e) Register Beta coefficients
+#     if(predictors >0){
+#         betas = data.table(t(coef(qreg)))[,..pred_vars]
+#         colnames(betas) = paste0('coef_',pred_vars)
+#
+#         betas = betas[rep(1,dim(test)[1]),]
+#         results = cbind(results, betas)
+#     }
+#     ## 3f) Include Climatology
+#     if(incl_climatology == TRUE){
+#         climatology = train[, .(quant =quantile(PC1,probs = q)), by = .(month_day = format(date, format ="%m-%d"), hour)]
+#
+#         if ("02-29" %in% format(test$date, format ="%m-%d") & !("02-29" %in%climatology$month_day)){ #Leap year issue
+#             print('Correcting leap year')
+#             leap = climatology[month_day=="02-28",]
+#             leap[,month_day:=  rep("02-29", 4)]
+#             climatology = rbind(climatology, leap)
+#         }
+#         clima_pred = climatology[month_day %in% format(test$date, format ="%m-%d"), quant]
+#         clima_loss = pinball_loss(q, clima_pred, test$PC1)
+#         results[,'clima_pred' := clima_pred]
+#         results[,'clima_loss' := clima_loss]
+#         #print(paste0("Climatology: ", sqrt(mean((test$PC1 - clima_pred)^2))))
+#     }
+#     return(results)
+# }

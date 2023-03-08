@@ -94,6 +94,7 @@ Mod_9_60_season_sin = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 
 plot_func = function(function_list = c(),
                      legend_input= c('Climatology', '1 NWP pred', '2 NWP preds'),
                      title = '',
+                     lead_time_interval = c(1,240),
                      climatology_ref = FALSE){
     low = 1
     upp = 240
@@ -102,10 +103,10 @@ plot_func = function(function_list = c(),
     dat = get(function_list[1])
     if (climatology_ref==TRUE){
         plot_data = dat$Results[, .(mean_test_loss = mean(clima_loss)), keyby=.(horizon =lead_time)]
-        print(dat$Results[,mean(clima_loss)])
+        print(dat$Results[lead_time>low & lead_time <upp,mean(clima_loss)])
     } else{
         plot_data = dat$Results[, .(mean_test_loss = mean(test_loss)), keyby=.(horizon =lead_time)]
-        print(dat$Results[,mean(test_loss)])
+        print(dat$Results[lead_time>lead_time_interval[1] & lead_time <lead_time_interval[2],mean(test_loss)])
     }
     matplot(low:upp, plot_data[low:upp,mean_test_loss] , type = 'l', ylim = c(0, 25), lty = 1,
             xaxt = 'n', xlab = 'Horizon (days)', ylab = 'Pinball loss', main = paste0(title,': 60 day window (Test)'), col = cols[1])
@@ -116,7 +117,7 @@ plot_func = function(function_list = c(),
     for (i in 2:length(function_list)){
         dat = get(function_list[i])
         plot_data = dat$Results[, .(mean_test_loss = mean(test_loss)), keyby=.(horizon =lead_time)]
-        print(dat$Results[,mean(test_loss)])
+        print(dat$Results[lead_time>lead_time_interval[1] & lead_time <lead_time_interval[2],mean(test_loss)])
         matlines(low:upp, plot_data[low:upp,mean_test_loss], col = cols[i], lty = ifelse(i==2, 1, 2))
     }
 }
@@ -134,10 +135,8 @@ plot_month = function(function_list = c(),
     dat = get(function_list[1])
     if (climatology_ref==TRUE){
         plot_data = dat$Results[lead_time<81, .(mean_test_loss = mean(clima_loss)), keyby=.(horizon =month(date))]
-        print(dat$Results[,mean(clima_loss)])
     } else{
         plot_data = dat$Results[, .(mean_test_loss = mean(test_loss)), keyby=.(horizon =month(date))]
-        print(dat$Results[,mean(test_loss)])
     }
     matplot(low:upp, plot_data[low:upp,mean_test_loss] , type = 'l', ylim = c(0, 25), lty = 1,
             xaxt = 'n', xlab = 'Month', ylab = 'Pinball loss', main = paste0(title,': 60 day window (Test)'), col = cols[1])
@@ -148,7 +147,6 @@ plot_month = function(function_list = c(),
     for (i in 2:length(function_list)){
         dat = get(function_list[i])
         plot_data = dat$Results[lead_time<81, .(mean_test_loss = mean(test_loss)), keyby=.(horizon =month(date))]
-        print(dat$Results[,mean(test_loss)])
         matlines(low:upp, plot_data[low:upp,mean_test_loss], col = cols[i], lty = ifelse(i==2, 1, 2))
     }
 }
@@ -226,12 +224,14 @@ Mod_9_60_int_c_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, 
 # Plot
 ```{r}
 plot_func(c('Mod_9_60_comb_a_0','Mod_9_60_comb_a_1', 'Mod_9_60_comb_a_2'), 
-          title = 'Time combo + NWP1 + NWP2', climatology_ref = FALSE)
+          title = 'Time combo + NWP1 + NWP2', climatology_ref = FALSE,
+          lead_time_interval = c(0, 4*15))
 plot_month(c('Mod_9_60_comb_a_0','Mod_9_60_comb_a_1', 'Mod_9_60_comb_a_2'), 
           title = 'Time combo + NWP1 + NWP2', climatology_ref = FALSE) # lead_time< 80
 
 plot_func(c('Mod_9_60_int_a_0','Mod_9_60_int_b_0', 'Mod_9_60_int_c_0'), 
-          title = 'Time combo + NWP1 + NWP2', climatology_ref = FALSE)
+          title = 'Time combo + NWP1 + NWP2', climatology_ref = FALSE,
+          lead_time_interval = c(0, 4*15))
 plot_month(c('Mod_9_60_int_a_0','Mod_9_60_int_b_0', 'Mod_9_60_int_c_0'), 
           title = 'Time combo + NWP1 + NWP2', climatology_ref = FALSE) # lead_time< 80
 ```
