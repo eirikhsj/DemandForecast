@@ -27,6 +27,18 @@
 demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 30, pred_lag= 15, train_y=5,
                            reg_form, p_comps, other_mods= NULL, comb = TRUE, custom = FALSE,
                            incl_climatology = FALSE, cores = 4){
+    arg1 = X_mat
+    arg2 = date_demand
+    arg3 = pred_win
+    arg4 = pred_lag
+    arg5 = train_y
+    arg6 = reg_form
+    arg7 = p_comps
+    arg8 = other_mods
+    arg9 = comb
+    arg10 = custom
+    arg11 = incl_climatology
+    arg12 = cores
 
     last_poss_pred = range(date_demand$date)[2] - pred_win - pred_lag
 
@@ -43,10 +55,10 @@ demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 
 
     detailed_results = mclapply(seq_along(init_days_all),
                       "Rolling",
-                      X_mat = X_mat, date_demand = date_demand,init_days= init_days_all, pred_win = pred_win, pred_lag= arg4, train_y=arg5,
-                      reg_form= reg_form, p_comps= p_comps, other_mods= other_mods, comb = comb, custom = custom,
-                      incl_climatology = incl_climatology,
-                      mc.cores = cores)
+                      X_mat = arg1, date_demand = arg2,init_days= init_days_all, pred_win = arg3, pred_lag= arg4, train_y=arg5,
+                      reg_form= arg6, p_comps= arg7, other_mods= arg8, comb = arg9, custom = arg10,
+                      incl_climatology = arg11,
+                      mc.cores = arg12)
 
     ## **** Return results ****
     Results = rbindlist(detailed_results)
