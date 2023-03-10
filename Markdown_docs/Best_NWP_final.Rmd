@@ -6,7 +6,7 @@ output: html_document
 ---
 
 
-```{r}
+```{r, cache = TRUE}
 library(DemandForecast)
 library(data.table)
 library(ncdf4)
@@ -23,7 +23,7 @@ ERA_NWP[, season:= ifelse(month(date) %in% c(12,1,2), 1,
                             ifelse(month(date) %in% c(6,7,8), 3, 4)))]
 ```
 
-```{r}
+```{r, eval  = FALSE}
 save(Mod_9_60_inter, file = 'Mod_9_60_inter.Rda')
 save(Mod_9_60_year_c, file = 'Mod_9_60_year_c.Rda')
 save(Mod_9_60_year_f, file = 'Mod_9_60_year_f.Rda')
@@ -45,9 +45,83 @@ save(Mod_9_60_season_sin, file = 'Mod_9_60_season_sin.Rda')
 save(Mod_9_60_NWP1, file = 'Mod_9_60_NWP1.Rda')
 save(Mod_9_60_NWP2, file = 'Mod_9_60_NWP2.Rda')
 save(Mod_9_60_climatology, file = 'Mod_9_60_climatology.Rda')
+
+save(Mod_9_60_comb_a_0, file = 'Mod_9_60_comb_a_0.Rda')
+save(Mod_9_60_comb_a_1, file = 'Mod_9_60_comb_a_1.Rda') 
+save(Mod_9_60_comb_a_2, file = 'Mod_9_60_comb_a_2.Rda') 
+
+save(Mod_9_60_int_a_0, file = 'Mod_9_60_int_a_0.Rda')
+save(Mod_9_60_int_b_0, file = 'Mod_9_60_int_b_0.Rda')
+save(Mod_9_60_int_c_0, file = 'Mod_9_60_int_c_0.Rda')
+
+save(Mod_9_60_comb_int_c_0, file = 'Mod_9_60_comb_int_c_0.Rda')
+save(Mod_9_60_comb_int_c_1, file = 'Mod_9_60_comb_int_c_1.Rda')
+save(Mod_9_60_comb_int_c_2, file = 'Mod_9_60_comb_int_c_2.Rda')
+save(Mod_9_60_comb_int_b_0, file = 'Mod_9_60_comb_int_b_0.Rda')
+save(Mod_9_60_comb_int_b_1, file = 'Mod_9_60_comb_int_b_1.Rda')
+save(Mod_9_60_comb_int_b_2, file = 'Mod_9_60_comb_int_b_2.Rda')
+save(Mod_9_60_comb_int_a_0, file = 'Mod_9_60_comb_int_b_0.Rda')
+save(Mod_9_60_comb_int_a_1, file = 'Mod_9_60_comb_int_a_1.Rda')
+save(Mod_9_60_comb_int_a_2, file = 'Mod_9_60_comb_int_a_2.Rda')
+save(Mod_9_60_comb_hour_1, file = 'Mod_9_60_comb_hour_1')
+save(Mod_9_60_comb_hour_2, file = 'Mod_9_60_comb_hour_2')
+save(Mod_9_60_comb_week_1, file = 'Mod_9_60_comb_week_1')
+save(Mod_9_60_comb_week_2, file = 'Mod_9_60_comb_week_2')
+
+```
+,(?<=\,)(.*?)(?=\))
+
+
+```{r, cache = TRUE}
+load(Mod_9_60_inter)
+load(Mod_9_60_year_c)
+load(Mod_9_60_year_f)
+load(Mod_9_60_hour_c)
+load(Mod_9_60_hour_f)
+load(Mod_9_60_hour_sin)
+load(Mod_9_60_week_c)
+load(Mod_9_60_week_f)
+load(Mod_9_60_week_sin)
+load(Mod_9_60_week_sin_2)
+load(Mod_9_60_week_sin_3)
+load(Mod_9_60_month_c)
+load(Mod_9_60_month_f)
+load(Mod_9_60_month_sin)
+load(Mod_9_60_season_c)
+load(Mod_9_60_season_f)
+load(Mod_9_60_season_sin)
+load(Mod_9_60_NWP1)
+load(Mod_9_60_NWP2)
+load(Mod_9_60_climatology)
+
+load(Mod_9_60_comb_a_0)
+load(Mod_9_60_comb_a_1) 
+load(Mod_9_60_comb_a_2)
+
+load(Mod_9_60_int_a_0)
+load(Mod_9_60_int_b_0)
+load(Mod_9_60_int_c_0)
+
+load(Mod_9_60_comb_int_c_0)
+load(Mod_9_60_comb_int_c_1)
+load(Mod_9_60_comb_int_c_2)
+
+load(Mod_9_60_comb_int_b_0)
+load(Mod_9_60_comb_int_b_1)
+load(Mod_9_60_comb_int_b_2)
+
+load(Mod_9_60_comb_int_a_0)
+load(Mod_9_60_comb_int_a_1)
+load(Mod_9_60_comb_int_a_2)
+
+load(Mod_9_60_comb_hour_1)
+load(Mod_9_60_comb_hour_2)
+
+load(Mod_9_60_comb_week_1)
+load(Mod_9_60_comb_week_2)
 ```
 
-```{r}
+```{r, eval = FALSE}
 Mod_9_60_inter = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
                                      window = 60, cores = 48, formula  = 'PC1 ~ 1')
 Mod_9_60_year_c = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
@@ -89,28 +163,29 @@ Mod_9_60_season_sin = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 
 
 ```
 
-
-```{r}
+## Plotting functions
+```{r, cache = TRUE}
 plot_func = function(function_list = c(),
                      legend_input= c('Climatology', '1 NWP pred', '2 NWP preds'),
                      title = '',
                      lead_time_interval = c(1,240),
-                     climatology_ref = FALSE){
+                     climatology_ref = FALSE,
+                     legend_place = 'top'){
     low = 1
     upp = 240
     ax = pretty(low:upp, 9)
-    cols = c('black', 'brown1', 'dodgerblue1', 'orange')
+    cols = c('black', 'brown1', 'dodgerblue1', 'orange', 'green')
     dat = get(function_list[1])
     if (climatology_ref==TRUE){
         plot_data = dat$Results[, .(mean_test_loss = mean(clima_loss)), keyby=.(horizon =lead_time)]
-        print(dat$Results[lead_time>low & lead_time <upp,mean(clima_loss)])
+        print(dat$Results[lead_time>lead_time_interval[1] & lead_time <lead_time_interval[2],mean(clima_loss)])
     } else{
         plot_data = dat$Results[, .(mean_test_loss = mean(test_loss)), keyby=.(horizon =lead_time)]
         print(dat$Results[lead_time>lead_time_interval[1] & lead_time <lead_time_interval[2],mean(test_loss)])
     }
     matplot(low:upp, plot_data[low:upp,mean_test_loss] , type = 'l', ylim = c(0, 25), lty = 1,
             xaxt = 'n', xlab = 'Horizon (days)', ylab = 'Pinball loss', main = paste0(title,': 60 day window (Test)'), col = cols[1])
-    legend("left", lty = 1, cex=0.6, col = c('black', 'brown1', 'dodgerblue1'),
+    legend(legend_place, lty = 1, cex=0.6, col = c('black', 'brown1', 'dodgerblue1', 'orange', 'green'),
            legend = legend_input)
     axis(1, at = ax, labels = ax/4)
     
@@ -127,11 +202,12 @@ plot_func = function(function_list = c(),
 plot_month = function(function_list = c(),
                      legend_input= c('Climatology', '1 NWP pred', '2 NWP preds'),
                      title = '',
-                     climatology_ref = FALSE){
+                     climatology_ref = FALSE,
+                     legend_place = 'top'){
     low = 1
     upp = 12
     ax = month.abb
-    cols = c('black', 'brown1', 'dodgerblue1', 'orange')
+    cols = c('black', 'brown1', 'dodgerblue1', 'orange', 'green')
     dat = get(function_list[1])
     if (climatology_ref==TRUE){
         plot_data = dat$Results[lead_time<81, .(mean_test_loss = mean(clima_loss)), keyby=.(horizon =month(date))]
@@ -140,7 +216,7 @@ plot_month = function(function_list = c(),
     }
     matplot(low:upp, plot_data[low:upp,mean_test_loss] , type = 'l', ylim = c(0, 25), lty = 1,
             xaxt = 'n', xlab = 'Month', ylab = 'Pinball loss', main = paste0(title,': 60 day window (Test)'), col = cols[1])
-    legend("left", lty = 1, cex=0.6, col = c('black', 'brown1', 'dodgerblue1'),
+    legend(legend_place, lty = 1, cex=0.6, col = c('black', 'brown1', 'dodgerblue1', 'orange', 'green'),
            legend = legend_input)
     axis(1, at = 1:12, labels = ax)
     
@@ -153,23 +229,27 @@ plot_month = function(function_list = c(),
 ```
 
 
-```{r}
+```{r, cache=TRUE}
 plot_func(c('Mod_9_60_inter', 'Mod_9_60_year_c', 'Mod_9_60_year_f'),
-          legend_input = c('Intercept', 'Year (cont)', 'Year (factor)'))
-plot_func(c('Mod_9_60_hour_c', 'Mod_9_60_hour_f', 'Mod_9_60_hour_sin'))
-plot_func(c('Mod_9_60_week_c', 'Mod_9_60_week_f', 'Mod_9_60_week_sin', 'Mod_9_60_week_sin_2','Mod_9_60_week_sin_3'))
-plot_func(c('Mod_9_60_month_c', 'Mod_9_60_month_f', 'Mod_9_60_month_sin'))
-plot_func(c('Mod_9_60_season_c', 'Mod_9_60_season_f', 'Mod_9_60_season_sin'))
+          legend_input = c('Intercept', 'Year (cont)', 'Year (factor)'), legend_place = 'bottomright')
+plot_func(c('Mod_9_60_hour_c', 'Mod_9_60_hour_f', 'Mod_9_60_hour_sin'), legend_place = 'bottomright',
+          title = 'Hour', legend_input = c('Hour (cont)', 'Hour (factor)', 'Hour sinusoidal'))
+plot_func(c('Mod_9_60_week_c', 'Mod_9_60_week_f', 'Mod_9_60_week_sin', 'Mod_9_60_week_sin_2','Mod_9_60_week_sin_3'), legend_place = 'bottomright',
+          title = 'Week', legend_input = c('Week (cont)', 'Week (factor)', 'Week sinusoidal(52)','Week sinusoidal(53)','Week sinusoidal(52.5)'))
+plot_func(c('Mod_9_60_month_c', 'Mod_9_60_month_f', 'Mod_9_60_month_sin'), legend_place = 'bottomright',
+           title = 'Month', legend_input = c('Month (cont)', 'Month (factor)', 'Month sinusoidal'))
+plot_func(c('Mod_9_60_season_c', 'Mod_9_60_season_f', 'Mod_9_60_season_sin'), legend_place = 'bottomright',
+          title = 'Season', legend_input = c('Season (cont)', 'Season (factor)', 'Season sinusoidal'))
 ```
 
-1) Continuos year is better 22.44 (Almost same as intercept) 
+1) Continuous year is better 22.44 (Almost same as intercept) 
 2) hour as factor better 22.1 (almost same as intercept)
 3) Cont week is hopeless, as factor good, best is 52 weeks of  9.96
 4) Month as factor is better 10.48
 5) Season as factor 13.48
 
 # Trying climatology and NWP vars
-```{r}
+```{r, eval=FALSE}
 Mod_9_60_NWP1 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg', 
                                       window = 60, cores = 48, formula  = 'PC1 ~ 1')
 Mod_9_60_NWP2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg', 
@@ -179,12 +259,11 @@ Mod_9_60_climatology = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP,
 ```
 
 
-
 ```{r}
 plot_func(c('Mod_9_60_climatology','Mod_9_60_NWP1', 'Mod_9_60_NWP2'), 
-          title = 'Intercept + NWP1 + NWP2', climatology_ref = TRUE)
+          title = 'Climatology + NWP1 + NWP2', climatology_ref = TRUE,lead_time_interval = c(1,80))
 plot_month(c('Mod_9_60_climatology','Mod_9_60_NWP1', 'Mod_9_60_NWP2'), 
-          title = 'Intercept + NWP1 + NWP2', climatology_ref = TRUE) # lead_time< 80
+          title = 'Climatology + NWP1 + NWP2', climatology_ref = TRUE) 
 ```
 
 1) climatology is very good, 
@@ -195,24 +274,42 @@ plot_month(c('Mod_9_60_climatology','Mod_9_60_NWP1', 'Mod_9_60_NWP2'),
 
 # Time covariate models
 ```{r}
-Mod_9_60_comb_a_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
-                                      window = 60, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour) + cos(2*pi * week/52) + sin(2*pi * week/52) + cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year')
+Mod_9_60_comb_a_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', window = 60, cores = 48, 
+                                    formula  = 'PC1 ~ 1 + as.factor(hour) + cos(2*pi * week/52) + sin(2*pi * week/52) + 
+                                    cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year')
 
-Mod_9_60_comb_a_1 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg', 
-                                      window = 60, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour) + cos(2*pi * week/52) + sin(2*pi * week/52) + cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year')
+Mod_9_60_comb_a_1 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg',window = 60, cores = 48, 
+                                    formula  = 'PC1 ~ 1 + as.factor(hour) + cos(2*pi * week/52) + sin(2*pi * week/52) + 
+                                    cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year')
 
-Mod_9_60_comb_a_2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg', 
-                                      window = 60, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour) + cos(2*pi * week/52) + sin(2*pi * week/52) + cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year')
-
+Mod_9_60_comb_a_2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg', window = 60, cores = 48, 
+                                    formula  = 'PC1 ~ 1 + as.factor(hour) + cos(2*pi * week/52) + sin(2*pi * week/52) + 
+                                    cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year')
 ```
-
 
 
 as.factor(month) +  as.factor(season) leads to an undefined matrix, so we have to go with an alternative. 
 
+```{r, cache = TRUE}
+plot_func(c('Mod_9_60_comb_a_0','Mod_9_60_comb_a_1', 'Mod_9_60_comb_a_2'), 
+          title = 'Time combo + NWP1 + NWP2', climatology_ref = FALSE,legend_input= c('Time covariates', '+ 1 NWP', '+ 2 NWP'),lead_time_interval = c(161,240))
+plot_month(c('Mod_9_60_comb_a_0','Mod_9_60_comb_a_1', 'Mod_9_60_comb_a_2'), 
+          title = 'Time combo + NWP1 + NWP2', climatology_ref = FALSE,legend_input= c('Time covariates', '+ 1 NWP', '+ 2 NWP')) 
+```
+1) This is a better climatology than using the quantile directly. 9.04
+2) Including the NWP2 very slightly increases the performance of the model. 8.11 vs 8.19 overall
+3) This increase comes at the beginning, so it seems worth it, contributes the first 10 days, 
+
+first 10 days is 5.78 vs 5.13
+first 20 days is 6.27 vs 6.41
+first 30 days is 7.45 vs 7.27
+
+days 10-20 i 7.6550 vs 7.6658
+
+We can again outperform the climatology model on a predictive task by using time covariates.
 
 # Interaction models
-```{r}
+```{r, eval = FALSE}
 Mod_9_60_int_a_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
                                       window = 60, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(season)')
 Mod_9_60_int_b_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
@@ -222,22 +319,15 @@ Mod_9_60_int_c_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, 
 ```
 
 # Plot
-```{r}
-plot_func(c('Mod_9_60_comb_a_0','Mod_9_60_comb_a_1', 'Mod_9_60_comb_a_2'), 
-          title = 'Time combo + NWP1 + NWP2', climatology_ref = FALSE,
-          lead_time_interval = c(0, 4*15))
-plot_month(c('Mod_9_60_comb_a_0','Mod_9_60_comb_a_1', 'Mod_9_60_comb_a_2'), 
-          title = 'Time combo + NWP1 + NWP2', climatology_ref = FALSE) # lead_time< 80
-
+```{r, cache = TRUE}
 plot_func(c('Mod_9_60_int_a_0','Mod_9_60_int_b_0', 'Mod_9_60_int_c_0'), 
-          title = 'Time combo + NWP1 + NWP2', climatology_ref = FALSE,
-          lead_time_interval = c(0, 4*15))
+          title = 'Interactions hour with season, month week', climatology_ref = FALSE,
+          legend_input= c('Hour:Season', 'Hour:Month', 'Hour:Week'))
 plot_month(c('Mod_9_60_int_a_0','Mod_9_60_int_b_0', 'Mod_9_60_int_c_0'), 
-          title = 'Time combo + NWP1 + NWP2', climatology_ref = FALSE) # lead_time< 80
+          title = 'Interactions hour with season, month week', climatology_ref = FALSE,
+          legend_input= c('Hour:Season', 'Hour:Month', 'Hour:Week')) 
 ```
-1) This is a better climatology than using the quantile directly. 
-2) Including the NWP2 very slightly increases the performance of the model.
-3) This increase comes at the beginning, so it seems worth it. 
+1) Hour:Week is the best one, and a better model than climatology. 
 
 
 ```{r}
@@ -253,48 +343,121 @@ Mod_9_60_comb_int_c_2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP
 
 ```{r}
 plot_func(c('Mod_9_60_climatology', 'Mod_9_60_comb_int_c_0','Mod_9_60_comb_int_c_1', 'Mod_9_60_comb_int_c_2'), 
-          title = 'Time combo + NWP1 + NWP2', climatology_ref = TRUE)
+          title = 'Interaction hour:week + NWP1 + NWP2', climatology_ref = TRUE,lead_time_interval = c(161,240))
 plot_month(c('Mod_9_60_climatology', 'Mod_9_60_comb_int_c_0','Mod_9_60_comb_int_c_1', 'Mod_9_60_comb_int_c_2'), 
-          title = 'Time combo + NWP1 + NWP2', climatology_ref = TRUE) # lead_time< 80
-
-
+          title = 'Interaction hour:week + NWP1 + NWP2', climatology_ref = TRUE) # lead_time< 80
 ```
-
-#Interactions worsens the NWP models
-
-
-save(Mod_9_60_comb_int_c_0, file = 'Mod_9_60_comb_int_c_0.Rda')
-save(Mod_9_60_comb_int_c_1, file = 'Mod_9_60_comb_int_c_1.Rda')
-save(Mod_9_60_comb_int_c_2, file = 'Mod_9_60_comb_int_c_2.Rda')
-
-
-
-scp eirikhsj@abacus-as.uio.no:~/Mod_9_60_comb_int_c_0.Rda eirikhsj@abacus-as.uio.no:~/Mod_9_60_comb_int_c_1.Rda eirikhsj@abacus-as.uio.no:~/Mod_9_60_comb_int_c_2.Rda  /Users/Eirik/Desktop/Master2023/Output_data/New_Best_NWP_model_output
-
-
-eirikhsj@abacus-as.uio.no:/mn/kadingir/datascience_000000/eirikhsj
-
+-Interactions worsens the NWP models
 
 
 ```{r}
-M_9_60_0       = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', window = 60, cores = 48)
-M_9_60_1       = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg', window = 60, cores = 48)
-M_9_60_2       = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg', window = 60, cores = 48)
-
-M_9_60_0_h     = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', window = 60, hour_v = TRUE, cores = 48)
-M_9_60_1_h     = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg', window = 60, hour_v = TRUE, cores = 48)
-M_9_60_2_h     = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg', window = 60, hour_v = TRUE, cores = 48) 
-
-M_9_60_0_w     = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', window = 60, week_v = TRUE, cores = 48)
-M_9_60_1_w     = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg', window = 60, week_v = TRUE, cores = 48)
-M_9_60_2_w     = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg', window = 60, week_v = TRUE, cores = 48)
-
-M_9_60_0_m     = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', window = 60, month_v = TRUE, cores = 48)
-M_9_60_1_m     = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg', window = 60, month_v = TRUE, cores = 48)
-M_9_60_2_m     = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg', window = 60, month_v = TRUE, cores = 48) 
-
-M_9_60_0_y     = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', window = 60, year_v = TRUE, cores = 48)
-M_9_60_1_y     = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg', window = 60, year_v = TRUE, cores = 48)
-M_9_60_2_y     = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg', window = 60, year_v = TRUE, cores = 48) 
+Mod_9_60_comb_int_b_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+                                      window = 60, cores = 48, 
+                                      formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(month) + cos(2*pi * week/52) + sin(2*pi * week/52) + year')
+Mod_9_60_comb_int_b_1 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg', 
+                                      window = 60, cores = 48, 
+                                      formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(month) + cos(2*pi * week/52) + sin(2*pi * week/52) + year')
+Mod_9_60_comb_int_b_2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg', 
+                                      window = 60, cores = 48, 
+                                      formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(month) + cos(2*pi * week/52) + sin(2*pi * week/52) + year')
 ```
 
+```{r}
+plot_func(c('Mod_9_60_climatology', 'Mod_9_60_comb_int_b_0','Mod_9_60_comb_int_b_1', 'Mod_9_60_comb_int_b_2'), 
+          title = 'Interaction hour:month + NWP1 + NWP2', climatology_ref = TRUE,lead_time_interval = c(161,240))
+plot_month(c('Mod_9_60_climatology', 'Mod_9_60_comb_int_b_0','Mod_9_60_comb_int_b_1', 'Mod_9_60_comb_int_b_2'), 
+          title = 'Interaction hour:month + NWP1 + NWP2', climatology_ref = TRUE) # lead_time< 80
+```
+
+
+```{r}
+Mod_9_60_comb_int_a_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', window = 60, cores = 48, 
+                                    formula  = 'PC1 ~ 1 + as.factor(hour):as.factor(season) + cos(2*pi * week/52) + sin(2*pi * week/52) + 
+                                    cos(2*pi * month/12) + sin(2*pi * month/12) +as.factor(season) + year')
+
+Mod_9_60_comb_int_a_1 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg',window = 60, cores = 48, 
+                                    formula  = 'PC1 ~ 1 + as.factor(hour):as.factor(season)  + cos(2*pi * week/52) + 
+                                    sin(2*pi * week/52) + cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year')
+
+Mod_9_60_comb_int_a_2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg', window = 60, cores = 48, 
+                                    formula  = 'PC1 ~ 1 + as.factor(hour):as.factor(season)  + cos(2*pi * week/52) + 
+                                    sin(2*pi * week/52) + cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year')
+```
+
+```{r}
+plot_func(c('Mod_9_60_climatology', 'Mod_9_60_comb_int_a_0','Mod_9_60_comb_int_a_1', 'Mod_9_60_comb_int_a_2'), 
+          title = 'Interaction hour:month + NWP1 + NWP2', climatology_ref = TRUE,lead_time_interval = c(161,240))
+plot_month(c('Mod_9_60_climatology', 'Mod_9_60_comb_int_a_0','Mod_9_60_comb_int_a_1', 'Mod_9_60_comb_int_a_2'), 
+          title = 'Interaction hour:month + NWP1 + NWP2', climatology_ref = TRUE) # lead_time< 80
+```
+
+
+# Considering different prediction intervals (daily prediction)
+```{r}
+Mod_9_60_climatology_daily = Mod_9_60_climatology$Results[,.(daily_pca =sum(PC1), daily_pred =sum(clima_pred)), by = .(init_date, date)]
+Mod_9_60_climatology_daily[, daily_loss := pinball_loss(0.9, daily_pred,daily_pca)]
+Mod_9_60_climatology_daily[, lead_time := as.integer(date - init_date) + 1]
+
+plot(Mod_9_60_climatology_daily[,mean(daily_loss), by = lead_time], type = 'l')
+
+Mod_9_60_NWP1_daily = Mod_9_60_NWP1$Results[,.(daily_pca =sum(PC1), daily_pred =sum(pred)), by = .(init_date, date)]
+Mod_9_60_NWP1_daily[, daily_loss := pinball_loss(0.9, daily_pred,daily_pca)]
+Mod_9_60_NWP1_daily[, lead_time := as.integer(date - init_date) + 1]
+
+plot(Mod_9_60_climatology_daily[,mean(daily_loss), by = lead_time], type = 'l',col = 'red', ylim = c(0, 42))
+lines(Mod_9_60_NWP1_daily[,mean(daily_loss), by = lead_time])
+
+
+#By 7 days
+Mod_9_60_climatology_weekly = Mod_9_60_climatology$Results[,.(daily_pca =sum(PC1), daily_pred =sum(clima_pred)), by = .(init_date, week(date))]
+
+
+```
+
+
+
+So based on this is seems that the best model is the one with just the NWP, at least for the first 20 days. 
+Might be interesting to check if we can add hour and week a simpler comb model basically. 
+
+```{r}
+Mod_9_60_comb_hour_1 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg',window = 60, cores = 4, 
+                                    formula  = 'PC1 ~ 1 + as.factor(hour)')
+
+Mod_9_60_comb_hour_2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg',window = 60, cores = 4, 
+                                    formula  = 'PC1 ~ 1 + as.factor(hour)')
+
+```
+
+
+```{r}
+plot_func(c('Mod_9_60_climatology', 'Mod_9_60_comb_hour_1','Mod_9_60_comb_hour_2'), 
+          title = 'Interaction hour:month + NWP1 + NWP2', climatology_ref = TRUE,lead_time_interval = c(1,240))
+plot_month(c('Mod_9_60_climatology', 'Mod_9_60_comb_hour_1','Mod_9_60_comb_hour_2'), 
+          title = 'Interaction hour:month + NWP1 + NWP2', climatology_ref = TRUE) 
+```
+
+```{r}
+Mod_9_60_comb_week_1 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg',window = 60, cores = 4, 
+                                    formula  = 'PC1 ~ 1 + as.factor(week)')
+
+Mod_9_60_comb_week_2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg',window = 60, cores = 4, 
+                                    formula  = 'PC1 ~ 1 + as.factor(week)')
+```
+
+```{r}
+plot_func(c('Mod_9_60_climatology', 'Mod_9_60_comb_week_1','Mod_9_60_comb_week_2'), 
+          title = 'Interaction hour:month + NWP1 + NWP2', climatology_ref = TRUE,lead_time_interval = c(1,240))
+plot_month(c('Mod_9_60_climatology', 'Mod_9_60_comb_week_1','Mod_9_60_comb_week_2'), 
+          title = 'Interaction hour:month + NWP1 + NWP2', climatology_ref = TRUE) 
+```
+
+# Code for saving and relocating files
+
+save(Mod_9_60_comb_int_a_0, file = 'Mod_9_60_comb_int_a_0.Rda')
+save(Mod_9_60_comb_int_a_1, file = 'Mod_9_60_comb_int_a_1.Rda')
+save(Mod_9_60_comb_int_a_2, file = 'Mod_9_60_comb_int_a_2.Rda')
+
+scp eirikhsj@abacus-as.uio.no:~/Mod_9_60_comb_int_a_0.Rda eirikhsj@abacus-as.uio.no:~/Mod_9_60_comb_int_a_1.Rda eirikhsj@abacus-as.uio.no:~/Mod_9_60_comb_int_a_2.Rda  /Users/Eirik/Desktop/Master2023/Output_data/New_Best_NWP_model_output
+
+
+eirikhsj@abacus-as.uio.no:/mn/kadingir/datascience_000000/eirikhsj

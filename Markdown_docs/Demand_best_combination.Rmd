@@ -6,6 +6,77 @@ output: html_document
 ---
 
 
+```{r}
+save(No_inter_1, file = paste0(path, 'No_inter_1.Rda'))
+save(No_inter_2, file = paste0(path, 'No_inter_2.Rda'))
+save(No_inter_3, file = paste0(path, 'No_inter_3.Rda'))
+save(No_inter_4, file = paste0(path, 'No_inter_4.Rda'))
+save(No_inter_5, file = paste0(path, 'No_inter_5.Rda'))
+save(No_inter_6, file = paste0(path, 'No_inter_6.Rda'))
+save(No_inter_7, file = paste0(path, 'No_inter_7.Rda'))
+save(No_inter_8, file = paste0(path, 'No_inter_8.Rda'))
+save(Mean_temp1, file = paste0(path, 'Mean_temp1.Rda'))
+save(Mean_temp2, file = paste0(path, 'Mean_temp1.Rda'))
+```
+
+```{r}
+path = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/'
+load(paste0(path, 'Naive.Rda'))
+load(paste0(path, 'No_inter_1.Rda'))
+load(paste0(path, 'No_inter_2.Rda'))
+load(paste0(path, 'No_inter_3.Rda'))
+load(paste0(path, 'No_inter_4.Rda'))
+load(paste0(path, 'No_inter_5.Rda'))
+load(paste0(path, 'No_inter_6.Rda'))
+load(paste0(path, 'No_inter_7.Rda'))
+load(paste0(path, 'No_inter_8.Rda'))
+load(paste0(path, 'Inter1.Rda'))
+load(paste0(path, 'Inter2.Rda'))
+load(paste0(path, 'Inter3.Rda'))
+load(paste0(path, 'Inter4.Rda'))
+load(paste0(path, 'Custom1.Rda'))
+load(paste0(path, 'Custom2.Rda'))
+load(paste0(path, 'Custom3.Rda'))
+load(paste0(path, 'Custom4.Rda'))
+load(paste0(path, 'Custom5.Rda'))
+load(paste0(path, 'Custom6.Rda'))
+load(paste0(path, 'Custom7.Rda'))
+load(paste0(path, 'Custom8.Rda'))
+load(paste0(path, 'Custom9.Rda'))
+load(paste0(path, 'Custom10.Rda'))
+
+load(paste0(path, 'Custom_lin1.Rda'))
+load(paste0(path, 'Custom_lin2.Rda'))
+load(paste0(path, 'Custom_lin3.Rda'))
+load(paste0(path, 'Custom_lin4.Rda'))
+load(paste0(path, 'Custom_lin5.Rda'))
+load(paste0(path, 'Custom_lin6.Rda'))
+load(paste0(path, 'Custom_lin7.Rda'))
+load(paste0(path, 'Custom_lin8.Rda'))
+load(paste0(path, 'Custom_lin9.Rda'))
+load(paste0(path, 'Custom_lin10.Rda'))
+
+load(paste0(path, 'Custom_comb1.Rda'))
+load(paste0(path, 'Custom_comb2.Rda'))
+load(paste0(path, 'Custom_comb3.Rda'))
+load(paste0(path, 'Custom_comb4.Rda'))
+load(paste0(path, 'Custom_comb5.Rda'))
+load(paste0(path, 'Custom_comb6.Rda'))
+load(paste0(path, 'Custom_comb7.Rda'))
+load(paste0(path, 'Custom_comb8.Rda'))
+load(paste0(path, 'Custom_comb9.Rda'))
+load(paste0(path, 'Custom_comb10.Rda'))
+
+load(paste0(path, 'Mean_temp1.Rda'))
+load(paste0(path, 'Mean_temp2.Rda'))
+
+#load(paste0(path, 'Factor10_inter1.Rda'))
+load(paste0(path, 'Factor10_inter2.Rda'))
+load(paste0(path, 'Factor10_inter3.Rda'))
+load(paste0(path, 'Factor10_inter4.Rda'))
+```
+
+
 # 4) Building best combination model 
 ```{r, eval = FALSE}
 Naive= demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
@@ -89,8 +160,9 @@ save(Naive, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_fo
 
 ## Interaction models
 ```{r}
-Inter1 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ as.factor(hour):as.factor(week)  + as.factor(w_day):as.factor(week) + s(week) + s(month) + season1 + season2 + year")
+Inter1 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, 
+                         train_y = 5, p_comps = 0,  
+                         reg_form = "volume ~ as.factor(hour):as.factor(week)  + as.factor(w_day):as.factor(week) + s(week) + s(month) + season1 + season2 + year")
 
 Inter2 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(hour):as.factor(month)  + as.factor(w_day):as.factor(week) + s(week) + s(month) + season1 + season2 + year")
@@ -312,22 +384,7 @@ save(Custom_comb8, file = 'Custom_comb8.Rda')
 save(Custom_comb9, file = 'Custom_comb9.Rda')
 save(Custom_comb10, file = 'Custom_comb10.Rda')
 
-scp eirikhsj@abacus-as.uio.no:~/Custom_comb1.Rda eirikhsj@abacus-as.uio.no:~/Custom_comb2.Rda eirikhsj@abacus-as.uio.no:~/Custom_comb3.Rda eirikhsj@abacus-as.uio.no:~/Custom_comb4.Rda eirikhsj@abacus-as.uio.no:~/Custom_comb5.Rda eirikhsj@abacus-as.uio.no:~/Custom_comb6.Rda eirikhsj@abacus-as.uio.no:~/Custom_comb7.Rda eirikhsj@abacus-as.uio.no:~/Custom_comb8.Rda eirikhsj@abacus-as.uio.no:~/Custom_comb9.Rda eirikhsj@abacus-as.uio.no:~/Custom_comb10.Rda /Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline
 
-scp /Users/Eirik/Desktop/Master2023/Data/NWP_quant/NWP_quant_rew25_1993_2022.Rda  
-
-
-scp eirikhsj@abacus-as.uio.no:~/NWP_quant_1993_2023.Rda /Users/Eirik/Desktop/Master2023/Data
-
-Output_data/output_demand_forecast_best_baseline
-
-eirikhsj@abacus-as.uio.no:/mn/kadingir/datascience_000000/eirikhsj
-
-
-
-
-
-scp eirikhsj@abacus-as.uio.no:~/Custom_comb1.Rda
 ```{r, cache = TRUE}
 plot(Custom_comb1$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], type = 'l', ylim = c(2000, 13700))
 lines(Custom_comb1$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date], col = 'red')
@@ -667,7 +724,7 @@ plot(date_demand[year(date)==yr &  wday(date)  %in% c(1) &hour %in%12,volume, by
 
 #Reason for including week-term 
 hour_x = 24
-plot(date_demand[year(date)==yr &  wday(date)  %in% c(1) &hour %in%hour_x,volume, by = date], col = 'black', ylim = c(25000, 65000), pch = 16, cex= 0.6, type = 'l', main = paste0('Difference between weekdays at ', hour_x, ':00'))
+plot(date_demand[year(date)==yr &  wday(date)  %in% c(1) &hour %in%hour_x,volume, by = date], col = 'black', ylim = c(25000, 65000), pch = 16, cex= 0.6, type = 'l', main = paste0('Difference between weekdays at ', hour_x, ':00.Rda'))
 for (i in 2:7){
     lines(date_demand[year(date)==yr &  wday(date)  %in% c(i) &hour %in%hour_x,volume, by = date], col = i)
 }

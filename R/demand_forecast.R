@@ -27,7 +27,6 @@
 demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 30, pred_lag= 15, train_y=5,
                            reg_form, p_comps, other_mods= NULL, comb = TRUE, custom = FALSE,
                            incl_climatology = FALSE, cores = 4){
-
     arg1 = X_mat
     arg2 = date_demand
     arg3 = pred_win
@@ -58,17 +57,10 @@ demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 
                       incl_climatology = arg11,
                       mc.cores = arg12)
 
-    # detailed_results = lapply(seq_along(init_days),
-    #                             "Rolling",
-    #                             X_mat = X_mat, date_demand = date_demand,init_days= init_days, pred_win = pred_win, pred_lag= pred_lag, train_y=train_y,
-    #                             reg_form= reg_form, p_comps= p_comps, other_mods= other_mods, comb = comb, custom = custom,
-    #                             incl_climatology = incl_climatology)
-
+    ## **** Return results ****
     Results = rbindlist(detailed_results)
-
     out = list()
     out$Results = Results
-    #out$mods = mods
     print('Demand forecast has completed')
     return(out)
 }
@@ -116,7 +108,6 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
     }
 
     ## **** Step 3: Check fit ****
-    #print(paste0("Test : ", dt_test[1,date], " - ", dt_test[length(dt_test$date),date], " "))
     results = dt_test
     results[,'init_date' := rep(init_day, length(dt_test$date))]
     results[,'lead_time':= ((as.integer(difftime(date, init_day, units = 'days')))*24)+ hour]
@@ -143,10 +134,5 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
         results[,'clima_pred' := clima_pred]
         print(paste0("Climatology: ", sqrt(sum((dt_test$volume - clima_pred)^2)/n)))
     }
-
-
-    #detailed_results[[i]] = results
-    #diff = round(difftime(Sys.time(),start_time, units="secs"),4)
-    #print(paste0('This round took ', diff, ' seconds. Only ', round((length(init_days)-i)*diff/60,3), ' minutes left'))
     return(results)
 }
