@@ -16,7 +16,7 @@ save(No_inter_6, file = paste0(path, 'No_inter_6.Rda'))
 save(No_inter_7, file = paste0(path, 'No_inter_7.Rda'))
 save(No_inter_8, file = paste0(path, 'No_inter_8.Rda'))
 save(Mean_temp1, file = paste0(path, 'Mean_temp1.Rda'))
-save(Mean_temp2, file = paste0(path, 'Mean_temp1.Rda'))
+save(Mean_temp2, file = paste0(path, 'Mean_temp2.Rda'))
 ```
 
 ```{r}
@@ -75,6 +75,13 @@ load(paste0(path, 'Factor10_inter2.Rda'))
 load(paste0(path, 'Factor10_inter3.Rda'))
 load(paste0(path, 'Factor10_inter4.Rda'))
 ```
+s <- system.time({
+Year1 = demand_forecast(X_mat,date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', 
+            pred_win = 30, pred_lag = 15, train_y = 5, p_comps = 0,  reg_form = "volume ~ year", incl_climatology = FALSE)
+})
+
+
+
 
 
 # 4) Building best combination model 
@@ -468,6 +475,19 @@ Climatology$Result[,sqrt(mean((volume - clima_pred)^2))]
 ```{r}
 Factor10_inter1 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 10,  reg_form = "volume ~ as.factor(hour):as.factor(week)  + as.factor(w_day):as.factor(week) + s(week) + s(month) + season1 + season2 + year", cores = 48)
+
+Factor10_inter1_4 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+                    p_comps = 4,  reg_form = "volume ~ as.factor(hour):as.factor(week)  + as.factor(w_day):as.factor(week) + s(week) + s(month) + season1 + season2 + year", cores = 48, custom = 's(PC1)+s(PC2)+s(PC3)+s(PC4)', no_pc = FALSE)
+
+
+Factor10_inter1_5 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+                    p_comps = 5,  reg_form = "volume ~ as.factor(hour):as.factor(week)  + as.factor(w_day):as.factor(week) + s(week) + s(month) + season1 + season2 + year", cores = 48, custom = 's(PC1)+s(PC2)+s(PC3)+s(PC4)+s(PC5)', no_pc = FALSE)
+
+Factor10_inter1_6 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+                    p_comps = 6,  reg_form = "volume ~ as.factor(hour):as.factor(week)  + as.factor(w_day):as.factor(week) + s(week) + s(month) + season1 + season2 + year", cores = 48, custom = 's(PC1)+s(PC2)+s(PC3)+s(PC4)+s(PC5)+s(PC6)')
+
+
+
 
 Factor10_inter2 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 10,  reg_form = "volume ~ as.factor(hour):as.factor(month)  + as.factor(w_day):as.factor(week) + s(week) + s(month) + season1 + season2 + year", cores = 48) #Have run

@@ -77,12 +77,12 @@ date_demand = prep$date_demand
 
 #Specify time covariates
 date_demand[,week:= week(date)]
-date_demand[,week1 := cos(2*pi * week/52) ]
-date_demand[,week2 := sin(2*pi * week/52) ]
+date_demand[,week1 :=  round(cos(2*pi * week/52), digits = 7) ]
+date_demand[,week2 :=  round(sin(2*pi * week/52), digits = 7) ]
 
 date_demand[,month:= month(date)]
-date_demand[,month1 := cos(2*pi * month/12) ]
-date_demand[,month2 := sin(2*pi * month/12) ]
+date_demand[,month1 := round(cos(2*pi * month/12), digits = 7)]
+date_demand[,month2 := round(sin(2*pi * month/12), digits = 7)]
 
 date_demand[,hour1 := cos(2*pi * hour/24) ]
 date_demand[,hour2 := sin(2*pi * hour/24) ]
@@ -97,8 +97,8 @@ date_demand[,season:= ifelse(month(date) %in% c(12,1,2), 1,
                             ifelse(month(date) %in% c(3,4,5), 2,
                             ifelse(month(date) %in% c(6,7,8), 3, 4)))]
 
-date_demand[,season1 := cos(2*pi * season/4) ]
-date_demand[,season2 := sin(2*pi * season/4) ]
+date_demand[,season1 := round(cos(2*pi * season/4), digits = 7)]
+date_demand[,season2 := round(sin(2*pi * season/4), digits = 7)]
 
 date_demand[,hourly_mean_grid := rowMeans(X_mat)]
 
