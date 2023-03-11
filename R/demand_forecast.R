@@ -59,8 +59,8 @@ demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 
                       "Rolling",
                       X_mat = arg1, date_demand = arg2,init_days= init_days_all, pred_win = arg3, pred_lag= arg4, train_y=arg5,
                       reg_form= arg6, p_comps= arg7, other_mods= arg8, comb = arg9, custom = arg10,
-                      incl_climatology = arg11, no_pc = arg13,
-                      mc.cores = arg12)
+                      incl_climatology = arg11, no_pc = arg12,
+                      mc.cores = arg13)
 
     ## **** Return results ****
     Results = rbindlist(detailed_results)
