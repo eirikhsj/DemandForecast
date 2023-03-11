@@ -109,7 +109,7 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
                 mods[[j]] = mgcv::gam(as.formula(sprintf("%s + %s)", reg_form, PC)), data = dt_train)
             }
         } else{
-            print(sprintf("%s + %s)", reg_form, PC))
+            print(sprintf("%s + %s)", reg_form, custom))
             mods[[2]] = mgcv::gam(as.formula(sprintf("%s + %s", reg_form, custom)), data = dt_train)
             }
     }
