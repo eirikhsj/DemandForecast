@@ -12,6 +12,7 @@
 #' @param comb Boolean. FALSE allows specific combination of PCs to be run without running all combinations.
 #' @param custom Boolean.Specifies a custom pc bases model.
 #' @param incl_climatology Boolean.Includes climatology model.
+#' @param no_pc Boolean.Includes basic (no pc) model.
 #'
 #' @return A data.table with actual and predicted demand values.
 #' @export
@@ -26,7 +27,7 @@
 #'
 demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 30, pred_lag= 15, train_y=5,
                            reg_form, p_comps, other_mods= NULL, comb = TRUE, custom = FALSE,
-                           incl_climatology = FALSE, cores = 4){
+                           incl_climatology = FALSE, no_pc = TRUE, cores = 4){
     arg1 = X_mat
     arg2 = date_demand
     arg3 = pred_win
@@ -38,7 +39,8 @@ demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 
     arg9 = comb
     arg10 = custom
     arg11 = incl_climatology
-    arg12 = cores
+    arg12 = no_pc
+    arg13 = cores
 
     last_poss_pred = range(date_demand$date)[2] - pred_win - pred_lag
 
@@ -57,7 +59,7 @@ demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 
                       "Rolling",
                       X_mat = arg1, date_demand = arg2,init_days= init_days_all, pred_win = arg3, pred_lag= arg4, train_y=arg5,
                       reg_form= arg6, p_comps= arg7, other_mods= arg8, comb = arg9, custom = arg10,
-                      incl_climatology = arg11,
+                      incl_climatology = arg11, no_pc = arg13,
                       mc.cores = arg12)
 
     ## **** Return results ****
@@ -70,7 +72,7 @@ demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 
 
 #' @export
 Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
-                   reg_form, p_comps, other_mods, comb, custom,incl_climatology){
+                   reg_form, p_comps, other_mods, comb, custom,incl_climatology, no_pc){
 
     ## ***** Step 1: Form the training and test datasets ****
     init_day = init_days[i]
@@ -97,9 +99,14 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
 
     ## ***** Step 2: Train models ****
     mods = list()
-    print(reg_form)
-    mods[[1]] = mgcv::gam(as.formula(reg_form), data = dt_train) #Just Time covariate models
-    j = 1
+    if (no_pc == TRUE){
+        print(reg_form)
+        mods[[1]] = mgcv::gam(as.formula(reg_form), data = dt_train) #Just Time covariate models
+    } else{
+        mods[[1]] = mgcv::gam(as.formula("volume ~ 1"), data = dt_train)
+    }
+
+    j = 2
     if (p_comps > 0){                              #PC GAM MODELS
         if(custom == FALSE){
             for (j in 2:(p_comps+1)){

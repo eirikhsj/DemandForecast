@@ -56,10 +56,10 @@ d) Should I try all combinations here and see which is best or is the more infor
 #module load  R/4.2.0-foss-2021b
 #install.packages('DemandForecast', repos = NULL,type = "source")
 library(DemandForecast)
-library(data.table)
-library(ncdf4)
-library(parallel)
-library(mgcv)
+# library(data.table)
+# library(ncdf4)
+# library(parallel)
+# library(mgcv)
 
 
 if(file.exists("~/Desktop/Master2023/Data/")){
@@ -93,7 +93,7 @@ date_demand[,w_day:= as.numeric(format(date, "%u"))]
 date_demand[,w_day1 := cos(2*pi * w_day/7) ]
 date_demand[,w_day2 := sin(2*pi * w_day/7) ]
 
-date_demand[, season:= ifelse(month(date) %in% c(12,1,2), 1, 
+date_demand[,season:= ifelse(month(date) %in% c(12,1,2), 1, 
                             ifelse(month(date) %in% c(3,4,5), 2,
                             ifelse(month(date) %in% c(6,7,8), 3, 4)))]
 
