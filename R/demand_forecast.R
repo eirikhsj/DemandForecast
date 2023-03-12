@@ -27,7 +27,7 @@
 #'
 demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 30, pred_lag= 15, train_y=5,
                            reg_form, p_comps, other_mods= NULL, comb = TRUE, custom = FALSE,
-                           incl_climatology = FALSE, no_pc = TRUE, cores = 4){
+                           incl_climatology = FALSE, no_pc = TRUE, cores = 4, num_thread = 1){
     arg1 = X_mat
     arg2 = date_demand
     arg3 = pred_win
@@ -52,8 +52,8 @@ demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 
 
 
     ## **** Run parallel cores ****
-    blas_set_num_threads(1)
-    omp_set_num_threads(1) #Set number of threads
+    blas_set_num_threads(num_thread)
+    omp_set_num_threads(num_thread) #Set number of threads
 
     detailed_results = mclapply(seq_along(init_days_all),
                       "Rolling",
@@ -106,7 +106,6 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
         mods[[1]] = mgcv::gam(as.formula("volume ~ 1"), data = dt_train)
     }
 
-    j = 2
     if (p_comps > 0){                              #PC GAM MODELS
         if(custom == FALSE){
             for (j in 2:(p_comps+1)){
@@ -125,6 +124,7 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
     results = dt_test
     results[,'init_date' := rep(init_day, length(dt_test$date))]
     results[,'lead_time':= ((as.integer(difftime(date, init_day, units = 'days')))*24)+ hour]
+    results[,paste0('N_train') := rep(dim(dt_train)[1], dim(dt_test)[1])]
     for (mod in 1:length(mods)){
         pred_demand_test = predict(mods[[mod]], newdata = dt_test)
         pred_demand_train = predict(mods[[mod]], newdata = dt_train)
@@ -134,6 +134,7 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
         print(sprintf("RMSE mod_%i for initalization %s is %f", mod, format(init_day,"%Y-%m-%d"), RMSE))
         results[,paste0('pred_',mod) := pred_demand_test]
         results[,paste0('RMSE_train_',mod) := rep(RMSE_train, dim(dt_test)[1])]
+
     }
     ## **** Step 4: Climatology ****
     if(incl_climatology == TRUE){
@@ -147,6 +148,17 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
         clima_pred = climatology[month_day %in% format(dt_test$date, format ="%m-%d"), ave_vol]
         results[,'clima_pred' := clima_pred]
         print(paste0("Climatology: ", sqrt(sum((dt_test$volume - clima_pred)^2)/n)))
+    }
+    if (is.data.table(results)==TRUE){
+        print("Returning data.table")
+    } else{
+        print(str(results))
+        print('Trying to convert')
+        results = as.data.table(results)
+        if(dim(results)[1] < 100){
+            print('This is strange')
+            print(results)
+        }
     }
     return(results)
 }

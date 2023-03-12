@@ -6,7 +6,7 @@
 \usage{
 rolling_mod_NWP(
   forc_start = as.Date("2007-01-01"),
-  forc_end = as.Date("2022-05-01"),
+  forc_end = as.Date("2023-01-01"),
   q,
   ERA_NWP,
   predictors,
@@ -43,7 +43,11 @@ rolling_mod_NWP(
 
 \item{year_v}{Boolean. Include year covariate.}
 
-\item{incl_climatology}{Boolean. Include climatology model}
+\item{incl_climatology}{Boolean. Include climatology model.}
+
+\item{cores}{Integer. Number of cores to be used.}
+
+\item{formula}{String. Regression formula.}
 }
 \value{
 Model output with predictions, loss and model coefficients.

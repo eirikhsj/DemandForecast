@@ -9,9 +9,25 @@ arg8 = FALSE
 arg9 = FALSE
 arg10 = FALSE
 arg11 = FALSE
-arg12 = 48
+arg12 = TRUE
+arg13 = 48
 forc_start = '2016-01-01'
 forc_end = '2023-01-01'
+
+
+pred_win = 30
+pred_lag = 15
+train_y = 5
+reg_form = "volume ~ year"
+p_comps = 0
+other_mods = FALSE
+comb = FALSE
+custom = FALSE
+incl_climatology = FALSE
+cores = 48
+forc_start = '2016-01-01'
+forc_end = '2023-01-01'
+
 
 last_poss_pred = range(date_demand$date)[2] - 30 - 15
 

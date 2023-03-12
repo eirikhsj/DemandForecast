@@ -18,7 +18,9 @@ demand_forecast(
   comb = TRUE,
   custom = FALSE,
   incl_climatology = FALSE,
-  cores = 4
+  no_pc = TRUE,
+  cores = 4,
+  num_thread = 1
 )
 }
 \arguments{
@@ -43,6 +45,8 @@ demand_forecast(
 \item{custom}{Boolean.Specifies a custom pc bases model.}
 
 \item{incl_climatology}{Boolean.Includes climatology model.}
+
+\item{no_pc}{Boolean.Includes basic (no pc) model.}
 }
 \value{
 A data.table with actual and predicted demand values.
