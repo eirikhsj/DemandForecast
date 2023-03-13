@@ -93,7 +93,7 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
 #This works remote
 #' @export
 Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, predictors,
-                       incl_climatology, formula){
+                       incl_climatology, formula, lead_t){
     ## 3a) Time keeping
     init_day = init_days[i]
     target_days = seq(init_day, length.out = window,  by = '1 days')
