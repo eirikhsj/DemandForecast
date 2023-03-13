@@ -50,7 +50,7 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
             pred_vars = c(pred_vars, paste0('NWP', l, '_', re, q*100))
             formula = paste0(formula, ' + ', paste0('NWP', l, '_', re, q*100))}
     }
-    if (other == FALSE){
+    if (incl_other == FALSE){
         incl_vars = c(incl_vars, pred_vars)
     } else{
         incl_vars = c(incl_vars, pred_vars, incl_other)
