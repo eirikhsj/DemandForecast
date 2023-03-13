@@ -1,26 +1,36 @@
 ---
-title: "Untitled"
+title: "Demand - Best Combination"
 author: "Eirik Sjåvik"
 date: "2023-03-02"
 output: html_document
 ---
 
+In this document we are looking at:
+1) the best combination of time covariates model, both interaction and no interaction 
+2) the best combination of Factor loading  model
+3) the best overall combination
 
-```{r}
-save(No_inter_1, file = paste0(path, 'No_inter_1.Rda'))
-save(No_inter_2, file = paste0(path, 'No_inter_2.Rda'))
-save(No_inter_3, file = paste0(path, 'No_inter_3.Rda'))
-save(No_inter_4, file = paste0(path, 'No_inter_4.Rda'))
-save(No_inter_5, file = paste0(path, 'No_inter_5.Rda'))
-save(No_inter_6, file = paste0(path, 'No_inter_6.Rda'))
-save(No_inter_7, file = paste0(path, 'No_inter_7.Rda'))
-save(No_inter_8, file = paste0(path, 'No_inter_8.Rda'))
-save(Mean_temp1, file = paste0(path, 'Mean_temp1.Rda'))
-save(Mean_temp2, file = paste0(path, 'Mean_temp2.Rda'))
-```
 
-```{r}
+The results show 2 types of sensitivity to time interval
+1) The Factor10_3 2FL model is not the best any more if we cut away the 2016-17. It is doing better later. 
+2) The Climatology is also doing horribly the first two years, with performance stabilizing after 3 years. 
+3) No question that we are doing better than climatology, but not as much. 
+
+4) Even if PC2 does not contribute much alone, it does contribute when the model increases. 
+5) Classic case of overfitting whit more than 2 PC components. 
+
+
+Some BLAS problems 
+Inter1$Result[pred_1<70000&pred_1>10000,sqrt(mean((volume - pred_1)^2))]
+Because of problems with overflow. 
+
+# 1) Load Models
+```{r , include=FALSE}
+library(DemandForecast)
+library(data.table)
 path = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/'
+load(paste0(path, 'Year1.Rda'))
+load(paste0(path, 'Climatology.Rda'))
 load(paste0(path, 'Naive.Rda'))
 load(paste0(path, 'No_inter_1.Rda'))
 load(paste0(path, 'No_inter_2.Rda'))
@@ -70,28 +80,21 @@ load(paste0(path, 'Custom_comb10.Rda'))
 load(paste0(path, 'Mean_temp1.Rda'))
 load(paste0(path, 'Mean_temp2.Rda'))
 
-#load(paste0(path, 'Factor10_inter1.Rda'))
+load(paste0(path, 'Factor10_inter1.Rda'))
 load(paste0(path, 'Factor10_inter2.Rda'))
 load(paste0(path, 'Factor10_inter3.Rda'))
 load(paste0(path, 'Factor10_inter4.Rda'))
 ```
-s <- system.time({
-Year1 = demand_forecast(X_mat,date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', 
-            pred_win = 30, pred_lag = 15, train_y = 5, p_comps = 0,  reg_form = "volume ~ year", incl_climatology = FALSE)
-})
 
 
-
-
-
-# 4) Building best combination model 
+# 2) Naive combination model 
 ```{r, eval = FALSE}
 Naive= demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                         p_comps = 0,  reg_form = "volume ~ hour + season + w_day + week + month + year")
 ```
 
-## Best model no interaction
-```{r}
+# 3) Best model no interaction
+```{r, eval = FALSE}
 No_inter_1= demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(hour)  + as.factor(w_day) + s(week) + month1 + month2 + season1 + season2 + year")
 
@@ -142,31 +145,22 @@ lines(No_inter_8$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_dat
 lines(Naive$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)])
 lines(Climatology$Result[,sqrt(mean((volume - clima_pred)^2)), keyby = month(init_date)])
 
-No_inter_1$Result[,sqrt(mean((volume - pred_1)^2))]
-No_inter_2$Result[,sqrt(mean((volume - pred_1)^2))] 
-No_inter_3$Result[,sqrt(mean((volume - pred_1)^2))] 
-No_inter_4$Result[,sqrt(mean((volume - pred_1)^2))] #Best s(month)
-No_inter_5$Result[,sqrt(mean((volume - pred_1)^2))]
-No_inter_6$Result[,sqrt(mean((volume - pred_1)^2))]
-No_inter_7$Result[,sqrt(mean((volume - pred_1)^2))]
-No_inter_8$Result[,sqrt(mean((volume - pred_1)^2))]
-Naive$Result[,sqrt(mean((volume - pred_1)^2))]
+print(c(
+No_inter_1$Result[,sqrt(mean((volume - pred_1)^2))],
+No_inter_2$Result[,sqrt(mean((volume - pred_1)^2))],
+No_inter_3$Result[,sqrt(mean((volume - pred_1)^2))], 
+No_inter_4$Result[,sqrt(mean((volume - pred_1)^2))], #Best s(month)
+No_inter_5$Result[,sqrt(mean((volume - pred_1)^2))],
+No_inter_6$Result[,sqrt(mean((volume - pred_1)^2))],
+No_inter_7$Result[,sqrt(mean((volume - pred_1)^2))],
+No_inter_8$Result[,sqrt(mean((volume - pred_1)^2))],
+Naive$Result[,sqrt(mean((volume - pred_1)^2))],
 Climatology$Result[,sqrt(mean((volume - clima_pred)^2))]
-```
-```{r, cache = TRUE}
-save(No_inter_1, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/No_inter_1.Rda')
-save(No_inter_2, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/No_inter_2.Rda')
-save(No_inter_3, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/No_inter_3.Rda')
-save(No_inter_4, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/No_inter_4.Rda')
-save(No_inter_5, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/No_inter_5.Rda')
-save(No_inter_6, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/No_inter_6.Rda')
-save(No_inter_7, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/No_inter_7.Rda')
-save(No_inter_8, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/No_inter_8.Rda')
-save(Naive, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Naive.Rda')
+))
 ```
 
-## Interaction models
-```{r}
+# 4) Interaction models
+```{r, eval = FALSE}
 Inter1 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, 
                          train_y = 5, p_comps = 0,  
                          reg_form = "volume ~ as.factor(hour):as.factor(week)  + as.factor(w_day):as.factor(week) + s(week) + s(month) + season1 + season2 + year")
@@ -199,22 +193,23 @@ lines(Inter4$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)],
 lines(Naive$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)])
 lines(Climatology$Result[,sqrt(mean((volume - clima_pred)^2)), keyby = month(init_date)])
 
-Inter1$Result[pred_1<70000&pred_1>10000,sqrt(mean((volume - pred_1)^2))]
-#Inter1$Result[,sqrt(mean((volume - pred_1)^2))]
-Inter2$Result[,sqrt(mean((volume - pred_1)^2))] 
-Inter3$Result[,sqrt(mean((volume - pred_1)^2))] 
-Inter4$Result[,sqrt(mean((volume - pred_1)^2))] #Best s(month)
+print(c(
+Inter1$Result[pred_1<70000&pred_1>10000,sqrt(mean((volume - pred_1)^2))],
+#Inter1$Result[,sqrt(mean((volume - pred_1)^2))],
+Inter2$Result[,sqrt(mean((volume - pred_1)^2))] ,
+Inter3$Result[,sqrt(mean((volume - pred_1)^2))], 
+Inter4$Result[,sqrt(mean((volume - pred_1)^2))], #Best s(month)
 
-Naive$Result[,sqrt(mean((volume - pred_1)^2))]
+Naive$Result[,sqrt(mean((volume - pred_1)^2))],
 Climatology$Result[,sqrt(mean((volume - clima_pred)^2))]
+))
 ```
 
 
-Inter1$Result[pred_1<70000&pred_1>10000,sqrt(mean((volume - pred_1)^2))]
-Because of problems with overflow. 
 
-## Single Factor loading models 
-```{r, cache = TRUE}
+
+# 5a) Single Factor loading models (splines)
+```{r, eval = FALSE}
 Custom1 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 1, custom = 's(PC1)',  reg_form = "volume ~ 1", cores =48)
 Custom2 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
@@ -279,7 +274,9 @@ Custom10$Result[,sqrt(mean((volume - pred_2)^2))]
 Naive$Result[,sqrt(mean((volume - pred_1)^2))]
 Climatology$Result[,sqrt(mean((volume - clima_pred)^2))]
 ```
-```{r, cache = TRUE}
+
+# 5b) Single Factor loading models (linear)
+```{r, eval  = FALSE}
 Custom_lin1 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 1, custom = 'PC1',  reg_form = "volume ~ 1", cores =48)
 Custom_lin2 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
@@ -346,8 +343,8 @@ Climatology$Result[,sqrt(mean((volume - clima_pred)^2))]
 
 
 
-## Mean temperature model 
-```{r, cache = TRUE}
+# 6) Mean temperature model 
+```{r, eval=FALSE}
 Mean_temp1 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 1, custom = 'hourly_mean_grid',  reg_form = "volume ~ 1")
 
@@ -355,8 +352,8 @@ Mean_temp2 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_
                     p_comps = 1, custom = 's(hourly_mean_grid)',  reg_form = "volume ~ 1")
 ```
 
-## Combinations of Factor loadings
-```{r, cache = TRUE}
+# 7a) Combinations of Increasing # of Factor loadings
+```{r, eval=FALSE}
 Custom_comb1 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 10,  reg_form = "volume ~ 1", cores =48)
 Custom_comb2 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
@@ -380,24 +377,7 @@ Custom_comb10 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', fo
 ```
 
 
-save(Custom_comb1, file = 'Custom_comb1.Rda')
-save(Custom_comb2, file = 'Custom_comb2.Rda')
-save(Custom_comb3, file = 'Custom_comb3.Rda')
-save(Custom_comb4, file = 'Custom_comb4.Rda')
-save(Custom_comb5, file = 'Custom_comb5.Rda')
-save(Custom_comb6, file = 'Custom_comb6.Rda')
-save(Custom_comb7, file = 'Custom_comb7.Rda')
-save(Custom_comb8, file = 'Custom_comb8.Rda')
-save(Custom_comb9, file = 'Custom_comb9.Rda')
-save(Custom_comb10, file = 'Custom_comb10.Rda')
 
-
-save(Factor10_inter1_3, file = 'Factor10_inter1_3.Rda')
-save(Factor10_inter1_3b, file = 'Factor10_inter1_3b.Rda')
-save(Factor10_inter1_4, file = 'Factor10_inter1_4.Rda')
-save(Factor10_inter1_5, file = 'Factor10_inter1_5.Rda')
-
-save(Factor10_inter1, file = 'Factor10_inter1.Rda')
 
 
 ```{r, cache = TRUE}
@@ -427,19 +407,22 @@ lines(Custom_comb1$Result[,sqrt(mean((volume - pred_10)^2)), keyby = month(init_
 lines(Naive$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)])
 lines(Climatology$Result[,sqrt(mean((volume - clima_pred)^2)), keyby = month(init_date)], col = 'blue')
 
-Custom_comb1$Result[,sqrt(mean((volume - pred_1)^2))] 
-Custom_comb1$Result[,sqrt(mean((volume - pred_2)^2))] 
-Custom_comb1$Result[,sqrt(mean((volume - pred_3)^2))] 
-Custom_comb1$Result[,sqrt(mean((volume - pred_4)^2))]
-Custom_comb1$Result[,sqrt(mean((volume - pred_5)^2))]
-Custom_comb1$Result[,sqrt(mean((volume - pred_6)^2))]
-Custom_comb1$Result[,sqrt(mean((volume - pred_7)^2))]
-Custom_comb1$Result[,sqrt(mean((volume - pred_8)^2))]
-Custom_comb1$Result[,sqrt(mean((volume - pred_9)^2))]
-Custom_comb1$Result[,sqrt(mean((volume - pred_10)^2))]
-Naive$Result[,sqrt(mean((volume - pred_1)^2))]
+print(c(
+Custom_comb1$Result[,sqrt(mean((volume - pred_1)^2))], 
+Custom_comb1$Result[,sqrt(mean((volume - pred_2)^2))], 
+Custom_comb1$Result[,sqrt(mean((volume - pred_3)^2))],
+Custom_comb1$Result[,sqrt(mean((volume - pred_4)^2))],
+Custom_comb1$Result[,sqrt(mean((volume - pred_5)^2))],
+Custom_comb1$Result[,sqrt(mean((volume - pred_6)^2))],
+Custom_comb1$Result[,sqrt(mean((volume - pred_7)^2))],
+Custom_comb1$Result[,sqrt(mean((volume - pred_8)^2))],
+Custom_comb1$Result[,sqrt(mean((volume - pred_9)^2))],
+Custom_comb1$Result[,sqrt(mean((volume - pred_10)^2))],
+Naive$Result[,sqrt(mean((volume - pred_1)^2))],
 Climatology$Result[,sqrt(mean((volume - clima_pred)^2))]
+))
 ```
+# 7b) Combinations of 2 Factor loadings
 ```{r, cache = TRUE}
 plot(Custom_comb2$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date], type = 'l', ylim = c(2000, 13700), col = 'red')
 lines(Custom_comb3$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
@@ -466,246 +449,197 @@ lines(Custom_comb10$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_
 lines(Naive$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)])
 lines(Climatology$Result[,sqrt(mean((volume - clima_pred)^2)), keyby = month(init_date)])
 
-Custom_comb2$Result[,sqrt(mean((volume - pred_2)^2))] 
-Custom_comb3$Result[,sqrt(mean((volume - pred_2)^2))] 
-Custom_comb4$Result[,sqrt(mean((volume - pred_2)^2))] 
-Custom_comb5$Result[,sqrt(mean((volume - pred_2)^2))]
-Custom_comb6$Result[,sqrt(mean((volume - pred_2)^2))]
-Custom_comb7$Result[,sqrt(mean((volume - pred_2)^2))]
-Custom_comb8$Result[,sqrt(mean((volume - pred_2)^2))]
-Custom_comb9$Result[,sqrt(mean((volume - pred_2)^2))]
-Custom_comb10$Result[,sqrt(mean((volume - pred_2)^2))]
-Naive$Result[,sqrt(mean((volume - pred_1)^2))]
+print(c(
+Custom_comb2$Result[,sqrt(mean((volume - pred_2)^2))], 
+Custom_comb3$Result[,sqrt(mean((volume - pred_2)^2))], 
+Custom_comb4$Result[,sqrt(mean((volume - pred_2)^2))], 
+Custom_comb5$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb6$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb7$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb8$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb9$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb10$Result[,sqrt(mean((volume - pred_2)^2))],
+Naive$Result[,sqrt(mean((volume - pred_1)^2))],
 Climatology$Result[,sqrt(mean((volume - clima_pred)^2))]
+))
 ```
 
-## Combining 
-```{r}
+## Final Best Demand Models 
+
+```{r, eval = FALSE}
 Factor10_inter1 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 10,  reg_form = "volume ~ as.factor(hour):as.factor(week)  + as.factor(w_day):as.factor(week) + s(week) + s(month) + season1 + season2 + year", cores = 48)
 
-Factor10_inter1_3 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 3,  reg_form = "volume ~ as.factor(hour):as.factor(week)  + as.factor(w_day):as.factor(week) + s(week) + s(month) + season1 + season2 + year", cores = 48, custom = 's(PC1)+s(PC2)+s(PC3)', no_pc = FALSE) #DONE
-
-
-Factor10_inter1_4 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 4,  reg_form = "volume ~ as.factor(hour):as.factor(week)  + as.factor(w_day):as.factor(week) + s(week) + s(month) + season1 + season2 + year", cores = 48, custom = 's(PC1)+s(PC2)+s(PC3)+s(PC4)', no_pc = FALSE) #DONE
-
-
-Factor10_inter1_5 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 5,  reg_form = "volume ~ as.factor(hour):as.factor(week)  + as.factor(w_day):as.factor(week) + s(week) + s(month) + season1 + season2 + year", cores = 48, custom = 's(PC1)+s(PC2)+s(PC3)+s(PC4)+s(PC5)', no_pc = FALSE) #ERROR -redo
-
-Factor10_inter1_6 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 6,  reg_form = "volume ~ as.factor(hour):as.factor(week)  + as.factor(w_day):as.factor(week) + s(week) + s(month) + season1 + season2 + year", cores = 48, custom = 's(PC1)+s(PC2)+s(PC3)+s(PC4)+s(PC5)+s(PC6)')
-
-
-
-
 Factor10_inter2 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 10,  reg_form = "volume ~ as.factor(hour):as.factor(month)  + as.factor(w_day):as.factor(week) + s(week) + s(month) + season1 + season2 + year", cores = 48) #Have run
+                    p_comps = 10,  reg_form = "volume ~ as.factor(hour):as.factor(month)  + as.factor(w_day):as.factor(week) + s(week) + s(month) + season1 + season2 + year", cores = 48) 
 
 Factor10_inter3 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 10,  reg_form = "volume ~ as.factor(hour):as.factor(week)  + as.factor(w_day):as.factor(month) + s(week) + s(month) + season1 + season2 + year", cores = 48) 
 
 Factor10_inter4 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 10,  reg_form = "volume ~ as.factor(hour):as.factor(month)  + as.factor(w_day):as.factor(month) + s(week) + s(month) + season1 + season2 + year", cores = 48) #Have run
+                    p_comps = 10,  reg_form = "volume ~ as.factor(hour):as.factor(month)  + as.factor(w_day):as.factor(month) + s(week) + s(month) + season1 + season2 + year", cores = 48) #
 ```
 
 
-```{r}
-plot(Factor10_inter4$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date], type = 'l', ylim = c(2000, 13700), col = 'red')
-lines(Factor10_inter4$Result[,sqrt(mean((volume - pred_3)^2)), keyby = init_date])
-lines(Factor10_inter4$Result[,sqrt(mean((volume - pred_4)^2)), keyby = init_date])
-lines(Factor10_inter4$Result[,sqrt(mean((volume - pred_5)^2)), keyby = init_date])
-lines(Factor10_inter4$Result[,sqrt(mean((volume - pred_6)^2)), keyby = init_date])
-lines(Factor10_inter4$Result[,sqrt(mean((volume - pred_7)^2)), keyby = init_date])
-lines(Factor10_inter4$Result[,sqrt(mean((volume - pred_8)^2)), keyby = init_date])
-lines(Factor10_inter4$Result[,sqrt(mean((volume - pred_9)^2)), keyby = init_date])
-lines(Factor10_inter4$Result[,sqrt(mean((volume - pred_10)^2)), keyby = init_date])
+```{r, cache=TRUE}
+plot(Factor10_inter3$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date], type = 'l', ylim = c(1600, 8000))
+lines(Factor10_inter3$Result[,sqrt(mean((volume - pred_3)^2)), keyby = init_date], col = 'red')
+lines(Factor10_inter3$Result[,sqrt(mean((volume - pred_4)^2)), keyby = init_date])
+lines(Factor10_inter3$Result[,sqrt(mean((volume - pred_5)^2)), keyby = init_date])
+#lines(Factor10_inter3$Result[,sqrt(mean((volume - pred_6)^2)), keyby = init_date])
+#lines(Factor10_inter3$Result[,sqrt(mean((volume - pred_7)^2)), keyby = init_date])
+#lines(Factor10_inter3$Result[,sqrt(mean((volume - pred_8)^2)), keyby = init_date])
+#lines(Factor10_inter3$Result[,sqrt(mean((volume - pred_9)^2)), keyby = init_date])
+#lines(Factor10_inter3$Result[,sqrt(mean((volume - pred_10)^2)), keyby = init_date])
 
-lines(Naive$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date])
-lines(Climatology$Result[,sqrt(mean((volume - clima_pred)^2)), keyby = init_date])
+#lines(Naive$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date])
+lines(Climatology$Result[,sqrt(mean((volume - clima_pred)^2)), keyby = init_date], col = 'blue')
 
-plot(Factor10_inter4$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)], type = 'l', ylim = c(2000, 13700), col = 'red')
-lines(Factor10_inter4$Result[,sqrt(mean((volume - pred_3)^2)), keyby = month(init_date)])
-lines(Factor10_inter4$Result[,sqrt(mean((volume - pred_4)^2)), keyby = month(init_date)])
-lines(Factor10_inter4$Result[,sqrt(mean((volume - pred_5)^2)), keyby = month(init_date)])
-lines(Factor10_inter4$Result[,sqrt(mean((volume - pred_6)^2)), keyby = month(init_date)])
-lines(Factor10_inter4$Result[,sqrt(mean((volume - pred_7)^2)), keyby = month(init_date)])
-lines(Factor10_inter4$Result[,sqrt(mean((volume - pred_8)^2)), keyby = month(init_date)])
-lines(Factor10_inter4$Result[,sqrt(mean((volume - pred_9)^2)), keyby = month(init_date)])
-lines(Factor10_inter4$Result[,sqrt(mean((volume - pred_10)^2)), keyby = month(init_date)])
-lines(Naive$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)])
-lines(Climatology$Result[,sqrt(mean((volume - clima_pred)^2)), keyby = month(init_date)])
+plot(Factor10_inter3$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)], type = 'l', ylim = c(2000, 6000))
+lines(Factor10_inter3$Result[,sqrt(mean((volume - pred_3)^2)), keyby = month(init_date)], col = 'red')
+lines(Factor10_inter3$Result[,sqrt(mean((volume - pred_4)^2)), keyby = month(init_date)])
+lines(Factor10_inter3$Result[,sqrt(mean((volume - pred_5)^2)), keyby = month(init_date)])
+lines(Factor10_inter3$Result[,sqrt(mean((volume - pred_6)^2)), keyby = month(init_date)])
+#lines(Factor10_inter3$Result[,sqrt(mean((volume - pred_7)^2)), keyby = month(init_date)])
+#lines(Factor10_inter3$Result[,sqrt(mean((volume - pred_8)^2)), keyby = month(init_date)])
+#lines(Factor10_inter3$Result[,sqrt(mean((volume - pred_9)^2)), keyby = month(init_date)])
+#lines(Factor10_inter3$Result[,sqrt(mean((volume - pred_10)^2)), keyby = month(init_date)])
+#lines(Naive$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)])
+lines(Climatology$Result[,sqrt(mean((volume - clima_pred)^2)), keyby = month(init_date)], col = 'blue')
 
-Factor10_inter4$Result[,sqrt(mean((volume - pred_2)^2))]
-Factor10_inter4$Result[,sqrt(mean((volume - pred_3)^2))] #Best 
-Factor10_inter4$Result[,sqrt(mean((volume - pred_4)^2))] 
-Factor10_inter4$Result[,sqrt(mean((volume - pred_5)^2))] 
-Factor10_inter4$Result[,sqrt(mean((volume - pred_6)^2))]
-Factor10_inter4$Result[,sqrt(mean((volume - pred_7)^2))]
-Factor10_inter4$Result[,sqrt(mean((volume - pred_8)^2))]
-Factor10_inter4$Result[,sqrt(mean((volume - pred_9)^2))]
-Factor10_inter4$Result[,sqrt(mean((volume - pred_10)^2))]
+Factor10_inter3$Result[,sqrt(mean((volume - pred_2)^2))]
+Factor10_inter3$Result[,sqrt(mean((volume - pred_3)^2))] #Best 
+Factor10_inter3$Result[,sqrt(mean((volume - pred_4)^2))] 
+Factor10_inter3$Result[,sqrt(mean((volume - pred_5)^2))] 
+Factor10_inter3$Result[,sqrt(mean((volume - pred_6)^2))]
+Factor10_inter3$Result[,sqrt(mean((volume - pred_7)^2))]
+Factor10_inter3$Result[,sqrt(mean((volume - pred_8)^2))]
+Factor10_inter3$Result[,sqrt(mean((volume - pred_9)^2))]
+Factor10_inter3$Result[,sqrt(mean((volume - pred_10)^2))]
 Naive$Result[,sqrt(mean((volume - pred_1)^2))]
 Climatology$Result[,sqrt(mean((volume - clima_pred)^2))]
 ```
 
+# Main plotting Function
 
-```{r, eval = FALSE}
-Combo1= demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ as.factor(hour):season + as.factor(season) + as.factor(w_day):season + week1 + week2 + month1 + month2 + year")
+#Numbers for  Factor10_1 are missing a month due to BLAS error. 
+```{r, cache = TRUE}
+Errorplot_factor_loading = function(data, plot_title = "Averaged Train and Test Error (2016-01:2023-01)", leg_place = 'topright', total_var = 11){
+    
+    test_pc = paste0('pred_', 1:total_var)
+    train_pc = paste0('RMSE_train_', 1:total_var)
+    test_plot = data[, lapply(.SD, function(x) sqrt(mean((volume - x)^2, na.rm=TRUE))), .SDcols = test_pc]
+    #train_plot = data[, lapply(.SD, function(x) mean(x)), .SDcols = train_pc]
+    Mrg = merge(Year1$Results[,.(date, hour, lead_time,N_train_1)], data, by = c("date", "hour", "lead_time"))
 
-Combo2= demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ as.factor(hour):season + as.factor(season) + as.factor(w_day):season + week1 + week2 + month + year")
+    train_plot = rep(NA, total_var)
+    for (i in 1:total_var){
+        vars = c("N_train_1", "lead_time", train_pc[i])
+        Mrg_omit = na.omit(Mrg[,..vars])
+        train_plot[i] = Mrg_omit[lead_time==361,sum(get(train_pc[i])*N_train_1, na.rm = FALSE)/ sum(N_train_1)]
+    }
+    #print(test_plot)
+    x = seq(1:length(test_plot))-1
+    
+    
+    par(mar=c(5,5,5,5))
+    # Test plot
+    plot(x, test_plot, type = 'l', cex.lab = 1.3, cex.main = 1.5, pch = 16, col = "red", main = paste(plot_title), ylab = "Test Error", xlab = "Number of Factor Loadings in Model")  
+    points(x, test_plot, pch = 16, col = "red")
+    lines(x, Factor10_inter2$Results[, lapply(.SD, function(x) sqrt(mean((volume - x)^2, na.rm=TRUE))), .SDcols = test_pc], lty = 2, col = 'grey')
+    lines(x, Factor10_inter1$Results[, lapply(.SD, function(x) sqrt(mean((volume - x)^2, na.rm=TRUE))), .SDcols = test_pc], lty = 2, col = 'grey')
+    lines(x, Factor10_inter4$Results[, lapply(.SD, function(x) sqrt(mean((volume - x)^2, na.rm=TRUE))), .SDcols = test_pc], lty = 2, col = 'grey')
+    par(new = TRUE)         #new axis
+    
+    # Train plot
+    plot(x, train_plot, type = 'l', cex.lab = 1.7, col = "black", axes = FALSE, xlab = "", ylab = "")
+    points(x, train_plot, pch = 16, col = "black")
+    
+    axis(side = 4, at = pretty(range(train_plot)))      
+    mtext("Train Error", side = 4, line = 3, cex = 1.3)
+    legend(leg_place, lty = 1, cex = 1, pch = 16, col = c('red', 'black', 'grey'), legend = c("Test Errors", "Training Errors", "Test Error (Alt Params)"))
 
-Combo3= demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ s(hour, by = season) + as.factor(season) + as.factor(w_day):season + week1 + week2 + month1 + month2 + year")
+    
+}
 
-Combo4= demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ as.factor(hour):season + as.factor(season) + as.factor(w_day):season + s(week1) + s(week2) + month + year")
+test_pc = paste0('pred_', 1:11)
+train_pc = paste0('RMSE_train_', 1:11)
 
-Combo5= demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ as.factor(hour):as.factor(season) + as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year")  #Much slower model and much better!!!!!!!!!!!!!!!!!!!!!!!!!!
+Errorplot_factor_loading(Factor10_inter3$Results)
+Errorplot_factor_loading(Factor10_inter3$Results[init_date>'2018-06-01',]) #Greys are not adjusted here
 
 
-Combo5b= demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ as.factor(hour):as.factor(season) + as.factor(season) + s(week1) + s(week2) + month + year") 
+by_init =Factor10_inter4$Results[, lapply(.SD, function(x) sqrt(mean((volume - x)^2))), .SDcols = test_pc, by = init_date]
 
-Combo5c= demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ as.factor(hour):as.factor(season) + as.factor(w_day):as.factor(season)+ s(week1) + s(week2) + month + year") 
+#by_init[, lapply(.SD, function(x) mean(x)), .SDcols = test_pc]
 
-Combo5d= demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                        p_comps = 0,  reg_form = "volume ~ as.factor(hour)+ as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year")  
+Factor10_results = rbind(
+Factor10_inter1$Results[, lapply(.SD, function(x) sqrt(mean((volume - x)^2, na.rm = TRUE))), .SDcols = test_pc],
+Factor10_inter2$Results[, lapply(.SD, function(x) sqrt(mean((volume - x)^2))), .SDcols = test_pc],
+Factor10_inter3$Results[, lapply(.SD, function(x) sqrt(mean((volume - x)^2))), .SDcols = test_pc],
+Factor10_inter4$Results[, lapply(.SD, function(x) sqrt(mean((volume - x)^2))), .SDcols = test_pc]
+)
 
-Combo6= demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ as.factor(hour):as.factor(month) + as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year")  
+print(t(Factor10_results))
 
-Baseline5= demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ as.factor(hour) + week1 + week2 + month + year")
+#Factor10_inter1_real[, lapply(.SD, function(x) sqrt(mean((volume - x)^2,na.rm = TRUE))), .SDcols = test_pc]
 
-Baseline_old= demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ as.factor(hour) + as.factor(week) + year")
+#Skill by month
+#Factor10_inter3$Results[,  sqrt(mean((volume - pred_3)^2)), by = month(date)]
 
-Best = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 6,  reg_form = "volume ~ as.factor(hour):as.factor(season) + as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year")
+plot(1 - (Factor10_inter3$Results[,  sqrt(mean((volume - pred_3)^2)), by = month(date)][,V1]/
+              Climatology$Results[, sqrt(mean((volume - clima_pred)^2)), by = month(date)][,V1])^2,
+     type = 'l', ylim = c(0, 0.8), xlab = 'Month', ylab = 'Skill Score',
+     main = 'Skill of GAMFL2 by Month')
+axis(month.abb, side = 4, labels = month.abb, at = 1:12)
+legend('topright', lty = 1, cex = 1, pch = 16, col = c('black','red'), title = 'Skill relative to:', legend = c("Climatology", "Time Interaction"))
 
-#Slight problem with prediction of one month for the below model, therefore had to split up and ommit month of 2014-06 predictions. 
-#The problem lies with PC2, baseline and PC1 works fine. 
-#Best2 = demand_forecast(forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-#                       p_comps = 6,  reg_form = "volume ~ as.factor(hour):as.factor(month) + as.factor(season) + as.factor(w_day):as.factor(season) + #s(week1) + s(week2) + month + year")
+lines(1 - (Factor10_inter3$Results[,  sqrt(mean((volume - pred_3)^2)), by = month(date)][,V1]/
+               Inter4$Result[, sqrt(mean((volume - pred_1)^2)), by = month(date)][,V1])^2, col = 'red')
 
-#Debug code: 
-#forc_start = '2014-06-01'; forc_end = '2014-06-01'; pred_win = 30; pred_lag = 15; train_y = 5; p_comps = 2;  reg_form = "volume ~ as.factor(hour):as.factor(month) + as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year"
 
-Best2_comb = list()
+plot(1 - (Factor10_inter3$Results[init_date>'2018-03-01',  sqrt(mean((volume - pred_3)^2)), by = month(date)][,V1]/
+              Climatology$Results[init_date>'2018-03-01', sqrt(mean((volume - clima_pred)^2)), by = month(date)][,V1])^2,
+     type = 'l', ylim = c(0, 0.8), xlab = 'Month', ylab = 'Skill Score',
+     main = 'Skill of GAMFL2 by Month')
+axis(month.abb, side = 4, labels = month.abb, at = 1:12)
+legend('topright', lty = 1, cex = 1, pch = 16, col = c('black','red'), title = 'Skill relative to:', legend = c("Climatology", "Time Interaction"))
 
-Best2a = demand_forecast(X_mat, date_demand,forc_start = '2014-02-01', forc_end = '2014-05-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                        p_comps = 2,  reg_form = "volume ~ as.factor(hour):as.factor(month) + as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year")
-#Best2c = demand_forecast(forc_start = '2014-06-01', forc_end = '2014-06-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-#                        p_comps = 2,  reg_form = "volume ~ as.factor(hour):as.factor(month) + as.factor(season) + as.factor(w_day):as.factor(season) + #s(week1) + s(week2) + month + year") 
-Best2b = demand_forecast(X_mat, date_demand,forc_start = '2014-07-01', forc_end = '2015-05-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                        p_comps = 2,  reg_form = "volume ~ as.factor(hour):as.factor(month) + as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year")
-Best2 = demand_forecast(X_mat, date_demand,forc_start = '2015-06-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                        p_comps = 6,  reg_form = "volume ~ as.factor(hour):as.factor(month) + as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year")
+lines(1 - (Factor10_inter3$Results[init_date>'2018-03-01',  sqrt(mean((volume - pred_3)^2)), by = month(date)][,V1]/
+               Inter4$Result[init_date>'2018-03-01', sqrt(mean((volume - pred_1)^2)), by = month(date)][,V1])^2, col = 'red')
 
-Best2_comb$Results = rbind(Best2a$Results, Best2b$Results,Best2$Results)
+
+plot(Factor10_inter3$Results[,  sqrt(mean((volume - pred_3)^2)), by = lead_time], type = 'l', main = "RMSE by lead time", ylab = "RMSE", xlab = "Lead Time")
+
+#Mrg[lead_time==361, sum(RMSE_train_3*N_train_1)/ sum(N_train_1)]
 ```
 
 
-```{r, eval = FALSE}
-save(Naive, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Naive.Rda')
-save(Combo1, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Combo1.Rda')
-save(Combo2, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Combo2.Rda')
-save(Combo3, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Combo3.Rda')
-save(Combo4, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Combo4.Rda')
-save(Combo5, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Combo5.Rda')
-save(Combo6, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Combo6.Rda')
-save(Best, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Best.Rda')
-save(Best2_comb, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Best2_comb.Rda')
 
-
-save(Baseline5, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Baseline5.Rda')
-save(Baseline_old, file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Baseline_old.Rda')
-```
 
 ```{r, cache=TRUE}
-load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Combo1.Rda')
-load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Combo2.Rda')
-load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Combo3.Rda')
-load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Combo4.Rda')
-load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Combo5.Rda')
-load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Combo6.Rda')
-load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Best.Rda')
-load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Best2.Rda')
-
-load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Baseline5.Rda')
-load(file = '/Users/Eirik/Desktop/Master2023/Output_data/output_demand_forecast_best_baseline/Baseline_old.Rda')
+acf(Factor10_inter3$Result[,volume -pred_2])
 ```
+
 
 
 # Compare combination Models
 ```{r, cache=TRUE}
-plot(Combo5$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], type = 'l', ylim = c(1000, 6000))
-#lines(Combo1$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date],)
-#lines(Combo2$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date],)
-#lines(Combo3$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date],)
-#lines(Combo4$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date],)
-lines(Climatology$Result[,sqrt(mean((volume - clima_pred)^2)), keyby = init_date], col = 'orange', lty = 3)
 
-lines(Best$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date], col = 'blue', lty = 3)
-lines(Best$Result[,sqrt(mean((volume - pred_3)^2)), keyby = init_date], col = 'purple')
+plot(Factor10_inter3$Result[,volume])
+lines(Factor10_inter3$Result[,volume], col = 'red')
 
-#lines(Baseline5$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date])
-#lines(Baseline_old$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], col = 'green')
-#lines(Naive$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], col = 'yellow')
-
-plot(Combo1$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)], type = 'l', ylim = c(1000, 6000))
-lines(Combo2$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)],)
-lines(Combo3$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)],)
-lines(Combo4$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)],) 
-lines(Combo5$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)], col = 'green')
-
-lines(Best$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)], col = 'red')
-lines(Best$Result[,sqrt(mean((volume - pred_3)^2)), keyby = month(init_date)], col = 'purple')
-
-lines(Baseline5$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)])
-lines(Baseline_old$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)])
-#lines(Naive$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)], col = 'yellow')
-
-Combo1$Result[,sqrt(mean((volume - pred_1)^2))]
-Combo2$Result[,sqrt(mean((volume - pred_1)^2))]
-Combo3$Result[,sqrt(mean((volume - pred_1)^2))]
-Combo4$Result[,sqrt(mean((volume - pred_1)^2))]
-Combo5$Result[,sqrt(mean((volume - pred_1)^2))]
-Combo6$Result[,sqrt(mean((volume - pred_1)^2))]
-Best$Result[,sqrt(mean((volume - pred_1)^2))]
-
-Best$Result[,sqrt(mean((volume - pred_2)^2))]
-Best$Result[,sqrt(mean((volume - pred_3)^2))]
-Best$Result[,sqrt(mean((volume - pred_4)^2))]
-Best$Result[,sqrt(mean((volume - pred_5)^2))]
-Best$Result[,sqrt(mean((volume - pred_6)^2))]
-Best$Result[,sqrt(mean((volume - pred_7)^2))]
-
-Baseline5$Result[,sqrt(mean((volume - pred_1)^2))]
-Baseline_old$Result[,sqrt(mean((volume - pred_1)^2))]
-#Naive$Result[,sqrt(mean((volume - pred_1)^2))]
-
-plot(Combo5$Result[,volume])
-lines(Combo5$Result[,volume], col = 'red')
-
-plot(Combo5$Result[year(date) ==2019 & month ==3,volume], cex = 0.4)
+plot(Factor10_inter3$Result[year(date) ==2016 & month ==3,volume], cex = 0.4)
 #lines(Baseline_old$Result[year(date) ==2019& month ==3,pred_1], col = 'blue')
-lines(Combo5$Result[year(date) ==2019& month ==3,pred_1], col = 'brown')
+lines(Climatology$Result[year(date) ==2016& month ==3,clima_pred], col = 'blue')
 #lines(Best$Result[year(date) ==2019& month ==3,pred_2], col = 'red', lty = 2)
-lines(Best$Result[year(date) ==2019& month ==3,pred_3], col = 'purple')
+lines(Factor10_inter3$Result[year(date) ==2016& month ==3,pred_3], col = 'red')
 
 #lines(Naive$Result[year(date) ==2019& month ==3,pred_1], col = 'yellow', lty = 2)
 
-plot(Best$Result[year(date) ==2021,volume -pred_3], col = 'purple', type = 'l')
-acf(Best$Result[year(date) ==2021,volume -pred_3])
-acf(Best$Result[,volume -pred_3])
+plot(Factor10_inter3$Result[year(date) ==2021,volume -pred_3], col = 'purple', type = 'l')
+acf(Factor10_inter3$Result[year(date) ==2021,volume -pred_3])
+acf(Factor10_inter3$Result[,volume -pred_3])
 ```
 
 # Make a temperature plot with 
@@ -727,9 +661,13 @@ we sum the predictions for each day and compared for summed volume.
 the other version has a rational for stake holders
 
 
-
-```{r}
-prep = prep_demand_temp_data(include_na_volume = FALSE)
+```{r, cache = TRUE}
+if(file.exists("~/Desktop/Master2023/Data/")){
+    prep = prep_demand_temp_data(include_na_volume = FALSE, 
+                          path = "~/Desktop/Master2023/Data/")
+}else{
+    prep = prep_demand_temp_data(include_na_volume = FALSE)
+}
 #
 X_mat = prep$X_mat #Temperature field
 date_demand = prep$date_demand
@@ -742,370 +680,42 @@ lines(date_demand[year(date)==2016 & hour %in%12,.(date, grid_mean_temp)], col =
 legend('bottomright', lty = 1, cex = 0.7, col = c('red', 'black'), legend = c("2016 observed","Climatology"), title = 'Temperature')
 
 date_demand[, climatology:= mean(grid_mean_temp), by = .(yday(date))]
-date_demand[, mm_temp:= mean(mean_temp), by = date]
+date_demand[, mm_temp:= mean(grid_mean_temp), by = date]
 plot(date_demand[year(date)==2016,.(date, mm_temp)], type = 'l', ylim = c(-8.7, 17))
 lines(date_demand[year(date)==2016,.(date, climatology)], col = 'red')
 
 yr = 2016
 date_demand[, mean_vol:= mean(volume), by = date]
 plot(  date_demand[year(date)==yr & hour %in%12,volume], col = 'black', ylim = c(30000, 65000), pch = 16, cex= 0.6, type = 'l')
-lines(Best$Results[year(date)==yr & hour %in%12,pred_3], col = 'red')
-lines(Best$Results[year(date)==yr & hour %in%12,pred_1], col = 'blue')
+lines(Factor10_inter3$Results[year(date)==yr & hour %in%12,pred_3], col = 'red')
+lines(Factor10_inter3$Results[year(date)==yr & hour %in%12,pred_1], col = 'blue')
 
 plot(date_demand[year(date)==yr &  wday(date)  %in% c(1) &hour %in%12,volume, by = date], col = 'black', ylim = c(30000, 65000), pch = 16, cex= 0.6, type = 'l')
 
-#Reason for including week-term 
+#Reason for including weekday-term 
 hour_x = 24
 plot(date_demand[year(date)==yr &  wday(date)  %in% c(1) &hour %in%hour_x,volume, by = date], col = 'black', ylim = c(25000, 65000), pch = 16, cex= 0.6, type = 'l', main = paste0('Difference between weekdays at ', hour_x, ':00.Rda'))
 for (i in 2:7){
     lines(date_demand[year(date)==yr &  wday(date)  %in% c(i) &hour %in%hour_x,volume, by = date], col = i)
 }
 
-"2014-02-15" "2014-04-15" "2014-06-15" "2014-08-15"
-"2014-09-15" "2014-11-15" "2015-01-15" "2015-02-15" "2015-04-15" "2015-06-15"
-"2015-08-15" "2015-09-15" "2015-11-15" "2016-01-15" "2016-02-15" "2016-04-15"
-"2016-06-15" "2016-08-15" "2016-09-15" "2016-11-15" "2017-01-15" "2017-02-15"
-"2017-04-15" "2017-06-15" "2017-08-15" "2017-09-15" "2017-11-15" "2018-01-15"
-"2018-02-15" "2018-04-15" "2018-06-15" "2018-08-15" "2018-09-15" "2018-11-15"
-"2019-01-15" "2019-02-15" "2019-04-15" "2019-06-15" "2019-08-15" "2019-09-15"
-"2019-11-15" "2020-01-15" "2020-02-15" "2020-04-15" "2020-06-15" "2020-08-15"
-"2020-09-15" "2020-11-15" "2021-01-15" "2021-02-15" "2021-04-15" "2021-06-15"
-"2021-08-15" "2021-09-15"
+# "2014-02-15" "2014-04-15" "2014-06-15" "2014-08-15"
+# "2014-09-15" "2014-11-15" "2015-01-15" "2015-02-15" "2015-04-15" "2015-06-15"
+# "2015-08-15" "2015-09-15" "2015-11-15" "2016-01-15" "2016-02-15" "2016-04-15"
+# "2016-06-15" "2016-08-15" "2016-09-15" "2016-11-15" "2017-01-15" "2017-02-15"
+# "2017-04-15" "2017-06-15" "2017-08-15" "2017-09-15" "2017-11-15" "2018-01-15"
+# "2018-02-15" "2018-04-15" "2018-06-15" "2018-08-15" "2018-09-15" "2018-11-15"
+# "2019-01-15" "2019-02-15" "2019-04-15" "2019-06-15" "2019-08-15" "2019-09-15"
+# "2019-11-15" "2020-01-15" "2020-02-15" "2020-04-15" "2020-06-15" "2020-08-15"
+# "2020-09-15" "2020-11-15" "2021-01-15" "2021-02-15" "2021-04-15" "2021-06-15"
+# "2021-08-15" "2021-09-15"
 
 ```
 
-## By lead time
-```{r}
+#
+By lead time
 
-```
-
-
-
-Spline interaction on pca
-```{r}
-Best_inter1 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 6,  reg_form = "volume ~ as.factor(hour):as.factor(season) + as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year", custom = 's(PC1, by = month) + s(PC2)')
-```
-
-```{r}
-Best_inter2= demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 6,  reg_form = "volume ~ as.factor(hour):as.factor(season) + as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year", custom = 's(PC1, by = as.factor(month)) + s(PC2)')
-
-```
-
-```{r}
-Best_inter3 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 6,  reg_form = "volume ~ as.factor(hour):as.factor(season) + as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year", custom = 's(PC1, by = as.factor(season)) + s(PC2)')
-```
-
-
-
-```{r}
-Best_inter4 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 6,  reg_form = "volume ~ as.factor(hour):as.factor(season) + as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year", custom = 's(PC1) + s(PC2) + s(PC5)')
-```
-
-
-```{r}
-Best_inter5 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 6,  reg_form = "volume ~ as.factor(hour):as.factor(season) + as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year", custom = 's(PC1) + s(PC2) + s(PC5)')
-```
-
-
-```{r}
-Baseline_old$Result[,sqrt(mean((volume - pred_1)^2))]
-#Combo1$Result[,sqrt(mean((volume - pred_1)^2))]
-#Combo2$Result[,sqrt(mean((volume - pred_1)^2))]
-#Combo3$Result[,sqrt(mean((volume - pred_1)^2))]
-#Combo4$Result[,sqrt(mean((volume - pred_1)^2))]
-#Combo5$Result[,sqrt(mean((volume - pred_1)^2))]
-Combo6$Result[,sqrt(mean((volume - pred_1)^2))]
-Best$Result[,sqrt(mean((volume - pred_1)^2))]
-Best$Result[,sqrt(mean((volume - pred_2)^2))]
-Best$Result[,sqrt(mean((volume - pred_3)^2))]
-#Best$Result[,sqrt(mean((volume - pred_4)^2))]
-#Best$Result[,sqrt(mean((volume - pred_5)^2))]
-#Best$Result[,sqrt(mean((volume - pred_6)^2))]
-#Best$Result[,sqrt(mean((volume - pred_7)^2))]
-
-#Baseline5$Result[,sqrt(mean((volume - pred_1)^2))]
-
-Best_inter1$Result[,sqrt(mean((volume - pred_2)^2))]
-Best_inter2$Result[,sqrt(mean((volume - pred_2)^2))]
-Best_inter3$Result[,sqrt(mean((volume - pred_2)^2))]
-Best_inter4$Result[,sqrt(mean((volume - pred_2)^2))]
-```
-
-Have not run inter_5 yet
-
-
-# OTHER STUFF
-
-
-What quality of the PCA are we leveraging?
-```{r, eval = FALSE}
-Baseline1 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ as.factor(hour) + as.factor(month) + year")
-
-Baseline2= demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ as.factor(hour) + month1 + month2 + year")
-
-Baseline3= demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ as.factor(hour) + week1 + week2 + year")
-
-Baseline4= demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ as.factor(hour) + week1 + week2 + month1 + month2 + year")
-
-Baseline5= demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ as.factor(hour) + week1 + week2 + month + year")
-
-Baseline6= demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 0,  reg_form = "volume ~ hour1 + hour2 + week1 + week2 + month + year")
-```
-
-```{r, eval = FALSE}
-plot(Baseline1$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], type = 'l')
-lines(Baseline2$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date])
-lines(Baseline3$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], col = 'green')
-lines(Baseline4$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], col = 'blue')
-lines(Baseline5$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], col = 'red')
-lines(Baseline6$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date])
-
-plot(Baseline1$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)], type = 'l')
-lines(Baseline2$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)])
-lines(Baseline3$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)], col = 'green')
-lines(Baseline4$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)], col = 'blue')
-lines(Baseline5$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)], col = 'red')
-lines(Baseline6$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)])
-
-
-Baseline1$Result[,sqrt(mean((volume - pred_1)^2))]
-Baseline2$Result[,sqrt(mean((volume - pred_1)^2))]
-Baseline3$Result[,sqrt(mean((volume - pred_1)^2))]
-Baseline4$Result[,sqrt(mean((volume - pred_1)^2))]
-Baseline5$Result[,sqrt(mean((volume - pred_1)^2))]
-Baseline6$Result[,sqrt(mean((volume - pred_1)^2))]
-```
+What quality of the PCA are we leveraging
 
 Comparing with 10 training years 
-```{r, eval = FALSE}
-Baseline1 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 10, 
-                    p_comps = 0,  reg_form = "volume ~ as.factor(hour) + as.factor(month) + year")
 
-plot(Baseline1$Results[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], type = 'l')
-
-
-plot(Baseline1$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)], type = 'l')
-
-Baseline1$Result[,sqrt(mean((volume - pred_1)^2))]
-
-
-Baseline2= demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 10, 
-                    p_comps = 0,  reg_form = "volume ~ as.factor(hour) + month1 + month2 + year")
-
-plot(Baseline2$Results[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], type = 'l')
-
-
-plot(Baseline2$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)], type = 'l')
-
-Baseline2$Result[,sqrt(mean((volume - pred_1)^2))]
-
-
-Baseline3= demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 10, 
-                    p_comps = 0,  reg_form = "volume ~ as.factor(hour) + week1 + week2 + year")
-
-plot(Baseline3$Results[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], type = 'l')
-
-
-plot(Baseline3$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)], type = 'l')
-
-Baseline3$Result[,sqrt(mean((volume - pred_1)^2))]
-
-Baseline4= demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 10, 
-                    p_comps = 0,  reg_form = "volume ~ as.factor(hour) + week1 + week2 + month1 + month2 + year")
-plot(Baseline4$Results[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], type = 'l')
-
-
-plot(Baseline4$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)], type = 'l')
-
-Baseline4$Result[,sqrt(mean((volume - pred_1)^2))]
-
-Baseline5= demand_forecast(forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 10, 
-                    p_comps = 0,  reg_form = "volume ~ as.factor(hour) + week1 + week2 + month + year")
-plot(Baseline5$Results[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], type = 'l')
-
-
-plot(Baseline5$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)], type = 'l')
-
-Baseline5$Result[,sqrt(mean((volume - pred_1)^2))]
-
-Baseline6= demand_forecast(forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 10, 
-                    p_comps = 0,  reg_form = "volume ~ hour1 + hour2 + week1 + week2 + month + year")
-plot(Baseline6$Results[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], type = 'l')
-
-plot(Baseline6$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)], type = 'l')
-
-Baseline6$Result[,sqrt(mean((volume - pred_1)^2))]
-
-```
-
-```{r, eval = FALSE}
-plot(Baseline1$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)], type = 'l', ylim = c(2500, 5000))
-lines(Baseline2$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)])
-lines(Baseline3$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)], col = 'green')
-lines(Baseline4$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)], col = 'blue')
-lines(Baseline5$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)], col = 'red')
-lines(Baseline6$Result[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)])
-
-Baseline1$Result[,sqrt(mean((volume - pred_1)^2))]
-Baseline2$Result[,sqrt(mean((volume - pred_1)^2))]
-Baseline3$Result[,sqrt(mean((volume - pred_1)^2))]
-Baseline4$Result[,sqrt(mean((volume - pred_1)^2))]
-Baseline5$Result[,sqrt(mean((volume - pred_1)^2))]
-Baseline6$Result[,sqrt(mean((volume - pred_1)^2))]
-
-```
-
-5 years of training
-[1] 3763.723
-[1] 3812.147
-[1] 3727.427
-[1] 3729.483
-[1] 3653.674
-3675.659 "volume ~ as.factor(hour) + as.factor(week) + month + year" 5c 5 years
-[1] 4088.025
-
-10 years of training
-[1] 3836.625
-[1] 3876.872
-[1] 3792.937
-[1] 3795.673
-[1] 3719.805
-3746.95 "volume ~ as.factor(hour) + as.factor(week) + month + year" 5b 10 years
-[1] 4146.292
-
-
-The best one here is baseline 5 using cosine + sine on the week term. 
-
-
-```{r, eval = FALSE}
-Eight_pca = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 8,  reg_form = "volume ~ as.factor(hour) + as.factor(month) + year")
-```
-
-
-```{r}
-plot(Eight_pca$Results[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], type = 'l', col = 'red', ylim = c(0,6000))
-lines(Eight_pca$Results[,sqrt(mean((volume - pred_2)^2)), keyby = init_date], col = 2)
-lines(Eight_pca$Results[,sqrt(mean((volume - pred_3)^2)), keyby = init_date], col = 3)
-lines(Eight_pca$Results[,sqrt(mean((volume - pred_4)^2)), keyby = init_date], col = 4)
-lines(Eight_pca$Results[,sqrt(mean((volume - pred_5)^2)), keyby = init_date], col = 5)
-lines(Eight_pca$Results[,sqrt(mean((volume - pred_6)^2)), keyby = init_date], col = 6)
-lines(Eight_pca$Results[,sqrt(mean((volume - pred_7)^2)), keyby = init_date], col = 7)
-lines(Eight_pca$Results[,sqrt(mean((volume - pred_8)^2)), keyby = init_date], col = 8)
-lines(Eight_pca$Results[,sqrt(mean((volume - pred_9)^2)), keyby = init_date], col = 9)
-
-plot(Eight_pca$Results[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)], type = 'l', ylim = c(0,6000), col = 'red')
-cols = colnames(Eight_pca$Results)[grep("^[p].*", colnames(Eight_pca$Results))]
-
-lines(Eight_pca$Results[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)], type = 'l', col = 1)
-lines(Eight_pca$Results[,sqrt(mean((volume - pred_3)^2)), keyby = month(init_date)], type = 'l', col = 1)
-lines(Eight_pca$Results[,sqrt(mean((volume - pred_4)^2)), keyby = month(init_date)], type = 'l', col = 3)
-lines(Eight_pca$Results[,sqrt(mean((volume - pred_5)^2)), keyby = month(init_date)], type = 'l', col = 4)
-lines(Eight_pca$Results[,sqrt(mean((volume - pred_6)^2)), keyby = month(init_date)], type = 'l', col = 5)
-lines(Eight_pca$Results[,sqrt(mean((volume - pred_7)^2)), keyby = month(init_date)], type = 'l', col = 6)
-lines(Eight_pca$Results[,sqrt(mean((volume - pred_8)^2)), keyby = month(init_date)], type = 'l', col = 7)
-lines(Eight_pca$Results[,sqrt(mean((volume - pred_9)^2)), keyby = month(init_date)], type = 'l', col = 1)
-
-
-
-```
-
-
-```{r, eval = FALSE}
-Eight_pca2 = demand_forecast(forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, p_comps = 8,  reg_form = "volume ~ as.factor(hour) + week1 + week2 + month + year")
-```
-
-
-```{r, eval = FALSE}
-plot(Eight_pca2$Results[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], type = 'l', col = 'red', ylim = c(0,6000))
-lines(Eight_pca2$Results[,sqrt(mean((volume - pred_2)^2)), keyby = init_date], col = 2)
-lines(Eight_pca2$Results[,sqrt(mean((volume - pred_3)^2)), keyby = init_date], col = 3)
-lines(Eight_pca2$Results[,sqrt(mean((volume - pred_4)^2)), keyby = init_date], col = 4)
-lines(Eight_pca2$Results[,sqrt(mean((volume - pred_5)^2)), keyby = init_date], col = 5)
-lines(Eight_pca2$Results[,sqrt(mean((volume - pred_6)^2)), keyby = init_date], col = 6)
-lines(Eight_pca2$Results[,sqrt(mean((volume - pred_7)^2)), keyby = init_date], col = 7)
-lines(Eight_pca2$Results[,sqrt(mean((volume - pred_8)^2)), keyby = init_date], col = 8)
-lines(Eight_pca2$Results[,sqrt(mean((volume - pred_9)^2)), keyby = init_date], col = 9)
-
-plot(Eight_pca2$Results[,sqrt(mean((volume - pred_1)^2)), keyby = month(init_date)], type = 'l', ylim = c(0,6000), col = 'red')
-cols = colnames(Eight_pca2$Results)[grep("^[p].*", colnames(Eight_pca2$Results))]
-
-lines(Eight_pca2$Results[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)], type = 'l', col = 1)
-lines(Eight_pca2$Results[,sqrt(mean((volume - pred_3)^2)), keyby = month(init_date)], type = 'l', col = 1)
-lines(Eight_pca2$Results[,sqrt(mean((volume - pred_4)^2)), keyby = month(init_date)], type = 'l', col = 3)
-lines(Eight_pca2$Results[,sqrt(mean((volume - pred_5)^2)), keyby = month(init_date)], type = 'l', col = 4)
-lines(Eight_pca2$Results[,sqrt(mean((volume - pred_6)^2)), keyby = month(init_date)], type = 'l', col = 5)
-lines(Eight_pca2$Results[,sqrt(mean((volume - pred_7)^2)), keyby = month(init_date)], type = 'l', col = 6)
-lines(Eight_pca2$Results[,sqrt(mean((volume - pred_8)^2)), keyby = month(init_date)], type = 'l', col = 7)
-lines(Eight_pca2$Results[,sqrt(mean((volume - pred_9)^2)), keyby = month(init_date)], type = 'l', col = 1)
-
-
-
-```
-
-```{r, eval = FALSE}
-Eight_pca$Results[,sqrt(colMeans((volume -.SD)^2)), .SDcols = grep("^pred", colnames(Eight_pca$Results))]
-
-Eight_pca2$Results[,sqrt(colMeans((volume -.SD)^2)), .SDcols = grep("^pred", colnames(Eight_pca2$Results))]
-
-colMeans(mod_fix$test_RMSE[,1:9])
-```
-
-This shows that 
-1) the performance of the sincos model Eight_pca2 is better than the factor one.
-2) That this is still substantially lower than the same ones from earlier. Why? Is it because we are taking a different average?
-
-
-```{r, eval = FALSE}
-Three_pca = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 3,  reg_form = "volume ~ as.factor(hour) + as.factor(month) + year")
-```
-
-
-```{r, eval = FALSE}
-Three_pca = demand_forecast(X_mat, date_demand,forc_start = '2019-01-01', forc_end = '2019-09-01', pred_win = 30, pred_lag = 15, train_y = 5, 
-                    p_comps = 3,  reg_form = "volume ~ as.factor(hour) + as.factor(month) + year")
-```
-
-
-## Check if the two datasets are similar
-```{r, eval = FALSE}
-nc = nc_open("/Users/Eirik/Desktop/Master2023/Data/Prob1_data/era_historical_data.nc4")
-X = ncvar_get(nc, "2m_temperature")
-hours = 1:24
-days = as.Date(ncvar_get(nc, "day"), origin = "1970-01-01")
-nc_close(nc)
-
-X_temp = matrix(as.vector(X),
-                nrow = dim(X)[3] * dim(X)[4], #hours times days
-                ncol = dim(X)[1] * dim(X)[2], #lon time lat
-                byrow = TRUE)
-
-dt_date = data.table(expand.grid(hour = hours,date = days))
-    
-dt_date[, I:= 1:.N]
-nc2 = nc_open("/Users/Eirik/Desktop/Master2023/Data/Prob1_data/temperature_data.nc4")
-X2 = ncvar_get(nc2, "2m_temperature")
-hours2 = 1:24
-days2 = as.Date(ncvar_get(nc2, "day"), origin = "1970-01-01")
-nc_close(nc2)
-
-X_temp2 = matrix(as.vector(X2),
-                nrow = dim(X2)[3] * dim(X2)[4], #hours times days
-                ncol = dim(X2)[1] * dim(X2)[2], #lon time lat
-                byrow = TRUE)
-
-dt_date2 = data.table(expand.grid(hour = hours2,date = days2))
-dt_date2[, I:= 1:.N]
-```

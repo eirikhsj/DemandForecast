@@ -63,7 +63,7 @@ library(DemandForecast)
 
 
 if(file.exists("~/Desktop/Master2023/Data/")){
-    prep_demand_temp_data(include_na_volume = FALSE, 
+    prep = prep_demand_temp_data(include_na_volume = FALSE, 
                           path = "~/Desktop/Master2023/Data/")
 }else{
     prep = prep_demand_temp_data(include_na_volume = FALSE)

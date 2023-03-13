@@ -457,7 +457,11 @@ save(Mod_9_60_comb_int_a_0, file = 'Mod_9_60_comb_int_a_0.Rda')
 save(Mod_9_60_comb_int_a_1, file = 'Mod_9_60_comb_int_a_1.Rda')
 save(Mod_9_60_comb_int_a_2, file = 'Mod_9_60_comb_int_a_2.Rda')
 
-scp eirikhsj@abacus-as.uio.no:~/Mod_9_60_comb_int_a_0.Rda eirikhsj@abacus-as.uio.no:~/Mod_9_60_comb_int_a_1.Rda eirikhsj@abacus-as.uio.no:~/Mod_9_60_comb_int_a_2.Rda  /Users/Eirik/Desktop/Master2023/Output_data/New_Best_NWP_model_output
+scp eirikhsj@abacus-as.uio.no:~/Factor10_inter1.Rda eirikhsj@abacus-as.uio.no:~/Factor10_inter1_2.Rda eirikhsj@abacus-as.uio.no:~/Factor10_inter1_3.Rda eirikhsj@abacus-as.uio.no:~/Factor10_inter1_4.Rda eirikhsj@abacus-as.uio.no:~/Factor10_inter1_5.Rda eirikhsj@abacus-as.uio.no:~/Factor10_inter1_7.Rda eirikhsj@abacus-as.uio.no:~/Factor10_inter1_8.Rda /Users/Eirik/Desktop/Master2023/Output_data/
 
+
+eirikhsj@abacus-as.uio.no:~/Factor10_inter1_6.Rda 
+eirikhsj@abacus-as.uio.no:~/Factor10_inter1_9.Rda
+eirikhsj@abacus-as.uio.no:~/Factor10_inter1_10.Rda
 
 eirikhsj@abacus-as.uio.no:/mn/kadingir/datascience_000000/eirikhsj

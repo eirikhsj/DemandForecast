@@ -41,6 +41,8 @@ demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 
     arg11 = incl_climatology
     arg12 = no_pc
     arg13 = cores
+    arg14 = num_thread
+
 
     last_poss_pred = range(date_demand$date)[2] - pred_win - pred_lag
 
@@ -52,8 +54,8 @@ demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 
 
 
     ## **** Run parallel cores ****
-    blas_set_num_threads(num_thread)
-    omp_set_num_threads(num_thread) #Set number of threads
+    blas_set_num_threads(arg14)
+    omp_set_num_threads(arg14) #Set number of threads
 
     detailed_results = mclapply(seq_along(init_days_all),
                       "Rolling",
@@ -72,7 +74,7 @@ demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 
 
 #' @export
 Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
-                   reg_form, p_comps, other_mods, comb, custom,incl_climatology, no_pc){
+                   reg_form, p_comps, other_mods, comb, custom,incl_climatology, no_pc,num_thread){
 
     ## ***** Step 1: Form the training and test datasets ****
     init_day = init_days[i]
@@ -162,3 +164,5 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
     }
     return(results)
 }
+
+
