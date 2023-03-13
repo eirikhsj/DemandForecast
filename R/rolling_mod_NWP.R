@@ -25,8 +25,8 @@
 
 #' @export
 rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2023-01-01'), q, ERA_NWP, predictors, model='reg', window = 60, reweight = FALSE,
-                       hour_v=FALSE, week_v=FALSE, month_v = FALSE, year_v=FALSE, incl_climatology =FALSE, cores = 4,
-                       formula = 'PC1 ~ 1'){
+                       incl_climatology =FALSE, cores = 4,
+                       formula = 'PC1 ~ 1', incl_other = FALSE){
 
     #1) Fix dates
     start =as.Date(forc_start)
@@ -50,7 +50,12 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
             pred_vars = c(pred_vars, paste0('NWP', l, '_', re, q*100))
             formula = paste0(formula, ' + ', paste0('NWP', l, '_', re, q*100))}
     }
-    incl_vars = c(incl_vars, pred_vars)
+    if (other == FALSE){
+        incl_vars = c(incl_vars, pred_vars)
+    } else{
+        incl_vars = c(incl_vars, pred_vars, incl_other)
+    }
+
     ERA_NWP_vars = ERA_NWP[,.SD, .SDcols =incl_vars]
 
     arg1 = ERA_NWP_vars
