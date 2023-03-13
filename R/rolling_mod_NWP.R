@@ -54,6 +54,7 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
         incl_vars = c(incl_vars, pred_vars)
     } else{
         incl_vars = c(incl_vars, pred_vars, incl_other)
+        print(incl_vars)
     }
 
     ERA_NWP_vars = ERA_NWP[,.SD, .SDcols =incl_vars]
