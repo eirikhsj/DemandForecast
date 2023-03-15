@@ -67,7 +67,8 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
     arg7 = predictors
     arg8 = incl_climatology
     arg9 = formula
-    arg10 = cores
+    arg10 = pred_vars
+    arg11 =cores
 
     ## **** Run parallel cores ****
     blas_set_num_threads(1)
@@ -78,8 +79,8 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
     detailed_results = mclapply(seq_along(init_days),
                                 "Rolling_nwp",
                                 ERA_NWP_vars = arg1, q = arg2, init_days= arg3, window = arg4, reweight = arg5, model= arg6,
-                                predictors=arg7, incl_climatology= arg8, formula = arg9,
-                                mc.cores = arg10)
+                                predictors=arg7, incl_climatology= arg8, formula = arg9, pred_vars=arg10,
+                                mc.cores = arg11)
 
     #4) Store and return
     Results = rbindlist(detailed_results,use.names=FALSE)
@@ -91,9 +92,8 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
 #This works remote
 #' @export
 Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, predictors,
-                       incl_climatology, formula){
+                       incl_climatology, formula, pred_vars){
     ## 3a) Time keeping
-    print('Enter')
     init_day = init_days[i]
     target_days = seq(init_day, length.out = window,  by = '1 days')
     print(paste('Forecast made on:', init_day))
@@ -133,12 +133,17 @@ Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, p
 
     ## 3e) Register Beta coefficients
     if(predictors >0){
+        print('Enter1')
+        print(pred_vars)
         betas = data.table(t(coef(qreg)))[,..pred_vars]
+        print('Enter2')
         colnames(betas) = paste0('coef_',pred_vars)
 
         betas = betas[rep(1,dim(test)[1]),] #unnecessary storage use, expand later
         results = cbind(results, betas)
     }
+
+
     ## 3f) Include Climatology
     if(incl_climatology == TRUE){
         climatology = train[, .(quant =quantile(PC1,probs = q)), by = .(month_day = format(date, format ="%m-%d"), hour)]
@@ -153,6 +158,7 @@ Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, p
         results[,'clima_pred' := clima_pred]
         #print(paste0("Climatology: ", sqrt(mean((test$PC1 - clima_pred)^2))))
     }
+    print(formula)
     return(results)
 }
 
