@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_one_month_NWP_quantiles.R
 \name{whdquantile}
 \alias{whdquantile}
-\title{Title}
+\title{whdquantile}
 \usage{
 whdquantile(x, probs, weights = NA)
 }
@@ -10,5 +10,5 @@ whdquantile(x, probs, weights = NA)
 \item{weights}{}
 }
 \description{
-Title
+whdquantile
 }

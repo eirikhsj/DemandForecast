@@ -13,13 +13,11 @@ rolling_mod_NWP(
   model = "reg",
   window = 60,
   reweight = FALSE,
-  hour_v = FALSE,
-  week_v = FALSE,
-  month_v = FALSE,
-  year_v = FALSE,
   incl_climatology = FALSE,
   cores = 4,
-  formula = "PC1 ~ 1"
+  formula = "PC1 ~ 1",
+  incl_other = FALSE,
+  lead_t = 240
 )
 }
 \arguments{
@@ -35,6 +33,12 @@ rolling_mod_NWP(
 
 \item{reweight}{Boolean. Use reweighted data.}
 
+\item{incl_climatology}{Boolean. Include climatology model.}
+
+\item{cores}{Integer. Number of cores to be used.}
+
+\item{formula}{String. Regression formula.}
+
 \item{hour_v}{Boolean. Include hour covariate.}
 
 \item{week_v}{Boolean. Include week covariate.}
@@ -42,12 +46,6 @@ rolling_mod_NWP(
 \item{month_v}{Boolean. Include month covariate.}
 
 \item{year_v}{Boolean. Include year covariate.}
-
-\item{incl_climatology}{Boolean. Include climatology model.}
-
-\item{cores}{Integer. Number of cores to be used.}
-
-\item{formula}{String. Regression formula.}
 }
 \value{
 Model output with predictions, loss and model coefficients.
