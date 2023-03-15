@@ -69,7 +69,6 @@ get_one_month_NWP_quantiles= function(files_i = "/mn/kadingir/datascience_000000
         #Find weight
         sq = exp(seq(log(0.000001), log(0.01), length.out = 25))
 
-
         arg1 = pc_data
         arg2 = ERA_PC1_15
         arg3 = init_day
@@ -80,36 +79,9 @@ get_one_month_NWP_quantiles= function(files_i = "/mn/kadingir/datascience_000000
         omp_set_num_threads(1)
         reweight_results_final = mclapply(seq_along(sq),
                                           'get_weights',
-                                          pc_data= arg1, ERA_PC1_15 =arg2,init_day=arg3,target_date= arg4, sq = arg5)
+                                          pc_data= arg1, ERA_PC1_15 =arg2,init_day=arg3,target_date= arg4, sq = arg5,
+                                        mc.cores = 25)
 
-        # for (k in 1:length(sq)){  #tuning parameter k
-        #     #print(k)
-        #     w = rep(0,dim(pc_data$NWP_PC_mat)[3])
-        #     NWP_15 = pc_data$NWP_PC_mat[57:60,1,] # time 57:60 is day 15 hours 6,12,18,24
-        #     for (m in 1:4){
-        #         w = w + -0.5*sq[k]*(ERA_PC1_15[m] - NWP_15[m,])^2
-        #         #w = w + -0.5*sq[k]*(ERA_PC1_15[m-56] - NWP_15)^2
-        #     }
-        #
-        #     mx = max(w)
-        #     s = sum( exp(w - mx) )
-        #     w_n = exp(w - mx) / s
-        #
-        #     #Apply weight to remaining obs
-        #     #When applying weights we are not dealing with actual values,
-        #     #so we must use a quant est function to get an actual values back
-        #     reweight_results_temp = list()
-        #     for (j in 1:500){
-        #         reweights = t(whdquantile(pc_data$NWP_PC_mat[j,1,], p = seq(0.1, 0.9, 0.1), weights = w_n))
-        #         reweight_results_temp[[j]] = data.table(reweights)
-        #     }
-        #     temp = rbindlist(reweight_results_temp)
-        #     reweight_results_final[[k]] = data.table(k = rep(k, 500),
-        #                                              temp,
-        #                                              hour = rep(c(6,12,18,24), 125),
-        #                                              init_date = init_day,
-        #                                              date = as.Date(target_date))
-        # }
 
         NWP_quant_rew = rbindlist(reweight_results_final)
         names(NWP_quant_rew) = c('Tuning_k', paste0('NWP_PC',pc_comp, '_rew_q', seq(10, 90, 10)), 'hour', 'init_date', 'date')
@@ -126,8 +98,8 @@ get_one_month_NWP_quantiles= function(files_i = "/mn/kadingir/datascience_000000
 
 
 #' @export
-get_weights = function(pc_data, ERA_PC1_15,init_day,target_date, sq){
-    #print(k)
+get_weights = function(k, pc_data, ERA_PC1_15,init_day,target_date, sq){
+    print(k)
     w = rep(0,dim(pc_data$NWP_PC_mat)[3])
     NWP_15 = pc_data$NWP_PC_mat[57:60,1,] # time 57:60 is day 15 hours 6,12,18,24
     for (m in 1:4){
