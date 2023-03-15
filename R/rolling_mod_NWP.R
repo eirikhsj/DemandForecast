@@ -24,9 +24,8 @@
 
 
 #' @export
-rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2023-01-01'), q, ERA_NWP, predictors, model='reg', window = 60, reweight = FALSE,
-                       incl_climatology =FALSE, cores = 4,
-                       formula = 'PC1 ~ 1', incl_other = FALSE, lead_t = 240){
+rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2023-01-01'), q=0.9, ERA_NWP, predictors=1, model='reg', window = 60, reweight = FALSE,
+                       incl_climatology =FALSE, formula = 'PC1 ~ 1', incl_other = FALSE, lead_t = 240, cores = 4){
 
     #1) Fix dates
     start =as.Date(forc_start)
@@ -57,7 +56,7 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
         print(incl_vars)
     }
 
-    ERA_NWP_vars = ERA_NWP[,.SD, .SDcols =incl_vars]
+    ERA_NWP_vars = ERA_NWP[lead_time <= lead_t ,.SD, .SDcols =incl_vars]
 
     arg1 = ERA_NWP_vars
     arg2 = q
@@ -68,8 +67,7 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
     arg7 = predictors
     arg8 = incl_climatology
     arg9 = formula
-    arg10 = lead_t
-    arg11 = cores
+    arg10 = cores
 
     ## **** Run parallel cores ****
     blas_set_num_threads(1)
@@ -80,8 +78,8 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
     detailed_results = mclapply(seq_along(init_days),
                                 "Rolling_nwp",
                                 ERA_NWP_vars = arg1, q = arg2, init_days= arg3, window = arg4, reweight = arg5, model= arg6,
-                                predictors=arg7, incl_climatology= arg8, formula = arg9, lead_t = arg10,
-                                mc.cores = arg11)
+                                predictors=arg7, incl_climatology= arg8, formula = arg9,
+                                mc.cores = arg10)
 
     #4) Store and return
     Results = rbindlist(detailed_results,use.names=FALSE)
@@ -93,8 +91,9 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
 #This works remote
 #' @export
 Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, predictors,
-                       incl_climatology, formula, lead_t){
+                       incl_climatology, formula){
     ## 3a) Time keeping
+    print('Enter')
     init_day = init_days[i]
     target_days = seq(init_day, length.out = window,  by = '1 days')
     print(paste('Forecast made on:', init_day))
@@ -102,7 +101,7 @@ Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, p
     ERA_NWP_final= na.omit(ERA_NWP_time)
 
     ## 3b) Split train-test
-    train = ERA_NWP_final[date<init_day & lead_time <lead_t, .SD, keyby = .(date,hour)]
+    train = ERA_NWP_final[date<init_day, .SD, keyby = .(date,hour)]
     if (reweight ==TRUE){
         test = ERA_NWP_final[date %in%target_days, .SD, keyby = .(date,hour)] #Here we only use 1 predictor, cant use init_day but no confusion in target_days
     } else{
