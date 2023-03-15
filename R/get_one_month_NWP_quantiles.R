@@ -100,7 +100,8 @@ get_one_month_NWP_quantiles= function(files_i = "/mn/kadingir/datascience_000000
                                                      date = as.Date(target_date))
             return(reweight_results_final)
         }
-
+        blas_set_num_threads(1)
+        omp_set_num_threads(1)
         reweight_results_final = mclapply(seq_along(sq),
                                           'get_weights', pc_data, ERA_PC1_15,init_day,target_date)
 
