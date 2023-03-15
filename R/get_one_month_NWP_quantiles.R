@@ -54,14 +54,13 @@ get_one_month_NWP_quantiles= function(files_i = "/mn/kadingir/datascience_000000
 
     #Find re-weighted quantiles
     if (rew == TRUE){
-        #1 get weights
-        #1a find the correct date for ERA
+        #1a find the correct date for ERA-reweighting
         init_day = as.Date(paste0(year_nwp,'-',month_nwp,'-01'))
         date_seq = seq(init_day, length=125, by='1 days')
         target_date = as.character(rep(date_seq, each=4))
         reweight_day = as.Date(paste0(year_nwp,'-',month_nwp,'-15'))
 
-        ERA_PC1_15 = PC_ERA$dt_test[(date == reweight_day & hour ==12), get(paste0('PC', pc_comp))]
+        ERA_PC1_15 = PC_ERA$dt_test[date == reweight_day & hour %in% c(6,12,18,24), get(paste0('PC', pc_comp))]
         #ERA_PC1_15 = mean(PC_ERA$dt_test[(date == d), get(paste0('PC', pc_comp))])
         #ERA_PC1_15 = PC_ERA$dt_test[(date == d & hour %in% c(6,12,18,24)), get(paste0('PC', pc_comp))]
 
@@ -70,10 +69,11 @@ get_one_month_NWP_quantiles= function(files_i = "/mn/kadingir/datascience_000000
         #Find weight
         sq = exp(seq(log(0.000001), log(0.01), length.out = 25))
         for (k in 1:length(sq)){  #tuning parameter k
+            print(k)
             w = rep(0,dim(pc_data$NWP_PC_mat)[3])
-            for (m in c(57:60)){  # time 57:60 is day 15 hours 6,12,18,24
-                NWP_15 = pc_data$NWP_PC_mat[m,1,]
-                w = w + -0.5*sq[k]*(ERA_PC1_15 - NWP_15)^2
+            NWP_15 = pc_data$NWP_PC_mat[57:60,1,] # time 57:60 is day 15 hours 6,12,18,24
+            for (m in 1:4){
+                w = w + -0.5*sq[k]*(ERA_PC1_15[m] - NWP_15[m,])^2
                 #w = w + -0.5*sq[k]*(ERA_PC1_15[m-56] - NWP_15)^2
             }
 
@@ -95,7 +95,6 @@ get_one_month_NWP_quantiles= function(files_i = "/mn/kadingir/datascience_000000
                                                      hour = rep(c(6,12,18,24), 125),
                                                      init_date = init_day,
                                                      date = as.Date(target_date))
-
         }
 
         NWP_quant_rew = rbindlist(reweight_results_final)
