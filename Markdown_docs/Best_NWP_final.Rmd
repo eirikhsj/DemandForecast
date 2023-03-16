@@ -21,6 +21,10 @@ ERA_NWP = get_ERA_NWP(ERA_path = "/mn/kadingir/datascience_000000/eirikhsj/PC_ER
 ERA_NWP[, season:= ifelse(month(date) %in% c(12,1,2), 1, 
                             ifelse(month(date) %in% c(3,4,5), 2,
                             ifelse(month(date) %in% c(6,7,8), 3, 4)))]
+
+
+
+
 ```
 
 ```{r, eval  = FALSE}
@@ -267,7 +271,7 @@ plot_month(c('Mod_9_60_climatology','Mod_9_60_NWP1', 'Mod_9_60_NWP2'),
 ```
 
 1) climatology is very good, 
-2) there seems to be pretty good skill
+2) there seems to be pretty good 
 3) we are doing better in winter than in summer. 
 4) Virtually no skill using information from previous month NWP2. 
 5) Can we improve model with the time covariates?

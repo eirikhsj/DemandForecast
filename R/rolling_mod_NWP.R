@@ -86,6 +86,8 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
     Results = rbindlist(detailed_results,use.names=FALSE)
     out = c()
     out$Results = Results
+    print('Temperature forecast has completed')
+    print('天气预报完成')
     return(out)
 }
 
