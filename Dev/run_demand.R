@@ -31,6 +31,11 @@ date_demand[, season:= ifelse(month(date) %in% c(12,1,2), 1,
                               ifelse(month(date) %in% c(3,4,5), 2,
                                      ifelse(month(date) %in% c(6,7,8), 3, 4)))]
 
+date_demand[,season1 := round(cos(2*pi * season/4), digits = 7)]
+date_demand[,season2 := round(sin(2*pi * season/4), digits = 7)]
+
+date_demand[,hourly_mean_grid := rowMeans(X_mat)]
+
 for (i in 3:10){
 
     mod = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01',
@@ -39,5 +44,5 @@ custom = paste0("as.factor(hour):as.factor(month)  + as.factor(w_day):as.factor(
 cores = 48, reg_form = "volume~1")
     assign(paste0("Custom_comb",i, "_int_w_m"), mod)
 
-    save(list = c(paste0("Custom_comb",i, "_int_w_m")), file = paste0("Custom_comb",i, "_int_w_m",'.RData'))
+    save(list = c(paste0("Custom_comb",i, "_int_w_m")), file = paste0("Custom_comb",i, "_int_w_m",'.Rda'))
 }
