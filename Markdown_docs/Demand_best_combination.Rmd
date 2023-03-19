@@ -558,14 +558,14 @@ Errorplot_factor_loading = function(data, plot_title = "Train and Test Error (20
     axis(side = 4, at = pretty(range(train_plot)))      
     mtext("Train Error", side = 4, line = 3, cex = 1.3)
     legend(leg_place, lty = 1, cex = 1, pch = 16, col = c('red', 'black', 'grey'), legend = c("Test Errors", "Training Errors", "Test Error (Alt Params)"))
-
-    
 }
 
 test_pc = paste0('pred_', 1:11)
 train_pc = paste0('RMSE_train_', 1:11)
-
+pdf("Best_final_demand.pdf", height = 5, width = 7, pointsize = 12)
 Errorplot_factor_loading(Factor10_inter3$Results)
+dev.off()
+
 Errorplot_factor_loading(Factor10_inter3$Results[init_date>'2018-06-01',]) #Greys are not adjusted here
 
 
@@ -587,69 +587,89 @@ print(t(Factor10_results))
 
 ###################################
 #Skill by month
-plot(1 - (Factor10_inter3$Results[,  mean((volume - pred_3)^2), by = month(date)][,V1]/
-              Climatology$Results[, mean((volume - clima_pred)^2), by = month(date)][,V1]),
-     type = 'l', ylim = c(-0.1, 0.8), xlab = 'Month', ylab = 'Skill Score',
-     main = 'Skill of GAM-FL2 by Month')
-axis(month.abb, side = 4, labels = month.abb, at = 1:12)
-legend('topright', lty = 1, cex = 1, pch = 16, col = c('black','red', 'orange'), title = 'Skill relative to:', legend = c("Climatology", "Time Interaction", "GAM-FL1"))
-abline(h = 0)
-lines(1 - (Factor10_inter3$Results[,  mean((volume - pred_3)^2), by = month(date)][,V1]/
-               Inter4$Result[, mean((volume - pred_1)^2), by = month(date)][,V1]), col = 'red')
-lines(1 - (Factor10_inter3$Results[,  mean((volume - pred_3)^2), by = month(date)][,V1]/
-               Factor10_inter3$Result[, mean((volume - pred_2)^2), by = month(date)][,V1]), col = 'orange')
+
+pdf("/Users/Eirik/Desktop/Master2023/ExportedPlots/GAM_FL2_3_skill_demand2.pdf", height = 7, width = 7, pointsize = 12)
+layout(matrix(c(1,2,3,3), 2, 2, byrow = TRUE))
+par(mar = c(4, 4, 4, 4))
+plot(1 - (Factor10_inter3$Results[,  mean((volume - pred_3)^2), keyby = month(date)][,V1]/
+              Climatology$Results[, mean((volume - clima_pred)^2), keyby = month(date)][,V1]),
+     type = 'l', ylim = c(-0.5, 1), xlab = 'Month', ylab = '', xaxt ='n',
+     main = 'Skill of GAM-FL2 by Month', col = 'blue')
+axis(month.abb, side = 1, labels = month.abb, at = 1:12)
+
+legend('top', cex = 0.7, pch = 16, col = c('blue','orange', 'black'), lty = c(1,2,1), title = 'Skill of GAM-FL2 relative to:', legend = c("Climatology", "Time Interaction", "GAM-FL1"))
+abline(h = 0, col = 'black')
+lines(1 - (Factor10_inter3$Results[,  mean((volume - pred_3)^2), keyby = month(date)][,V1]/
+               Inter4$Result[, mean((volume - pred_1)^2), keyby = month(date)][,V1]), col = rgb(1,0.5,0,0.65), lty = 2)
+lines(1 - (Factor10_inter3$Results[,  mean((volume - pred_3)^2), keyby = month(date)][,V1]/
+               Factor10_inter3$Result[, mean((volume - pred_2)^2), keyby = month(date)][,V1]), col = 'black')
+par(new = TRUE)
+barplot(Factor10_inter3$Results[,  sqrt(mean((volume - pred_3)^2)), keyby = month][,V1], ylim = c(0, 10000), col = rgb(0,0,1, 0.1),xlab = "", ylab = "", xaxt = 'n', axes = FALSE)
+mtext("Skill Score", side = 2, line = 3, cex = 0.8, padj = 1.4)
+ticks <- seq_len(12)
+#axis(side = 1, at = ticks - 0.5, labels = FALSE)
 
 #By hour
-plot(1:24,1 - (Factor10_inter3$Results[,  mean((volume - pred_3)^2), by = hour][,V1]/
-              Climatology$Results[, mean((volume - clima_pred)^2), by = hour][,V1]),
-     type = 'l', ylim = c(-0.1, 1), xlab = 'Hour', ylab = 'Skill Score',
-     main = 'Skill of GAM-FL1 and GAM-FL2 by hour')
-abline(h = 0)
-lines(1:24,1 - (Factor10_inter3$Results[,  mean((volume - pred_2)^2), by = hour][,V1]/
-               Climatology$Results[, mean((volume - clima_pred)^2), by = hour][,V1]),col = 'orange')
-legend('topright', lty = 1, cex = 1, pch = 16, col = c('black','orange'), title = 'Skill relative to Climatolog:', legend = c("GAM-FL1", "GAM-FL2"))
+plot(1:24,1 - (Factor10_inter3$Results[,  mean((volume - pred_3)^2), keyby = hour][,V1]/
+              Climatology$Results[, mean((volume - clima_pred)^2), keyby = hour][,V1]),
+     type = 'l', ylim = c(-0.5, 1), xlab = 'Hour', ylab = '',xaxt = 'n',yaxt = 'n',
+     main = 'Skill by Hour', col ='red')
+abline(h = 0, col = 'black')
+axis(1, at = c(1,6,12,18,24))
+axis(side = 1, at = seq(1:24), labels = rep('', 24), tcl = 0.1)
+lines(1:24,1 - (Factor10_inter3$Results[,  mean((volume - pred_2)^2), keyby = hour][,V1]/
+               Climatology$Results[, mean((volume - clima_pred)^2), keyby = hour][,V1]),col = 'black')
+lines(1:24,1 - (Factor10_inter3$Results[,  sqrt(mean((volume - pred_1)^2)), keyby = hour][,V1]/
+               Climatology$Results[, sqrt(mean((volume - clima_pred)^2)), keyby = hour][,V1])^2,col = rgb(1,0.5,0,0.65), lty = 2)
 
+legend('topright', lty = c(1,1,2), cex = 0.7, pch = 16, col = c('black', 'red', 'orange'), title = 'Skill relative to Climatology of:', legend = c("GAM-FL1", "GAM-FL2", "Time Interaction"))
+par(new = TRUE)
+barplot(Factor10_inter3$Results[,  sqrt(mean((volume - pred_3)^2)), keyby = hour][,V1], ylim = c(0, 10000), col = rgb(0,0,1, 0.1),xlab = "", ylab = "", xaxt = 'n', axes = FALSE)
+axis(side = 4, at = pretty(range(0, 4000)))      
+    mtext("RMSE", side = 4, line = 3, cex = 0.8, padj = -1.4)
 
 #Skill by init month
-plot(unique(Factor10_inter3$Results$init_date),1 - (Factor10_inter3$Results[,  mean((volume - pred_3)^2), by = init_date][,V1]/
-              Climatology$Results[, mean((volume - clima_pred)^2), by = init_date][,V1]),
-     type = 'l', ylim = c(-1.7, 1), xlab = 'Initialization Month', ylab = 'Skill Score',
-     main = 'Skill of GAM-FL1 and GAM-FL2 by Init month')
+dates = unique(Factor10_inter3$Results$init_date)
+plot(1:length(unique(Factor10_inter3$Results$init_date)),1 - (Factor10_inter3$Results[, mean((volume - pred_3)^2), keyby = init_date][,V1]/
+              Climatology$Results[, mean((volume - clima_pred)^2), keyby = init_date][,V1]),
+     type = 'l', ylim = c(-1.7, 1), xlab = 'Initialization Month', ylab = '',xaxt = 'n',
+     main = 'Skill by Initialization Month', col = 'red')
+axis(1, at = seq(1,length(dates), by = 6),labels = format(dates[seq(1, length(dates), by = 6)], "%b-%y"))
+axis(side = 1, at = seq(1:85), labels = rep('', 85), tcl = 0.1)
 abline(h = 0)
 
-lines(unique(Factor10_inter3$Results$init_date),1 - (Factor10_inter3$Results[,  sqrt(mean((volume - pred_2)^2)), by = init_date][,V1]/
-               Climatology$Results[, sqrt(mean((volume - clima_pred)^2)), by = init_date][,V1])^2,col = 'red')
+lines(1:length(unique(Factor10_inter3$Results$init_date)),1 - (Factor10_inter3$Results[,  sqrt(mean((volume - pred_2)^2)), keyby = init_date][,V1]/
+               Climatology$Results[, sqrt(mean((volume - clima_pred)^2)), keyby = init_date][,V1])^2,col = 'black')
 
-lines(unique(Factor10_inter3$Results$init_date),1 - (Factor10_inter3$Results[,  sqrt(mean((volume - pred_1)^2)), by = init_date][,V1]/
-               Climatology$Results[, sqrt(mean((volume - clima_pred)^2)), by = init_date][,V1])^2,col = 'orange')
-legend('topright', lty = 1, cex = 1, pch = 16, col = c('black','red', 'orange'), title = 'Skill relative to Climatology:', legend = c("GAM-FL1", "GAM-FL2", "Interaction"))
+lines(1:length(unique(Factor10_inter3$Results$init_date)),1 - (Factor10_inter3$Results[,  sqrt(mean((volume - pred_1)^2)), keyby = init_date][,V1]/
+               Climatology$Results[, sqrt(mean((volume - clima_pred)^2)), keyby = init_date][,V1])^2,col = rgb(1,0.5,0,0.65), lty = 2)
+legend('left', lty = c(1,1,2), cex = 0.7, pch = 16, col = c('black', 'red', 'orange'), title = 'Skill relative to Climatology of:', legend = c("GAM-FL1", "GAM-FL2", "Interaction"))
+par(new = TRUE)
+barplot(Factor10_inter3$Results[,  sqrt(mean((volume - pred_3)^2)), keyby = init_date][,V1], ylim = c(0, 10000), col = rgb(0,0,1, 0.1),xlab = "", ylab = "", xaxt = 'n', axes = FALSE)
+axis(side = 4, at = pretty(range(0, 10000)))      
+mtext("RMSE", side = 4, line = 3, cex = 0.8, padj = -1.4)
+mtext("Skill Score", side = 2, line = 3, cex = 0.8, padj = 1.4)
 
+dev.off()
 
 #####################
 
 #Skill by month after 2018
-plot(1 - (Factor10_inter3$Results[init_date>'2018-03-01',  sqrt(mean((volume - pred_3)^2)), by = month(date)][,V1]/
-              Climatology$Results[init_date>'2018-03-01', sqrt(mean((volume - clima_pred)^2)), by = month(date)][,V1])^2,
+plot(month.abb,1 - (Factor10_inter3$Results[init_date>'2018-03-01',  sqrt(mean((volume - pred_3)^2)), keyby = month(date)][,V1]/
+              Climatology$Results[init_date>'2018-03-01', sqrt(mean((volume - clima_pred)^2)), keyby = month(date)][,V1])^2,
      type = 'l', ylim = c(0, 0.8), xlab = 'Month', ylab = 'Skill Score',
      main = 'Skill of GAMFL2 by Month')
 axis(month.abb, side = 4, labels = month.abb, at = 1:12)
 legend('topright', lty = 1, cex = 1, pch = 16, col = c('black','red'), title = 'Skill relative to:', legend = c("Climatology", "Time Interaction"))
 
-lines(1 - (Factor10_inter3$Results[init_date>'2018-03-01',  sqrt(mean((volume - pred_3)^2)), by = month(date)][,V1]/
-               Inter4$Result[init_date>'2018-03-01', sqrt(mean((volume - pred_1)^2)), by = month(date)][,V1])^2, col = 'red')
+lines(1 - (Factor10_inter3$Results[init_date>'2018-03-01',  sqrt(mean((volume - pred_3)^2)), keyby = month(date)][,V1]/
+               Inter4$Result[init_date>'2018-03-01', sqrt(mean((volume - pred_1)^2)), keyby = month(date)][,V1])^2, col = 'red')
 
-
-plot(Factor10_inter3$Results[,  sqrt(mean((volume - pred_3)^2)), by = lead_time], type = 'l', main = "RMSE by lead time", ylab = "RMSE", xlab = "Lead Time")
-lin_mod = lm(V1 ~ lead_time, data = Factor10_inter3$Results[,  sqrt(mean((volume - pred_3)^2)), by = lead_time])
+plot(Factor10_inter3$Results[,  sqrt(mean((volume - pred_3)^2)), keyby = lead_time], type = 'l', main = "RMSE by lead time", ylab = "RMSE", xlab = "Lead Time")
+lin_mod = lm(V1 ~ lead_time, data = Factor10_inter3$Results[,  sqrt(mean((volume - pred_3)^2)), keyby = lead_time])
 lines(361:1080, predict(lin_mod))
 abline(h = coef(lin_mod)[1])
-#Mrg[lead_time==361, sum(RMSE_train_3*N_train_1)/ sum(N_train_1)]
-
-
-
-
-
-
+#Mrg[lead_time==361, sum(RMSE_train_3*N_train_1)/ sum(N_train_1)]d
 ```
 
 
@@ -699,6 +719,16 @@ we sum the predictions for each day and compared for summed volume.
 the other version has a rational for stake holders
 
 
+```{r}
+plot(1:85, 1 - Factor10_inter3$Results[,  mean((volume - pred_3)^2), keyby = init_date][,V1]/
+         Climatology$Results[, mean((volume - clima_pred)^2), keyby =init_date][,V1],
+     type = 'l', ylim = c(-2.5, 1), xlab = "", ylab = "", xaxt = 'n')
+par(new = TRUE)
+barplot(Factor10_inter3$Results[,  sqrt(mean((volume - pred_3)^2)), keyby = init_date][,V1], ylim = c(0, 10000), col = rgb(0,0,1, 0.1),xlab = "", ylab = "", xaxt = 'n', axes = FALSE)
+```
+
+
+
 ```{r, cache = TRUE}
 if(file.exists("~/Desktop/Master2023/Data/")){
     prep = prep_demand_temp_data(include_na_volume = FALSE, 
@@ -712,12 +742,78 @@ date_demand = prep$date_demand
 X_mean = rowMeans(X_mat) - 273.15
 date_demand[, grid_mean_temp:= X_mean]
 date_demand[, climatology:= mean(grid_mean_temp), by = .(hour, yday(date))]
-yr = 2018
-plot(date_demand[year(date)==yr & hour %in%12,.(date, climatology)], type = 'l', 
-     ylim = c(-9, 17), ylab = 'Temperature (°C)', xlab = 'Date', main = 'Daily Mean Grid Temperature at 12:00 (lat 4-25, long 55-75)')
-lines(date_demand[year(date)==yr & hour %in%12,.(date, grid_mean_temp)], col = 'red')
-legend('bottomright', lty = 1, cex = 0.7, col = c('red', 'black'), legend = c(paste0(yr, " observed"),"Climatology"), title = 'Temperature')
+date_demand[, climat_volume:= mean(volume), by = .(hour, week(date))]
+#(lat 4-25, long 55-75), 
+pdf("/Users/Eirik/Desktop/Master2023/ExportedPlots/Pred_vs_actual_4_demand.pdf", height = 7, width = 9, pointsize = 12)
+layout(matrix(c(1,2,3,4), 2, 2, byrow = TRUE))
+par(mar = c(3.4, 3.2, 2, 3.2))
 
+yr = 2021
+#PLOT 1: Daily skill level one year
+plot(1 - Factor10_inter3$Results[year(date)==yr,  mean((volume - pred_3)^2), keyby = week(date)][,V1]/
+              Climatology$Results[year(date)==yr, mean((volume - clima_pred)^2), keyby = week(date)][,V1],
+     type = 'l', ylim = c(-0.8, 1), xlab = "", ylab = "", xaxt = 'n',
+     main = paste0('Skill of GAM-FL2 by Week (', yr,')'))
+abline(h = 0, col = 'black')
+rect(9.5, -7, 10.5, par("usr")[4], col = rgb(0.5, 0.5, 0.5, alpha = 0.2), border = NA, lty = 0)
+rect(48.5, -7, 49.5, par("usr")[4], col = rgb(0.5, 0.5, 0.5, alpha = 0.2), border = NA, lty = 0)
+axis(1, at = c(1, 10, 19, 27, 36, 45, 53), labels = c(format(Factor10_inter3$Results[year(date)==yr,  .(date,mean((volume - pred_3)^2)), keyby = week(date)][, .(date= date[1]), by = V2][c(1, 10, 19, 27, 36, 45),date],  "%b"), 'Jan'))
+legend('bottomleft', lty = c(1,2), cex = 0.7, col = c('black','orange'), title = 'Skill relative to:', legend = c("Climatology", "Time Interaction"),bg = "white")
+lines(1 - (Factor10_inter3$Results[year(date)==yr,  mean((volume - pred_3)^2), keyby = week(date)][,V1]/
+               Inter4$Result[year(date)==yr, mean((volume - pred_1)^2), keyby = week(date)][,V1]), col = 'orange', lty = 2)
+mtext(paste0('Month (',yr,')'), side = 1, line = 3, cex = 0.8, padj = -1.4)
+mtext('Skill Score', side = 2, line = 3, cex = 0.8, padj = 1.4)
+mtext('Week 10', side = 3, line = 4, cex = 0.8, padj = 10.4, adj = 0.25)
+mtext('Week 49', side = 3, line = 4, cex = 0.8, padj = 10.4, adj = 0.85)
+
+#PLOT 2: Daily Mean Grid Temp
+plot(date_demand[year(date)==yr & hour %in%12,.(date, climatology)], type = 'l', 
+     ylim = c(-13, 17), ylab = '', xlab = "", main = paste0('Temperature vs Demand at 12:00 (', yr,')'))
+lines(date_demand[year(date)==yr & hour %in%12,.(date, grid_mean_temp)], col = 'red')
+
+rect(as.Date('2021-02-25'), par("usr")[3], as.Date('2021-03-03'), par("usr")[4], col = rgb(0.5, 0.5, 0.5, alpha = 0.2), border = NA, lty = 0)
+rect(as.Date('2021-12-02'), par("usr")[3], as.Date('2021-12-09'), par("usr")[4], col = rgb(0.5, 0.5, 0.5, alpha = 0.2), border = NA, lty = 0)
+legend('bottomleft', lty = 1, cex = 0.7, col = c('green', 'blue'), legend = c(paste0("Observed (",yr,")"),"Climatology (2013-23)"), title = 'Daily Mean Grid Temperature:',bg = "white")
+legend('bottomright', lty = 1, cex = 0.7, col = c('red', 'black'), legend = c(paste0("Observed (",yr,")"),"Climatology (2013-23)"), title = 'Weekly Mean Demand:',bg = "white")
+par(new=TRUE)
+plot(date_demand[year(date)==yr & hour %in%12,.(date,mean(volume)), keyby = week(date)][,.(date,V2)], type = 'l', cex.lab = 1.7, col = "green", axes = FALSE, xlab = "", ylab = "", ylim = c(32000, 62500))
+axis(side = 4, at = pretty(range(date_demand[year(date)==yr & hour %in%12,.(date, volume)][,volume]))) 
+lines(date_demand[year(date)==yr & hour %in%12,.(date, climat_volume)], col = 'blue')
+mtext('Temperature (°C)', side = 2, line = 3, cex = 0.8, padj = 1.4)
+mtext("Energy Demand Volume (MWh)", side = 4, line = 3, cex = 0.8, padj = -1.4)
+mtext(paste0('Month (',yr,')'), side = 1, line = 3, cex = 0.8, padj = -1.4)
+
+mtext('Week 10', side = 3, line = 4, cex = 0.8, padj = 10.4, adj = 0.23)
+mtext('Week 49', side = 3, line = 4, cex = 0.8, padj = 10.4, adj = 0.865)
+
+#par(new=TRUE)
+#plot(Factor10_inter3$Results[year(date)==yr & hour %in%12,PC1], col = 'purple', type = 'l', axes = FALSE, xlab = "", ylab = "")
+
+#PLOT 3: Predicted vs Actual
+ww1 = 10
+plot(Factor10_inter3$Results[year(date) == yr & week(date) == ww1,volume], col = 'black', ylim = c(32000, 62500), pch = 16, cex= 0.6,xlab = "", main = paste0('Predicted vs Actual - Week ',  ww1, ' (', yr, ')'), xaxt = 'n', ylab = '')
+lines(Factor10_inter3$Results[year(date) == yr & week(date) == ww1,pred_3], col = 'red')
+lines(Climatology$Results[year(date) == yr & week(date) == ww1,clima_pred], col = 'blue', lty = 1)
+lines(Factor10_inter3$Results[year(date) == yr & week(date) == ww1,pred_1], col = 'orange', lty = 2)
+#lines(Factor10_inter3$Results[year(date) == yr & week(date) == ww1,pred_2], col = 'pink', lty = 1)
+legend('bottomleft', lty = 1, cex = 0.7, col = c('red', 'blue', 'orange'), legend = c('GAM-FL2',"Climatology", 'Time Interaction'), title = 'Model:')
+axis(1, at = c(seq(1,168, by = 24), 168), labels = c(format(Factor10_inter3$Results[year(date) == yr & week(date) == ww1,date][seq(1,168, by = 24)], "%d-%b"), '11-Mar'))
+mtext(paste0('Date (',yr,')'), side = 1, line = 3, cex = 0.8, padj = -1.4)
+mtext('Energy Demand Volume (MWh)', side = 2, line = 3, cex = 0.8, padj = 1.4)
+
+#PLOT 4: Predicted vs Actual
+ww2 = 49
+plot(Factor10_inter3$Results[year(date) == yr & week(date) == ww2,volume], col = 'black', ylim = c(32000, 62500), pch = 16, cex= 0.6,xlab = "", main = paste0('Predicted vs Actual - Week ',  ww2, ' (', yr, ')'), xaxt = 'n', ylab = '')
+lines(Factor10_inter3$Results[year(date) == yr & week(date) == ww2,pred_3], col = 'red')
+lines(Climatology$Results[year(date) == yr & week(date) == ww2,clima_pred], col = 'blue', lty = 1)
+lines(Factor10_inter3$Results[year(date) == yr & week(date) == ww2,pred_1], col = 'orange', lty = 2)
+legend('bottomleft', lty = 1, cex = 0.7, col = c('red', 'blue', 'orange'), legend = c('GAM-FL2',"Climatology", 'Time Interaction'), title = 'Model:')
+axis(1, at = c(seq(1,168, by = 24), 168), labels = c(format(Factor10_inter3$Results[year(date) == yr & week(date) == ww2,date][seq(1,168, by = 24)], "%d-%b"), '09-Dec'))
+mtext(paste0('Date (',yr,')'), side = 1, line = 3, cex = 0.8, padj = -1.4)
+mtext('Energy Demand Volume (MWh)', side = 2, line = 3, cex = 0.8, padj = 1.4)
+dev.off()
+
+######################
 
 plot(date_demand[year(date)==yr & hour %in%12 & month == 3,.(date, climatology)], type = 'l', 
      ylim = c(-9, 16), ylab = 'Temperature (°C)', xlab = 'Date', main = 'Daily Mean Grid Temperature at 12:00 (lat 4-25, long 55-75)')
@@ -730,19 +826,21 @@ date_demand[, mm_temp:= mean(grid_mean_temp), by = date]
 plot(date_demand[year(date)==2022,.(date, mm_temp)], type = 'l', ylim = c(-8.7, 17))
 lines(date_demand[year(date)==2022,.(date, climatology)], col = 'red')
 
-
 date_demand[, mean_vol:= mean(volume), by = date]
-plot(date_demand[year(date)==yr & month%in% c(2,3),volume], col = 'black', ylim = c(30000, 65000), pch = 16, cex= 0.6)
-lines(Factor10_inter3$Results[year(date)==yr & month %in% c(2,3),pred_3], col = 'red')
-lines(Factor10_inter3$Results[year(date)==yr & month %in% c(2,3),pred_1], col = 'blue')
 
-plot(date_demand[year(date)==yr &  wday(date)  %in% c(1) &hour %in%12,volume, by = date], col = 'black', ylim = c(30000, 65000), pch = 16, cex= 0.6, type = 'l')
+
+
+
+
+
+
+plot(date_demand[year(date)==yr &  wday(date)  %in% c(1) &hour %in%12,volume, keyby = date], col = 'black', ylim = c(30000, 65000), pch = 16, cex= 0.6, type = 'l')
 
 #Reason for including weekday-term 
 hour_x = 24
-plot(date_demand[year(date)==yr &  wday(date)  %in% c(1) &hour %in%hour_x,volume, by = date], col = 'black', ylim = c(25000, 65000), pch = 16, cex= 0.6, type = 'l', main = paste0('Difference between weekdays at ', hour_x, ':00.Rda'))
+plot(date_demand[year(date)==yr &  wday(date)  %in% c(1) &hour %in%hour_x,volume, keyby = date], col = 'black', ylim = c(25000, 65000), pch = 16, cex= 0.6, type = 'l', main = paste0('Difference between weekdays at ', hour_x, ':00.Rda'))
 for (i in 2:7){
-    lines(date_demand[year(date)==yr &  wday(date)  %in% c(i) &hour %in%hour_x,volume, by = date], col = i)
+    lines(date_demand[year(date)==yr &  wday(date)  %in% c(i) &hour %in%hour_x,volume, keyby = date], col = i)
 }
 
 # "2014-02-15" "2014-04-15" "2014-06-15" "2014-08-15"
