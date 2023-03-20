@@ -84,6 +84,45 @@ load(paste0(path, 'Factor10_inter1.Rda'))
 load(paste0(path, 'Factor10_inter2.Rda'))
 load(paste0(path, 'Factor10_inter3.Rda'))
 load(paste0(path, 'Factor10_inter4.Rda'))
+
+load(paste0(path,"Custom_comb3_int.Rda"))
+load(paste0(path,"Custom_comb4_int.Rda"))
+load(paste0(path,"Custom_comb5_int.Rda"))
+load(paste0(path,"Custom_comb6_int.Rda"))
+load(paste0(path,"Custom_comb7_int.Rda"))
+load(paste0(path,"Custom_comb8_int.Rda"))
+load(paste0(path,"Custom_comb9_int.Rda"))
+load(paste0(path,"Custom_comb10_int.Rda"))
+
+load(paste0(path,"Custom_comb10_int_m_w.Rda"))
+load(paste0(path,"Custom_comb9_int_m_w.Rda"))
+load(paste0(path,"Custom_comb8_int_m_w.Rda"))
+load(paste0(path,"Custom_comb7_int_m_w.Rda"))
+load(paste0(path,"Custom_comb6_int_m_w.Rda"))
+load(paste0(path,"Custom_comb5_int_m_w.Rda"))
+load(paste0(path,"Custom_comb4_int_m_w.Rda"))
+load(paste0(path,"Custom_comb3_int_m_w.Rda"))
+load(paste0(path,"Custom_comb10_int_w_m.Rda"))
+load(paste0(path,"Custom_comb9_int_w_m.Rda"))
+load(paste0(path,"Custom_comb8_int_w_m.Rda"))
+load(paste0(path,"Custom_comb7_int_w_m.Rda"))
+load(paste0(path,"Custom_comb6_int_w_m.Rda"))
+load(paste0(path,"Custom_comb5_int_w_m.Rda"))
+load(paste0(path,"Custom_comb4_int_w_m.Rda"))
+load(paste0(path,"Custom_comb3_int_w_m.Rda"))
+load(paste0(path,"Custom_comb10_int_m_m.Rda"))
+load(paste0(path,"Custom_comb9_int_m_m.Rda"))
+load(paste0(path,"Custom_comb8_int_m_m.Rda"))
+load(paste0(path,"Custom_comb7_int_m_m.Rda"))
+load(paste0(path,"Custom_comb6_int_m_m.Rda"))
+load(paste0(path,"Custom_comb5_int_m_m.Rda"))
+load(paste0(path,"Custom_comb4_int_m_m.Rda"))
+load(paste0(path,"Custom_comb3_int_m_m.Rda"))
+load(paste0(path,"mean_m_w.Rda"))
+load(paste0(path,"mean_w_w.Rda"))
+load(paste0(path,"mean_w_m.Rda"))
+load(paste0(path,"mean_m_m.Rda"))
+
 ```
 
 
@@ -429,7 +468,6 @@ lines(Custom_comb3$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
 lines(Custom_comb4$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
 lines(Custom_comb5$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
 lines(Custom_comb6$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
-lines(Custom_comb5$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
 lines(Custom_comb7$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
 lines(Custom_comb8$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
 lines(Custom_comb9$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
@@ -464,7 +502,7 @@ Climatology$Result[,sqrt(mean((volume - clima_pred)^2))]
 ))
 ```
 
-## Final Best Demand Models 
+## Final 1 Best Demand Models (Increasing)
 
 ```{r, eval = FALSE}
 Factor10_inter1 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
@@ -479,6 +517,9 @@ Factor10_inter3 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', 
 Factor10_inter4 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 10,  reg_form = "volume ~ as.factor(hour):as.factor(month)  + as.factor(w_day):as.factor(month) + s(week) + s(month) + season1 + season2 + year", cores = 48) #
 ```
+
+
+
 
 
 ```{r, cache=TRUE}
@@ -522,6 +563,275 @@ Climatology$Result[,sqrt(mean((volume - clima_pred)^2))]
 
 # Main plotting Function
 
+
+## Final 2 Best Demand Model (Two models)
+```{r}
+for (i in 3:10){
+    mod = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01',
+                          pred_win = 30, pred_lag = 15, train_y = 5, p_comps = i,  no_pc = TRUE,
+                          custom = paste0("as.factor(hour):as.factor(week)  + as.factor(w_day):as.factor(week) + 
+                                          s(week) + s(month) + season1 + season2 + year + s(PC1)+ s(PC",i,")") ,
+                          cores = 48, reg_form = "volume~1")
+    assign(paste0("Custom_comb",i, "_int_w_w"), mod)
+}
+
+for (i in 3:10){
+    mod = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01',
+                          pred_win = 30, pred_lag = 15, train_y = 5, p_comps = i,  no_pc = TRUE,
+                          custom = paste0("as.factor(hour):as.factor(month)  + as.factor(w_day):as.factor(week) + 
+                                          s(week) + s(month) + season1 + season2 + year + s(PC1)+ s(PC",i,")") ,
+                          cores = 48, reg_form = "volume~1")
+    assign(paste0("Custom_comb",i, "_int_m_w"), mod)
+}
+
+for (i in 3:10){
+    mod = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01',
+                          pred_win = 30, pred_lag = 15, train_y = 5, p_comps = i,  no_pc = TRUE,
+                          custom = paste0("as.factor(hour):as.factor(week)  + as.factor(w_day):as.factor(month) + 
+                                          s(week) + s(month) + season1 + season2 + year + s(PC1)+ s(PC",i,")") ,
+                          cores = 48, reg_form = "volume~1")
+    assign(paste0("Custom_comb",i, "_int_w_m"), mod)
+}
+
+for (i in 3:10){
+    mod = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01',
+                          pred_win = 30, pred_lag = 15, train_y = 5, p_comps = i,  no_pc = TRUE,
+                          custom = paste0("as.factor(hour):as.factor(month)  + as.factor(w_day):as.factor(month) + 
+                                          s(week) + s(month) + season1 + season2 + year + s(PC1)+ s(PC",i,")") ,
+                          cores = 48, reg_form = "volume~1")
+    assign(paste0("Custom_comb",i, "_int_m_m"), mod)
+}
+```
+
+### Plot
+```{r, cache = TRUE}
+plot(Custom_comb3_int_m_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date], type = 'l', ylim = c(2000, 13700), col = 'red')
+lines(Custom_comb4_int_m_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
+lines(Custom_comb5_int_m_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
+lines(Custom_comb6_int_m_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
+lines(Custom_comb7_int_m_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
+lines(Custom_comb8_int_m_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
+lines(Custom_comb9_int_m_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
+lines(Custom_comb10_int_m_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
+lines(Climatology$Result[,sqrt(mean((volume - clima_pred)^2)), keyby = init_date])
+
+plot(Custom_comb3_int_m_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)], type = 'l', ylim = c(2000, 13700), col = 'red')
+lines(Custom_comb4_int_m_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)])
+lines(Custom_comb5_int_m_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)])
+lines(Custom_comb6_int_m_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)])
+lines(Custom_comb7_int_m_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)])
+lines(Custom_comb8_int_m_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)])
+lines(Custom_comb9_int_m_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)])
+lines(Custom_comb10_int_m_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)])
+lines(Climatology$Result[,sqrt(mean((volume - clima_pred)^2)), keyby = month(init_date)])
+
+print(c(
+Custom_comb3_int_m_m$Result[,sqrt(mean((volume - pred_2)^2))], 
+Custom_comb4_int_m_m$Result[,sqrt(mean((volume - pred_2)^2))], 
+Custom_comb5_int_m_m$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb6_int_m_m$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb7_int_m_m$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb8_int_m_m$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb9_int_m_m$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb10_int_m_m$Result[,sqrt(mean((volume - pred_2)^2))],
+Climatology$Result[,sqrt(mean((volume - clima_pred)^2))]
+))
+```
+
+
+```{r, cache = TRUE}
+plot(Custom_comb3_int_m_w$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date], type = 'l', ylim = c(2000, 13700), col = 'red')
+lines(Custom_comb4_int_m_w$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
+lines(Custom_comb5_int_m_w$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
+lines(Custom_comb6_int_m_w$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
+lines(Custom_comb5_int_m_w$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
+lines(Custom_comb7_int_m_w$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
+lines(Custom_comb8_int_m_w$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
+lines(Custom_comb9_int_m_w$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
+lines(Custom_comb10_int_m_w$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
+lines(Climatology$Result[,sqrt(mean((volume - clima_pred)^2)), keyby = init_date])
+
+plot(Custom_comb3_int_m_w$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)], type = 'l', ylim = c(2000, 13700), col = 'red')
+lines(Custom_comb4_int_m_w$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)])
+lines(Custom_comb5_int_m_w$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)])
+lines(Custom_comb6_int_m_w$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)])
+lines(Custom_comb7_int_m_w$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)])
+lines(Custom_comb8_int_m_w$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)])
+lines(Custom_comb9_int_m_w$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)])
+lines(Custom_comb10_int_m_w$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)])
+lines(Climatology$Result[,sqrt(mean((volume - clima_pred)^2)), keyby = month(init_date)])
+
+print(c(
+Custom_comb3_int_m_w$Result[,sqrt(mean((volume - pred_2)^2))], 
+Custom_comb4_int_m_w$Result[pred_2 < 100000 & pred_2 > -100000,sqrt(mean((volume - pred_2)^2))], 
+Custom_comb5_int_m_w$Result[pred_2 < 100000 & pred_2 > -100000,sqrt(mean((volume - pred_2)^2))],
+Custom_comb6_int_m_w$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb7_int_m_w$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb8_int_m_w$Result[pred_2 < 100000 & pred_2 > -100000,sqrt(mean((volume - pred_2)^2))],
+Custom_comb9_int_m_w$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb10_int_m_w$Result[,sqrt(mean((volume - pred_2)^2))],
+Climatology$Result[,sqrt(mean((volume - clima_pred)^2))]
+))
+```
+
+
+```{r, cache = TRUE}
+plot(Custom_comb3_int_w_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date], type = 'l', ylim = c(2000, 13700), col = 'red')
+lines(Custom_comb4_int_w_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
+lines(Custom_comb5_int_w_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
+lines(Custom_comb6_int_w_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
+lines(Custom_comb5_int_w_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
+lines(Custom_comb7_int_w_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
+lines(Custom_comb8_int_w_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
+lines(Custom_comb9_int_w_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
+lines(Custom_comb10_int_w_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
+lines(Climatology$Result[,sqrt(mean((volume - clima_pred)^2)), keyby = init_date])
+
+plot(Custom_comb3_int_w_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)], type = 'l', ylim = c(2000, 13700), col = 'red')
+lines(Custom_comb4_int_w_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)])
+lines(Custom_comb5_int_w_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)])
+lines(Custom_comb6_int_w_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)])
+lines(Custom_comb7_int_w_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)])
+lines(Custom_comb8_int_w_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)])
+lines(Custom_comb9_int_w_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)])
+lines(Custom_comb10_int_w_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)])
+lines(Climatology$Result[,sqrt(mean((volume - clima_pred)^2)), keyby = month(init_date)])
+
+print(c(
+Custom_comb3_int_w_m$Result[,sqrt(mean((volume - pred_2)^2))], 
+Custom_comb4_int_w_m$Result[,sqrt(mean((volume - pred_2)^2))], 
+Custom_comb5_int_w_m$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb6_int_w_m$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb7_int_w_m$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb8_int_w_m$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb9_int_w_m$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb10_int_w_m$Result[,sqrt(mean((volume - pred_2)^2))],
+Climatology$Result[,sqrt(mean((volume - clima_pred)^2))]
+))
+```
+
+
+```{r}
+
+w_w = c(
+Inter1$Result[pred_1<70000&pred_1>10000,sqrt(mean((volume - pred_1)^2))],
+Factor10_inter1$Result[,sqrt(mean((volume - pred_2)^2))],
+Factor10_inter1$Result[,sqrt(mean((volume - pred_3)^2))],
+Custom_comb3_int$Result[,sqrt(mean((volume - pred_2)^2))], 
+Custom_comb4_int$Result[,sqrt(mean((volume - pred_2)^2))], 
+Custom_comb5_int$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb6_int$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb7_int$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb8_int$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb9_int$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb10_int$Result[pred_2 < 100000 & pred_2 > -100000,sqrt(mean((volume - pred_2)^2))]
+)
+
+
+m_w = c(
+Factor10_inter2$Result[,sqrt(mean((volume - pred_1)^2))],
+Factor10_inter2$Result[,sqrt(mean((volume - pred_2)^2))],
+Factor10_inter2$Result[,sqrt(mean((volume - pred_3)^2))],
+Custom_comb3_int_m_w$Result[,sqrt(mean((volume - pred_2)^2))], 
+Custom_comb4_int_m_w$Result[pred_2 < 100000 & pred_2 > -100000,sqrt(mean((volume - pred_2)^2))], 
+Custom_comb5_int_m_w$Result[pred_2 < 100000 & pred_2 > -100000,sqrt(mean((volume - pred_2)^2))],
+Custom_comb6_int_m_w$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb7_int_m_w$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb8_int_m_w$Result[pred_2 < 100000 & pred_2 > -100000,sqrt(mean((volume - pred_2)^2))],
+Custom_comb9_int_m_w$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb10_int_m_w$Result[,sqrt(mean((volume - pred_2)^2))]
+)
+
+w_m = c(
+Factor10_inter3$Result[,sqrt(mean((volume - pred_1)^2))],
+Factor10_inter3$Result[,sqrt(mean((volume - pred_2)^2))],
+Factor10_inter3$Result[,sqrt(mean((volume - pred_3)^2))],
+Custom_comb3_int_w_m$Result[,sqrt(mean((volume - pred_2)^2))], 
+Custom_comb4_int_w_m$Result[,sqrt(mean((volume - pred_2)^2))], 
+Custom_comb5_int_w_m$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb6_int_w_m$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb7_int_w_m$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb8_int_w_m$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb9_int_w_m$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb10_int_w_m$Result[,sqrt(mean((volume - pred_2)^2))]
+)
+
+m_m = c(
+Factor10_inter4$Result[,sqrt(mean((volume - pred_1)^2))],
+Factor10_inter4$Result[,sqrt(mean((volume - pred_2)^2))],
+Factor10_inter4$Result[,sqrt(mean((volume - pred_3)^2))],
+Custom_comb3_int_m_m$Result[,sqrt(mean((volume - pred_2)^2))], 
+Custom_comb4_int_m_m$Result[,sqrt(mean((volume - pred_2)^2))], 
+Custom_comb5_int_m_m$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb6_int_m_m$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb7_int_m_m$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb8_int_m_m$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb9_int_m_m$Result[,sqrt(mean((volume - pred_2)^2))],
+Custom_comb10_int_m_m$Result[,sqrt(mean((volume - pred_2)^2))]
+
+)
+pdf("/Users/Eirik/Desktop/Master2023/ExportedPlots/Best_final_demand2.pdf", height = 7, width = 7, pointsize = 12)
+#layout(matrix(c(1,2,3,3), 2, 2, byrow = TRUE))
+x = seq(1:length(m_m))-1
+plot(x, w_m, type = 'l', cex.lab = 1.3, cex.main = 1.5, pch = 16, col = "red", main = "Test Error", ylab = "Test Error (RMSE)", xlab = "Factor Loadings in Model")  
+points(x, w_m, pch = 16, col = "red")
+lines(x, m_m, lty = 2, col = 'grey')
+lines(x, m_w, lty = 2, col = 'grey')
+lines(x, w_w, lty = 2, col = 'grey')
+legend(leg_place, lty = 1, cex = 1, pch = 16, col = c('red', 'grey', 'blue'), legend = c("Test Errors", "Test Error (Alt Params)", "Test Errors (Increasing)"))
+lines(x, Factor10_inter3$Results[, lapply(.SD, function(x) sqrt(mean((volume - x)^2, na.rm=TRUE))), .SDcols = test_pc], lty = 2, col = 'blue')
+dev.off()
+```
+
+
+## Final 3 Best Demand Model (Mean Grid)
+```{r}
+mean_w_w = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01',
+                                      pred_win = 30, pred_lag = 15, train_y = 5, p_comps = i,  no_pc = TRUE,
+custom = paste0("as.factor(hour):as.factor(week)  + as.factor(w_day):as.factor(week) + s(week) + s(month) + season1 + season2 + year + s(hourly_mean_grid)") ,
+cores = 48, reg_form = "volume~1")
+save(mean_w_w, file = 'mean_w_w.Rda')
+
+mean_w_m = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01',
+                           pred_win = 30, pred_lag = 15, train_y = 5, p_comps = i,  no_pc = TRUE,
+                           custom = paste0("as.factor(hour):as.factor(week)  + as.factor(w_day):as.factor(month) + s(week) + s(month) + season1 + season2 + year + s(hourly_mean_grid)") ,
+                           cores = 48, reg_form = "volume~1")
+save(mean_w_m, file = 'mean_w_m.Rda')
+
+mean_m_w = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01',
+                           pred_win = 30, pred_lag = 15, train_y = 5, p_comps = i,  no_pc = TRUE,
+                           custom = paste0("as.factor(hour):as.factor(month)  + as.factor(w_day):as.factor(week) + s(week) + s(month) + season1 + season2 + year + s(hourly_mean_grid)") ,
+                           cores = 48, reg_form = "volume~1")
+save(mean_m_w, file = 'mean_m_w.Rda')
+
+mean_m_m = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01',
+                           pred_win = 30, pred_lag = 15, train_y = 5, p_comps = i,  no_pc = TRUE,
+                           custom = paste0("as.factor(hour):as.factor(month)  + as.factor(w_day):as.factor(month) + s(week) + s(month) + season1 + season2 + year + s(hourly_mean_grid)") ,
+                           cores = 48, reg_form = "volume~1")
+save(mean_m_m, file = 'mean_m_m.Rda')
+```
+
+```{r, cache=TRUE}
+plot(mean_m_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date], type = 'l', ylim = c(1600, 8000))
+lines(mean_m_w$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date], col = 'red')
+lines(mean_w_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
+lines(mean_w_w$Result[,sqrt(mean((volume - pred_2)^2)), keyby = init_date])
+lines(Climatology$Result[,sqrt(mean((volume - clima_pred)^2)), keyby = init_date], col = 'blue')
+
+plot(mean_m_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)], type = 'l', ylim = c(2000, 6000))
+lines(mean_m_w$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)], col = 'red')
+lines(mean_w_m$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)])
+lines(mean_w_w$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)])
+lines(Factor10_inter3$Result[,sqrt(mean((volume - pred_2)^2)), keyby = month(init_date)], col = 'purple')
+lines(Factor10_inter3$Result[,sqrt(mean((volume - pred_3)^2)), keyby = month(init_date)], col = 'orange')
+lines(Climatology$Result[,sqrt(mean((volume - clima_pred)^2)), keyby = month(init_date)], col = 'blue')
+
+mean_m_m$Result[,sqrt(mean((volume - pred_2)^2))]
+mean_m_w$Result[,sqrt(mean((volume - pred_2)^2))] 
+mean_w_m$Result[,sqrt(mean((volume - pred_2)^2))] #Best 
+mean_w_w$Result[,sqrt(mean((volume - pred_2)^2))] 
+Climatology$Result[,sqrt(mean((volume - clima_pred)^2))]
+```
 #Numbers for  Factor10_1 are missing a month due to BLAS error. 
 ```{r, cache = TRUE}
 Errorplot_factor_loading = function(data, plot_title = "Train and Test Error (2016-01:2023-01)", leg_place = 'topright', total_var = 11){
@@ -595,7 +905,7 @@ plot(1 - (Factor10_inter3$Results[,  mean((volume - pred_3)^2), keyby = month(da
               Climatology$Results[, mean((volume - clima_pred)^2), keyby = month(date)][,V1]),
      type = 'l', ylim = c(-0.5, 1), xlab = 'Month', ylab = '', xaxt ='n',
      main = 'Skill of GAM-FL2 by Month', col = 'blue')
-axis(month.abb, side = 1, labels = month.abb, at = 1:12)
+
 
 legend('top', cex = 0.7, pch = 16, col = c('blue','orange', 'black'), lty = c(1,2,1), title = 'Skill of GAM-FL2 relative to:', legend = c("Climatology", "Time Interaction", "GAM-FL1"))
 abline(h = 0, col = 'black')
@@ -608,7 +918,7 @@ barplot(Factor10_inter3$Results[,  sqrt(mean((volume - pred_3)^2)), keyby = mont
 mtext("Skill Score", side = 2, line = 3, cex = 0.8, padj = 1.4)
 ticks <- seq_len(12)
 #axis(side = 1, at = ticks - 0.5, labels = FALSE)
-
+axis(month.abb, side = 1, labels = month.abb, at = 1:12)
 #By hour
 plot(1:24,1 - (Factor10_inter3$Results[,  mean((volume - pred_3)^2), keyby = hour][,V1]/
               Climatology$Results[, mean((volume - clima_pred)^2), keyby = hour][,V1]),
