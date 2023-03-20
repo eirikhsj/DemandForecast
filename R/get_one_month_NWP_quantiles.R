@@ -77,7 +77,7 @@ get_one_month_NWP_quantiles= function(files_i = "/mn/kadingir/datascience_000000
 
         blas_set_num_threads(1)
         omp_set_num_threads(1)
-        print(init_day)
+        print(reweight_day)
         reweight_results_final = mclapply(seq_along(sq),
                                           'get_weights',
                                           pc_data= arg1, ERA_PC1_15 =arg2,init_day=arg3,

@@ -152,7 +152,7 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
         print(paste0("Climatology: ", sqrt(sum((dt_test$volume - clima_pred)^2)/n)))
     }
     if (is.data.table(results)==TRUE){
-        print("Returning data.table")
+        print("")
     } else{
         print(str(results))
         print('Trying to convert')

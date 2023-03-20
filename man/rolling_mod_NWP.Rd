@@ -7,17 +7,17 @@
 rolling_mod_NWP(
   forc_start = as.Date("2007-01-01"),
   forc_end = as.Date("2023-01-01"),
-  q,
+  q = 0.9,
   ERA_NWP,
-  predictors,
+  predictors = 1,
   model = "reg",
   window = 60,
   reweight = FALSE,
   incl_climatology = FALSE,
-  cores = 4,
   formula = "PC1 ~ 1",
   incl_other = FALSE,
-  lead_t = 240
+  lead_t = 240,
+  cores = 4
 )
 }
 \arguments{
@@ -35,9 +35,9 @@ rolling_mod_NWP(
 
 \item{incl_climatology}{Boolean. Include climatology model.}
 
-\item{cores}{Integer. Number of cores to be used.}
-
 \item{formula}{String. Regression formula.}
+
+\item{cores}{Integer. Number of cores to be used.}
 
 \item{hour_v}{Boolean. Include hour covariate.}
 
