@@ -36,6 +36,30 @@ date_demand[,season2 := round(sin(2*pi * season/4), digits = 7)]
 
 date_demand[,hourly_mean_grid := rowMeans(X_mat)]
 
+mean_w_w = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01',
+                                      pred_win = 30, pred_lag = 15, train_y = 5, p_comps = i,  no_pc = TRUE,
+custom = paste0("as.factor(hour):as.factor(week)  + as.factor(w_day):as.factor(week) + s(week) + s(month) + season1 + season2 + year + s(hourly_mean_grid)") ,
+cores = 48, reg_form = "volume~1")
+save(mean_w_w, file = 'mean_w_w.Rda')
+
+mean_w_m = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01',
+                           pred_win = 30, pred_lag = 15, train_y = 5, p_comps = i,  no_pc = TRUE,
+                           custom = paste0("as.factor(hour):as.factor(week)  + as.factor(w_day):as.factor(month) + s(week) + s(month) + season1 + season2 + year + s(hourly_mean_grid)") ,
+                           cores = 48, reg_form = "volume~1")
+save(mean_w_m, file = 'mean_w_m.Rda')
+
+mean_m_w = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01',
+                           pred_win = 30, pred_lag = 15, train_y = 5, p_comps = i,  no_pc = TRUE,
+                           custom = paste0("as.factor(hour):as.factor(month)  + as.factor(w_day):as.factor(week) + s(week) + s(month) + season1 + season2 + year + s(hourly_mean_grid)") ,
+                           cores = 48, reg_form = "volume~1")
+save(mean_m_w, file = 'mean_m_w.Rda')
+
+mean_m_m = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01',
+                           pred_win = 30, pred_lag = 15, train_y = 5, p_comps = i,  no_pc = TRUE,
+                           custom = paste0("as.factor(hour):as.factor(month)  + as.factor(w_day):as.factor(month) + s(week) + s(month) + season1 + season2 + year + s(hourly_mean_grid)") ,
+                           cores = 48, reg_form = "volume~1")
+save(mean_m_m, file = 'mean_m_m.Rda')
+
 # for (i in 3:10){
 #
 #     mod = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01',
@@ -47,34 +71,34 @@ date_demand[,hourly_mean_grid := rowMeans(X_mat)]
 #     save(list = c(paste0("Custom_comb",i, "_int_w_w")), file = paste0("Custom_comb",i, "_int_w_w",'.Rda'))
 # }
 
-for (i in 3:10){
-
-    mod = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01',
-                          pred_win = 30, pred_lag = 15, train_y = 5, p_comps = i,  no_pc = TRUE,
-                          custom = paste0("as.factor(hour):as.factor(month)  + as.factor(w_day):as.factor(week) + s(week) + s(month) + season1 + season2 + year + s(PC1)+ s(PC",i,")") ,
-                          cores = 48, reg_form = "volume~1")
-    assign(paste0("Custom_comb",i, "_int_m_w"), mod)
-
-    save(list = c(paste0("Custom_comb",i, "_int_m_w")), file = paste0("Custom_comb",i, "_int_m_w",'.Rda'))
-}
-
-for (i in 3:10){
-
-    mod = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01',
-                          pred_win = 30, pred_lag = 15, train_y = 5, p_comps = i,  no_pc = TRUE,
-                          custom = paste0("as.factor(hour):as.factor(week)  + as.factor(w_day):as.factor(month) + s(week) + s(month) + season1 + season2 + year + s(PC1)+ s(PC",i,")") ,
-                          cores = 48, reg_form = "volume~1")
-    assign(paste0("Custom_comb",i, "_int_w_m"), mod)
-
-    save(list = c(paste0("Custom_comb",i, "_int_w_m")), file = paste0("Custom_comb",i, "_int_w_m",'.Rda'))
-}
-
-for (i in 3:10){
-
-    mod = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01',
-                          pred_win = 30, pred_lag = 15, train_y = 5, p_comps = i,  no_pc = TRUE,
-                          custom = paste0("as.factor(hour):as.factor(month)  + as.factor(w_day):as.factor(month) + s(week) + s(month) + season1 + season2 + year + s(PC1)+ s(PC",i,")") ,
-                          cores = 48, reg_form = "volume~1")
-    assign(paste0("Custom_comb",i, "_int_m_m"), mod)
-    save(list = c(paste0("Custom_comb",i, "_int_m_m")), file = paste0("Custom_comb",i, "_int_m_m",'.Rda'))
-}
+# for (i in 3:10){
+#
+#     mod = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01',
+#                           pred_win = 30, pred_lag = 15, train_y = 5, p_comps = i,  no_pc = TRUE,
+#                           custom = paste0("as.factor(hour):as.factor(month)  + as.factor(w_day):as.factor(week) + s(week) + s(month) + season1 + season2 + year + s(PC1)+ s(PC",i,")") ,
+#                           cores = 48, reg_form = "volume~1")
+#     assign(paste0("Custom_comb",i, "_int_m_w"), mod)
+#
+#     save(list = c(paste0("Custom_comb",i, "_int_m_w")), file = paste0("Custom_comb",i, "_int_m_w",'.Rda'))
+# }
+#
+# for (i in 3:10){
+#
+#     mod = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01',
+#                           pred_win = 30, pred_lag = 15, train_y = 5, p_comps = i,  no_pc = TRUE,
+#                           custom = paste0("as.factor(hour):as.factor(week)  + as.factor(w_day):as.factor(month) + s(week) + s(month) + season1 + season2 + year + s(PC1)+ s(PC",i,")") ,
+#                           cores = 48, reg_form = "volume~1")
+#     assign(paste0("Custom_comb",i, "_int_w_m"), mod)
+#
+#     save(list = c(paste0("Custom_comb",i, "_int_w_m")), file = paste0("Custom_comb",i, "_int_w_m",'.Rda'))
+# }
+#
+# for (i in 3:10){
+#
+#     mod = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01',
+#                           pred_win = 30, pred_lag = 15, train_y = 5, p_comps = i,  no_pc = TRUE,
+#                           custom = paste0("as.factor(hour):as.factor(month)  + as.factor(w_day):as.factor(month) + s(week) + s(month) + season1 + season2 + year + s(PC1)+ s(PC",i,")") ,
+#                           cores = 48, reg_form = "volume~1")
+#     assign(paste0("Custom_comb",i, "_int_m_m"), mod)
+#     save(list = c(paste0("Custom_comb",i, "_int_m_m")), file = paste0("Custom_comb",i, "_int_m_m",'.Rda'))
+# }
