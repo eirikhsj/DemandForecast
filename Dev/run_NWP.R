@@ -41,7 +41,7 @@ save(Mod_9_120_NWP1_per16, file = 'Mod_9_120_NWP1_per16.Rda')
 
 Mod_9_120_NWP1_per32 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg',incl_other = c("PC_32days_roll", "NWP1_roll32"),
                                 window = 120, cores = 48, formula  = 'PC_32days_roll ~ 1 + NWP1_roll32')
-save(Mod_9_120_NWP1_per32, file = 'Mod_9_120_NWP1_per32.Rda')
+save(Mod_9_120_NWP1_per32, file = 'Mod_9_120_NWP1_per32.Rda')vim
 
 # model = 'reg';incl_other = c("NWP1_roll1","PC_1days_roll");
 # window = 120; cores = 48; formula  = 'PC_1days_roll ~ 1 + NWP1_roll1'
