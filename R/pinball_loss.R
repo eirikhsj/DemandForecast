@@ -15,7 +15,9 @@ pinball_loss = function(quantile, pred, obs){
 
     l = rep(0, length(pred))
     for (i in 1:length(pred)){
-        if (pred[i]< obs[i] ){
+        if (is.na(pred[i])| is.na(obs[i])){
+            l[i]= NA
+        } else if(pred[i]< obs[i] ){
             l[i] = (obs[i]-pred[i])*quantile
         } else{
             l[i] =  (pred[i]-obs[i])*(1-quantile)

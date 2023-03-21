@@ -16,7 +16,6 @@ rolling_mod_NWP(
   incl_climatology = FALSE,
   formula = "PC1 ~ 1",
   incl_other = FALSE,
-  lead_t = 240,
   cores = 4
 )
 }

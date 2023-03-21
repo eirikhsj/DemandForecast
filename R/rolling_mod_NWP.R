@@ -49,10 +49,11 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
             pred_vars = c(pred_vars, paste0('NWP', l, '_', re, q*100))
             formula = paste0(formula, ' + ', paste0('NWP', l, '_', re, q*100))}
     }
-    if (incl_other == FALSE){
+    if (incl_other[1] == FALSE){
         incl_vars = c(incl_vars, pred_vars)
     } else{
-        incl_vars = c(incl_vars, pred_vars, incl_other)
+        pred_vars = incl_other[2]
+        incl_vars = c(incl_vars, pred_vars, incl_other[1])
         print(incl_vars)
     }
 
@@ -126,11 +127,12 @@ Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, p
     results = test
     results[,'pred' := predict(qreg, newdata = test)]
     results[,'test_loss' := test_l]
-    print(paste0('Ave pinball loss for ', init_day, ' is = ', mean(test_l)))
+    print(paste0('Ave pinball loss for ', init_day, ' is = ', round(mean(test_l),digits = 2)))
 
     ## 3e) Register Beta coefficients
+    print(pred_vars)
     if(predictors >0){
-        print(pred_vars)
+
         betas = data.table(t(coef(qreg)))[,..pred_vars]
         colnames(betas) = paste0('coef_',pred_vars)
         betas = betas[rep(1,dim(test)[1]),] #unnecessary storage use, expand later
@@ -150,7 +152,6 @@ Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, p
         clima_pred = climatology[month_day %in% format(test$date, format ="%m-%d"), quant]
         results[,'clima_pred' := clima_pred]
     }
-    print(formula)
     return(results)
 }
 
