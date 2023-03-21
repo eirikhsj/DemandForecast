@@ -25,7 +25,7 @@
 
 #' @export
 rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2023-01-01'), q=0.9, ERA_NWP, predictors=1, model='reg', window = 60, reweight = FALSE,
-                       incl_climatology =FALSE, formula = 'PC1 ~ 1', incl_other = FALSE, lead_t = 240, cores = 4){
+                       incl_climatology =FALSE, formula = 'PC1 ~ 1', incl_other = FALSE, cores = 4){
 
     #1) Fix dates
     start =as.Date(forc_start)
@@ -56,7 +56,7 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
         print(incl_vars)
     }
 
-    ERA_NWP_vars = ERA_NWP[lead_time <= lead_t ,.SD, .SDcols =incl_vars]
+    ERA_NWP_vars = ERA_NWP[lead_time <= window*4,.SD, .SDcols =incl_vars]
 
     arg1 = ERA_NWP_vars
     arg2 = q
@@ -78,8 +78,8 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
     #mod = gam(Y ~X, data = data.table(X = rnorm(10), Y = rnorm(10)))
     detailed_results = mclapply(seq_along(init_days),
                                 "Rolling_nwp",
-                                ERA_NWP_vars = arg1, q = arg2, init_days= arg3, window = arg4, reweight = arg5, model= arg6,
-                                predictors=arg7, incl_climatology= arg8, formula = arg9, pred_vars=arg10,
+                                ERA_NWP_vars = arg1, q = arg2, init_days= arg3, window = arg4, reweight = arg5, model = arg6,
+                                predictors = arg7, incl_climatology = arg8, formula = arg9, pred_vars = arg10,
                                 mc.cores = arg11)
 
     #4) Store and return
@@ -87,11 +87,10 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
     out = c()
     out$Results = Results
     print('Temperature forecast has completed')
-    print('天气预报完成')
+    print('温度预报完成')
     return(out)
 }
 
-#This works remote
 #' @export
 Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, predictors,
                        incl_climatology, formula, pred_vars){
@@ -113,16 +112,12 @@ Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, p
     # if (max(train$year) > max(test$year)){
     #     test = test[year > max(train$year), year := max(train$year)]
     # }
-    print(dim(test))
+
     ## 3c) Run qr-reg
     if (model == 'reg'){
         print(formula)
-        #print(q)
-        #print(dim(train))
-        #print(find('rq'))
         qreg = rq(formula, data = train, tau = c(q))
         #qreg = gam(as.formula(formula), data = train)
-        print(qreg)
         train_l = pinball_loss(q, predict(qreg), train$PC1)
         test_l = pinball_loss(q, predict(qreg, newdata = test), test$PC1)
     }
@@ -135,16 +130,12 @@ Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, p
 
     ## 3e) Register Beta coefficients
     if(predictors >0){
-        print('Enter1')
         print(pred_vars)
         betas = data.table(t(coef(qreg)))[,..pred_vars]
-        print('Enter2')
         colnames(betas) = paste0('coef_',pred_vars)
-
         betas = betas[rep(1,dim(test)[1]),] #unnecessary storage use, expand later
         results = cbind(results, betas)
     }
-
 
     ## 3f) Include Climatology
     if(incl_climatology == TRUE){
@@ -158,7 +149,6 @@ Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, p
         }
         clima_pred = climatology[month_day %in% format(test$date, format ="%m-%d"), quant]
         results[,'clima_pred' := clima_pred]
-        #print(paste0("Climatology: ", sqrt(mean((test$PC1 - clima_pred)^2))))
     }
     print(formula)
     return(results)

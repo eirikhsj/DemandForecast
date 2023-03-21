@@ -542,7 +542,7 @@ lines(Mod_9_60_climatology$Results[, mean(loss32days), by = group32], col = 'red
 
 plot(1 - (Mod_9_60_NWP1$Results[,mean(test_loss), by = lead_time][,V1]/
               Mod_9_60_climatology$Results[,mean(clima_loss), by = lead_time][,V1]),
-              type = 'l',col = 'black', ylim = c(-0.05, 0.71))
+              type = 'l',col = 'black', ylim = c(-0.05, 0.6), main = "Skill by Period")
 lines(rep(1 - (Mod_9_60_NWP1$Results[,mean(loss1days), by = group1][,V1]/
               Mod_9_60_climatology$Results[,mean(loss1days), by = group1][,V1]), each = 4),col = 'grey')
 abline(h = 0)
@@ -556,6 +556,7 @@ lines(rep(1 - (Mod_9_60_NWP1$Results[,mean(loss16days), by = group16][,V1]/
               Mod_9_60_climatology$Results[,mean(loss16days), by = group16][,V1]),each = 64),col = 'blue')
 lines(rep(1 - (Mod_9_60_NWP1$Results[,mean(loss32days), by = group32][,V1]/
               Mod_9_60_climatology$Results[,mean(loss32days), by = group32][,V1]),each = 128),col = 'orange')
+legend("topright", lty = 1, cex = 1, pch = 16, col = c('black','grey','grey','grey', 'red', 'blue', 'orange'), legend = c("6-hour", "Daily", "2 days", "4 days","8 days", "16 days", "32 days"))
 ```
 
 
