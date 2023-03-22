@@ -874,6 +874,11 @@ plot(ERA_correct_clima[,mean(loss_clima), keyby = lead_time], type = 'l')
 ```
 
 
+```{r}
+Mod_9_120_NWP1_check_climat = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg', 
+                                window = 120, cores = 48, formula  = 'PC1 ~ 1', incl_climatology = TRUE)
+```
+
 # Code for saving and relocating files
 
 save(Mod_9_60_comb_int_a_0, file = 'Mod_9_60_comb_int_a_0.Rda')

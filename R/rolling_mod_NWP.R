@@ -163,7 +163,8 @@ Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, p
             climatology = rbind(climatology, leap)
         }
         pred_clima = climatology[month_day %in% format(test$date, format ="%m-%d"), .(month_day, hour,  clima_pred= quant)]
-        results = merge(results,pred_clima)
+        results[,month_day:=  format(date, format ="%m-%d")]
+        results = merge(results,pred_clima, by = c("month_day", "hour"))
     }
     return(results)
 }
