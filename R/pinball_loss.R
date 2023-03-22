@@ -10,18 +10,21 @@
 #' @examples
 #' pinball_loss(0.9, 2, 2)
 #'
-pinball_loss = function(quantile, pred, obs){
+pinball_loss = function(quantile, pred, obs, Jensen = FALSE){
     #Input is quantile q and predicted values pred, and observed values obs
-
     l = rep(0, length(pred))
-    for (i in 1:length(pred)){
-        if (is.na(pred[i])| is.na(obs[i])){
-            l[i]= NA
-        } else if(pred[i]< obs[i] ){
-            l[i] = (obs[i]-pred[i])*quantile
-        } else{
-            l[i] =  (pred[i]-obs[i])*(1-quantile)
+    if (Jensen ==FALSE){
+        for (i in 1:length(pred)){
+            if (is.na(pred[i])| is.na(obs[i])){
+                l[i]= NA
+            } else if(pred[i]< obs[i] ){
+                l[i] = (obs[i]-pred[i])*quantile
+            } else{
+                l[i] =  (pred[i]-obs[i])*(1-quantile)
+            }
         }
+    } else{
+
     }
     #L_avg = sum(l)/length(pred)
     return (l)

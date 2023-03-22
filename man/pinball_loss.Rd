@@ -4,7 +4,7 @@
 \alias{pinball_loss}
 \title{pinball loss}
 \usage{
-pinball_loss(quantile, pred, obs)
+pinball_loss(quantile, pred, obs, Jensen = FALSE)
 }
 \arguments{
 \item{quantile}{Quantile of interest}

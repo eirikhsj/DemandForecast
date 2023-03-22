@@ -16,6 +16,7 @@ rolling_mod_NWP(
   incl_climatology = FALSE,
   formula = "PC1 ~ 1",
   incl_other = FALSE,
+  skill_interval = 0,
   cores = 4
 )
 }

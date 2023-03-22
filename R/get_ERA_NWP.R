@@ -85,24 +85,24 @@ get_ERA_NWP = function(ERA_path = '~/Desktop/Master2023/Data/PC_ERA/PC_ERA_79_92
         Cast4[,.SD, .SDcols = vars[1:6] ],
         Cast5[,.SD, .SDcols = vars[1:5] ]), fill = TRUE)
 
-    ERA_NEW_keep = ERA_NWP_comb[NWP_1!='NA']
+    ERA_NWP_keep = ERA_NWP_comb[NWP_1!='NA']
 
     #Create time variables from date
-    ERA_NEW_keep[,'year'  := (year(date) - 1993)]
-    ERA_NEW_keep[,'month' := month(date)]
-    ERA_NEW_keep[,'week'  := week(date)]
-    ERA_NEW_keep[,'lead_time':= ((as.integer(difftime(date, init_date_1, units = 'days')))*4)+ hour/6]
+    ERA_NWP_keep[,'year'  := (year(date) - 1993)]
+    ERA_NWP_keep[,'month' := month(date)]
+    ERA_NWP_keep[,'week'  := week(date)]
+    ERA_NWP_keep[,'lead_time':= ((as.integer(difftime(date, init_date_1, units = 'days')))*4)+ hour/6]
 
     if(reweight==FALSE){
         NWPs = paste0(c('NWP1_', 'NWP2_', 'NWP3_', 'NWP4_', 'NWP5_'),quant)
         #Set new names and select
-        setnames(ERA_NEW_keep, c('NWP_1', 'NWP_2', 'NWP_3', 'NWP_4', 'NWP_5','init_date_1', 'PC'),
+        setnames(ERA_NWP_keep, c('NWP_1', 'NWP_2', 'NWP_3', 'NWP_4', 'NWP_5','init_date_1', 'PC'),
                  c(NWPs,'init_date',PC ))
     }
     else{
         NWPs = paste0(c('NWP1_re', 'NWP2_re', 'NWP3_re', 'NWP4_re', 'NWP5_re'),quant)
         #Set new names and select
-        setnames(ERA_NEW_keep, c('NWP_1', 'NWP_2', 'NWP_3', 'NWP_4', 'NWP_5','init_date_1', 'PC'),
+        setnames(ERA_NWP_keep, c('NWP_1', 'NWP_2', 'NWP_3', 'NWP_4', 'NWP_5','init_date_1', 'PC'),
                  c(NWPs,'init_date',PC ))
     }
 
@@ -110,7 +110,7 @@ get_ERA_NWP = function(ERA_path = '~/Desktop/Master2023/Data/PC_ERA/PC_ERA_79_92
     last_vars = c(c('date','hour','week', 'month','year','init_date', 'lead_time'),
                   NWPs[1:NWP_preds], PC)
 
-    ERA_NWP_select = ERA_NEW_keep[,.SD, .SDcols = last_vars]
+    ERA_NWP_select = ERA_NWP_keep[,.SD, .SDcols = last_vars]
 
     return(ERA_NWP_select)
 }

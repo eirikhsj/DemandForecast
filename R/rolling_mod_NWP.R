@@ -25,7 +25,7 @@
 
 #' @export
 rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2023-01-01'), q=0.9, ERA_NWP, predictors=1, model='reg', window = 60, reweight = FALSE,
-                       incl_climatology =FALSE, formula = 'PC1 ~ 1', incl_other = FALSE, cores = 4){
+                       incl_climatology =FALSE, formula = 'PC1 ~ 1', incl_other = FALSE, skill_interval = 0, cores = 4){
 
     #1) Fix dates
     start =as.Date(forc_start)
@@ -59,6 +59,13 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
 
     ERA_NWP_vars = ERA_NWP[lead_time <= window*4,.SD, .SDcols =incl_vars]
 
+    if (skill_interval>0){
+        ERA_NWP_vars[, c(paste0("PC_", skill_interval, "days_roll"), paste0("NWP1_roll", skill_interval)):=
+                                            .(rollapply(PC1, width = skill_interval*4, partial = TRUE, FUN = mean),
+                                              rollapply(NWP1_90, width = skill_interval*4, partial = TRUE, FUN = mean)), by = .(init_date)]
+
+    }
+
     arg1 = ERA_NWP_vars
     arg2 = q
     arg3 = init_days
@@ -69,7 +76,7 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
     arg8 = incl_climatology
     arg9 = formula
     arg10 = pred_vars
-    arg11 =cores
+    arg11 = cores
 
     ## **** Run parallel cores ****
     blas_set_num_threads(1)
@@ -141,7 +148,13 @@ Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, p
 
     ## 3f) Include Climatology
     if(incl_climatology == TRUE){
-        climatology = train[, .(quant =quantile(PC1,probs = q)), by = .(month_day = format(date, format ="%m-%d"), hour)]
+
+        if (skill_interval>0){
+            pc_int = paste0("PC_", skill_interval, "days_roll")
+            climatology = train[, .(quant =quantile(get(pc_int),probs = q)), by = .(month_day = format(date, format ="%m-%d"), hour)]
+        } else{
+            climatology = train[, .(quant =quantile(PC1,probs = q)), by = .(month_day = format(date, format ="%m-%d"), hour)]
+        }
 
         if ("02-29" %in% format(test$date, format ="%m-%d") & !("02-29" %in%climatology$month_day)){ #Leap year issue
             print('Correcting leap year')
@@ -149,8 +162,8 @@ Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, p
             leap[,month_day:=  rep("02-29", 4)]
             climatology = rbind(climatology, leap)
         }
-        clima_pred = climatology[month_day %in% format(test$date, format ="%m-%d"), quant]
-        results[,'clima_pred' := clima_pred]
+        pred_clima = climatology[month_day %in% format(test$date, format ="%m-%d"), .(month_day, hour,  clima_pred= quant)]
+        results = merge(results,pred_clima)
     }
     return(results)
 }
