@@ -19,12 +19,15 @@
 #' @import data.table
 #' @import stats
 #'
-#' @examples mod = rolling_mod_NWP('2007-01-01', '2022-05-01', 0.9, ERA_NWP, 1, model = 'reg', window = 60, reweight=FALSE)
+#' @examples mod = rolling_mod_NWP('2007-01-01', '2022-05-01', 0.9, ERA_NWP, 1, model = 'qreg', window = 60, reweight=FALSE)
 #' @name rolling_mod_NWP
 
 
+forc_start=as.Date('2007-01-01'); forc_end=as.Date('2023-01-01'); q=0.9; ERA_NWP; predictors=0; model='qreg'; window = 125; reweight = FALSE;
+incl_climatology =TRUE; formula = 'PC1 ~ 1'; incl_other = FALSE; skill_interval = 0; cores = 4
+
 #' @export
-rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2023-01-01'), q=0.9, ERA_NWP, predictors=1, model='reg', window = 60, reweight = FALSE,
+rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2023-01-01'), q=0.9, ERA_NWP, predictors=1, model='qreg', window = 60, reweight = FALSE,
                        incl_climatology =FALSE, formula = 'PC1 ~ 1', incl_other = FALSE, skill_interval = 0, cores = 4){
 
     #1) Fix dates
@@ -63,7 +66,6 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
         ERA_NWP_vars[, c(paste0("PC_", skill_interval, "days_roll"), paste0("NWP1_roll", skill_interval)):=
                                             .(rollapply(PC1, width = skill_interval*4, partial = TRUE, FUN = mean),
                                               rollapply(NWP1_90, width = skill_interval*4, partial = TRUE, FUN = mean)), by = .(init_date)]
-
     }
 
     arg1 = ERA_NWP_vars
@@ -116,30 +118,31 @@ Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, p
     } else{
         test = ERA_NWP_final[init_date == init_day, .SD, keyby = .(date,hour)] #Use of several preds means target_days selects to many dates
     }
-
+    results = test
     # if (max(train$year) > max(test$year)){
     #     test = test[year > max(train$year), year := max(train$year)]
     # }
 
     ## 3c) Run qr-reg
-    if (model == 'reg'){
+    if (model == 'qreg'){
         print(formula)
         qreg = rq(formula, data = train, tau = c(q))
         #qreg = gam(as.formula(formula), data = train)
         train_l = pinball_loss(q, predict(qreg), train$PC1)
         test_l = pinball_loss(q, predict(qreg, newdata = test), test$PC1)
+        results[,'pred' := predict(qreg, newdata = test)]
+
+    }  else if(model == 'spline'){
+        qreg = rq(PC1 ~ bs(NWP1_roll1, df=5), data=train, tau=c(q))
     }
 
     ## 3d) Register loss
-    results = test
-    results[,'pred' := predict(qreg, newdata = test)]
     results[,'test_loss' := test_l]
-    print(paste0('Ave pinball loss for ', init_day, ' is = ', round(mean(test_l),digits = 2)))
+    print(paste0('Ave pinball loss for model', init_day, ' is = ', round(mean(test_l),digits = 2)))
 
     ## 3e) Register Beta coefficients
     print(pred_vars)
     if(predictors >0){
-
         betas = data.table(t(coef(qreg)))[,..pred_vars]
         colnames(betas) = paste0('coef_',pred_vars)
         betas = betas[rep(1,dim(test)[1]),] #unnecessary storage use, expand later
@@ -148,7 +151,6 @@ Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, p
 
     ## 3f) Include Climatology
     if(incl_climatology == TRUE){
-
         if (skill_interval>0){
             pc_int = paste0("PC_", skill_interval, "days_roll")
             climatology = train[, .(quant =quantile(get(pc_int),probs = q)), by = .(month_day = format(date, format ="%m-%d"), hour)]
@@ -165,7 +167,9 @@ Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, p
         pred_clima = climatology[month_day %in% format(test$date, format ="%m-%d"), .(month_day, hour,  clima_pred= quant)]
         results[,month_day:=  format(date, format ="%m-%d")]
         results = merge(results,pred_clima, by = c("month_day", "hour"))
+
     }
+
     return(results)
 }
 

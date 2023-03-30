@@ -6,13 +6,31 @@ output: html_document
 ---
 
 
+#This document contains information about chapter 7: Use of NWP Forecasts for Temperature prediction
+
+It contains model runs from: 
+1) Out of sample Climatology
+2) In sample Climatology for 0.1-0.9 quantiles
+3) Weighted NWP-quantile models for 0.1-0.9 (Non-regression)
+- Comparison plot
+- Skill plot
+4) Quantile regression models
+- Time Covariates
+- All lead_time models
+- Daily models
+
+5) Spline alternative to regression models
+- 
+6) Scoring Intervals
+
+# Load data
 ```{r, cache = TRUE}
 library(DemandForecast)
-library(data.table)
-library(ncdf4)
-library(parallel)
-library(mgcv)
-library(quantreg)
+# library(data.table)
+# library(ncdf4)
+# library(parallel)
+# library(mgcv)
+# library(quantreg)
 
 ERA_NWP = get_ERA_NWP(ERA_path = "/mn/kadingir/datascience_000000/eirikhsj/PC_ERA_79_92.Rda", 
                       NWP_path ="/mn/kadingir/datascience_000000/eirikhsj/NWP_quant_1993_2023.Rda",
@@ -21,64 +39,244 @@ ERA_NWP = get_ERA_NWP(ERA_path = "/mn/kadingir/datascience_000000/eirikhsj/PC_ER
 ERA_NWP[, season:= ifelse(month(date) %in% c(12,1,2), 1, 
                             ifelse(month(date) %in% c(3,4,5), 2,
                             ifelse(month(date) %in% c(6,7,8), 3, 4)))]
+```
 
 
+# 1) Weighted vs Quantile regression Climatology 0.9
+```{r}
+ERA_NWP[,raw_loss := pinball_loss(0.9, NWP1_90, PC1)]
+#ERA_NWP[,mean(raw_loss)]
+plot(ERA_NWP[,mean(raw_loss), keyby = lead_time], type = 'l', ylim = c(0, 13))
+lines(Mod_9_120_NWP1_check_climat$Results[,mean(test_loss), by = lead_time],col = 'red')
+#lines(TTTT$Results[,mean(test_loss), keyby = lead_time], col = 'purple')
+legend('bottomright', col = c('black','red', 'purple'), title = 'Model', legend = c('NWP1 (Weighted /direct)', 'NWP1 (Qreg All data)', "NWP1 (Qreg 6-hour Beta)"), pch = 16, lty = 1)
+```
 
+### Plot of Weighted quantile estimate for specific month
+```{r}
+#load("~/Desktop/Master2023/Data/ERA_NWP_raw_loss.Rda")
+plot_dat = ERA_NWP_raw_loss[init_date == '2020-12-01', c(paste0("NWP_PC1_q",seq(1:9),"0"), 'PC1','NWP_PC1_mean', 'hour')]
+plot_dat[,x:= 1:500]
+ggplot() +
+    geom_ribbon(data = plot_dat[hour == 6], aes(x = x, ymin = NWP_PC1_q10, ymax =NWP_PC1_q90, fill = "1-9"), alpha = 0.8) +
+    geom_ribbon(data = plot_dat[hour == 6], aes(x = x, ymin = NWP_PC1_q20, ymax = NWP_PC1_q80, fill = "2-8"), alpha = 0.6) +
+    geom_ribbon(data = plot_dat[hour == 6], aes(x = x, ymin = NWP_PC1_q30, ymax = NWP_PC1_q70, fill = "3-7"), alpha = 0.4) +
+    geom_ribbon(data = plot_dat[hour == 6], aes(x = x, ymin = NWP_PC1_q40, ymax = NWP_PC1_q60, fill = "4-6"), alpha = 0.2) +
+    scale_fill_brewer(palette = "RdYlGn") +
+    geom_line(data = plot_dat[hour == 6],  color = 'blue',aes(x = x, y = PC1))+
+    geom_line(data = plot_dat[hour == 6],  color = 'black',aes(x = x, y = NWP_PC1_mean))+
+    geom_line(data = plot_dat[hour == 6],  color = 'purple',aes(x = x, y = NWP_PC1_q50))+
+    theme_classic()+
+    coord_cartesian(ylim = c(-150, 370), xlim = c(0,500)) 
+```
+# Climatology models (Out-of-sample for all quantiles)
+```{r}
+Clima_90 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.8, ERA_NWP, 0, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1', incl_climatology = TRUE)                                            
+Clima_80 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.8, ERA_NWP, 0, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1', incl_climatology = TRUE)                                              
+Clima_70 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.7, ERA_NWP, 0, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1', incl_climatology = TRUE)  
+Clima_60 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.6, ERA_NWP, 0, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1', incl_climatology = TRUE)                                            
+Clima_50 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.5, ERA_NWP, 0, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1', incl_climatology = TRUE)                                              
+Clima_40 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.4, ERA_NWP, 0, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1', incl_climatology = TRUE)                                              
+Clima_30 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.3, ERA_NWP, 0, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1', incl_climatology = TRUE)                                              
+Clima_20 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.2, ERA_NWP, 0, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1', incl_climatology = TRUE)
+Clima_10 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.1, ERA_NWP, 0, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1', incl_climatology = TRUE)
+
+setnames(Clima_90$Results, 'clima_pred', 'clima_pred90')
+setnames(Clima_80$Results, 'clima_pred', 'clima_pred80')
+setnames(Clima_70$Results, 'clima_pred', 'clima_pred70')
+setnames(Clima_60$Results, 'clima_pred', 'clima_pred60')
+setnames(Clima_50$Results, 'clima_pred', 'clima_pred50')
+setnames(Clima_40$Results, 'clima_pred', 'clima_pred40')
+setnames(Clima_30$Results, 'clima_pred', 'clima_pred30')
+setnames(Clima_20$Results, 'clima_pred', 'clima_pred20')
+setnames(Clima_10$Results, 'clima_pred', 'clima_pred10')
+
+Clima = Clima_10$Results[,.(date, hour, month_day, PC1, init_date, lead_time, clima_pred10)]
+Clima = merge(Clima, Clima_20$Results[,.(date, hour, month_day, PC1, init_date, lead_time, clima_pred20)], by = c('date', 'hour', 'init_date', 'PC1', 'lead_time', 'month_day'))
+Clima = merge(Clima, Clima_30$Results[,.(date, hour, month_day, PC1, init_date, lead_time, clima_pred30)], by = c('date', 'hour', 'init_date', 'PC1', 'lead_time', 'month_day'))
+Clima = merge(Clima, Clima_40$Results[,.(date, hour, month_day, PC1, init_date, lead_time, clima_pred40)], by = c('date', 'hour', 'init_date', 'PC1', 'lead_time', 'month_day'))
+Clima = merge(Clima, Clima_50$Results[,.(date, hour, month_day, PC1, init_date, lead_time, clima_pred50)], by = c('date', 'hour', 'init_date', 'PC1', 'lead_time', 'month_day'))
+Clima = merge(Clima, Clima_60$Results[,.(date, hour, month_day, PC1, init_date, lead_time, clima_pred60)], by = c('date', 'hour', 'init_date', 'PC1', 'lead_time', 'month_day'))
+Clima = merge(Clima, Clima_70$Results[,.(date, hour, month_day, PC1, init_date, lead_time, clima_pred70)], by = c('date', 'hour', 'init_date', 'PC1', 'lead_time', 'month_day'))
+Clima = merge(Clima, Clima_80$Results[,.(date, hour, month_day, PC1, init_date, lead_time, clima_pred80)], by = c('date', 'hour', 'init_date', 'PC1', 'lead_time', 'month_day'))
+Clima = merge(Clima, Clima_90$Results[,.(date, hour, month_day, PC1, init_date, lead_time, clima_pred90)], by = c('date', 'hour', 'init_date', 'PC1', 'lead_time', 'month_day'))
+```
+
+### Comparison of Wegihted NWP1 with Climatology at different quantiles 0.1-0.9
+```{r}
+ERA_NWP_raw_loss[,'lead_time':= ((as.integer(difftime(date, init_date, units = 'days')))*4)+ hour/6]
+
+#plot(ERA_NWP_raw_loss[, mean(pinball_loss(i/10,NWP_PC1_mean , PC1)), by = lead_time], type = 'l', ylim = c(0, 25))
+colz = c('red', 'blue', 'green', 'yellow', 'brown', 'purple', 'grey', 'pink', 'orange')
+colz = rep('red',9)
+par(mar=c(4.5,4.5,4.5,4.5))
+for (i in c(seq(1, 9, 1))){
+    # plot(ERA_NWP_raw_loss[, mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1)), by = lead_time], col = 'red', type = 'l', main = paste0('Pinball Loss of NWP1 and Climatology (', i*10,"th percentile)"), ylab = 'Pinball Loss', xlab = 'Lead Time (6 hour-spaced )', ylim = c(0, 25))
+    # lines(Clima[, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1)), by = lead_time], col = 'blue')
+    # par(new = TRUE)
+    # plot(1 - (ERA_NWP_raw_loss[, mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1)), by = lead_time][,V1]/Clima[, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1)), by = lead_time][,V1]), type = 'l', axes = FALSE, xlab = "", ylab = "", ylim = c(-0.1, 0.8))
+    # axis(side = 4, at = seq(-0.1, 1, by = 0.2)) 
+    # abline(h = 0, lty = 2, col = 'black')
+    # abline(h = 0.1, lty = 2, col = 'grey')
+    # abline(h = -0.1, lty = 2, col = 'grey')
+    # if (ERA_NWP_raw_loss[, mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1)), by = lead_time][500,V1]>17){
+    #     l = 'right'
+    # } else{ l = 'topright'}
+    # legend(l, col = c('red', 'blue', 'black'), legend =  c(paste0("NWP1 q",i,"0"), paste0("Climatology q",i,"0"), "Skill Score NWP1"),pch = 16,lty = c(1))
+    # mtext("Skill Score", side = 4, line = 3, cex = 1)
+    print(c(Clima[lead_time %in% 1:120, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1))],
+              ERA_NWP_raw_loss[lead_time %in% 1:120, mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1))]))
+    
+    print(c(
+        1 - (ERA_NWP_raw_loss[lead_time %in% 1:80, mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1))]/Clima[lead_time %in% 1:80, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1))]),
+        1 - (ERA_NWP_raw_loss[lead_time %in% 81:160, mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1))]/Clima[lead_time %in% 81:160, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1))]),
+        1 - (ERA_NWP_raw_loss[lead_time %in% 161:240, mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1))]/Clima[lead_time %in% 161:240, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1))])))
+    # acf(1 - (ERA_NWP_raw_loss[100:500, mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1)), by = lead_time][,V1]/Clima[100:500, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1)), by = lead_time][,V1]))
+}
+
+```
+Looking at inter-quantile differences. 
+```{r}
+Clima[,dist90_10:= clima_pred90 -clima_pred10]
+Clima[,mean(dist90_10), by = month(date)]
+ERA_NWP_raw_loss[,dist90_10:= NWP_PC1_q90 -NWP_PC1_q10]
+ERA_NWP_raw_loss[,mean(dist90_10), by = month(date)]
+
+Clima[,dist70_30:= clima_pred70 -clima_pred30]
+Clima[,mean(dist70_30), by = month(date)]
+ERA_NWP_raw_loss[,dist70_30:= NWP_PC1_q70 -NWP_PC1_q30]
+ERA_NWP_raw_loss[,mean(dist70_30), by = month(date)]
+
+data.table(cbind(Clima[,mean(dist90_10), by = month(date)],ERA_NWP_raw_loss[,mean(dist90_10), by = month(date)][,V1]))
+
+
+data.table(cbind(Clima[,mean(dist70_30), by = month(date)],ERA_NWP_raw_loss[,mean(dist70_30), by = month(date)][,V1]))
+
+
+ERA_NWP_raw_loss[lead_time>80,mean(NWP_PC1_q90 -NWP_PC1_q10)]
+Clima[lead_time>80,mean(clima_pred90 -clima_pred10)]
+
+
+ERA_CLIMA = merge(Clima, ERA_NWP_raw_loss, by = c('date', 'hour', 'lead_time', 'PC1'))
+ERA_CLIMA[, mean(clima_pred90-NWP_PC1_q90)]
 
 ```
 
+
+
+```{r}
+ERA_out_of_sample = ERA$dt_test[hour %in% c(6,12,18,24)]
+ERA_out_of_sample[,month_day := format(date, format ="%m-%d")]
+for (i in c(seq(0.1, 0.9, 0.1))){
+    
+    ERA_out_of_sample[,c(paste0("quant_",i*100)) := .(quantile(PC1,probs = i)), by = .(month_day = format(date, format ="%m-%d"), hour)]
+    ERA_out_of_sample[,c(paste0("quant_",i*100,"_loss"))  := .(pinball_loss(i,get(paste0("quant_",i*100)),PC1))]
+}
+#ERA_correct_clima[,loss_clima := pinball_loss(0.9,quant,PC1)]
+
+ERA_out_of_sample[year(date)==1999 & month(date) %in% c(1,2,3,4,5)]
+
+plot_dat = ERA_out_of_sample[year(date)==2015 & month(date) %in% c(12,1,2,3,4,5), c(paste0("quant_",seq(1:9),"0"), 'PC1', 'hour')]
+plot_dat = plot_dat[1:500,]
+plot_dat[,x:= 1:500]
+ggplot() +
+    geom_ribbon(data = plot_dat[hour == 6], aes(x = x, ymin = quant_10, ymax =quant_90, fill = "1-9"), alpha = 0.8) +
+    geom_ribbon(data = plot_dat[hour == 6], aes(x = x, ymin = quant_20, ymax = quant_80, fill = "2-8"), alpha = 0.6) +
+    geom_ribbon(data = plot_dat[hour == 6], aes(x = x, ymin = quant_30, ymax = quant_70, fill = "3-7"), alpha = 0.4) +
+    geom_ribbon(data = plot_dat[hour == 6], aes(x = x, ymin = quant_40, ymax = quant_60, fill = "4-6"), alpha = 0.2) +
+    scale_fill_brewer(type = "seq", palette = "Blues", direction = -1, guide = FALSE, na.value = "gray50") +
+    geom_line(data = plot_dat[hour == 6],  color = 'blue',aes(x = x, y = PC1))+
+    geom_line(data = plot_dat[hour == 6],  color = 'purple',aes(x = x, y = quant_50))+
+    coord_cartesian(ylim = c(-150, 370), xlim = c(0,500)) +
+    theme_classic()
+
+```
+
+
+```{r}
+#rep(seq(dato, length.out = 125, by = "day"),each =4)
+dato = as.Date('2013-11-01')
+plot_dat2 = Clima[init_date == dato, c(paste0("clima_pred",seq(1:9),"0"), 'PC1', 'hour')]
+plot_dat2[,x:= rep(seq(dato, length.out = 125, by = "day"),each =4)]
+plot_dat = ERA_NWP_raw_loss[init_date == dato, c(paste0("NWP_PC1_q",seq(1:9),"0"), 'PC1','NWP_PC1_mean', 'hour')]
+plot_dat[,x:= rep(seq(dato, length.out = 125, by = "day"),each =4)]
+ggplot() +
+    geom_ribbon(data = plot_dat2[hour == 6], aes(x = x, ymin = clima_pred10, ymax =clima_pred90, fill = "1-9"), alpha = 0.8) +
+    geom_ribbon(data = plot_dat2[hour == 6], aes(x = x, ymin = clima_pred20, ymax = clima_pred80, fill = "2-8"), alpha = 0.6) +
+    geom_ribbon(data = plot_dat2[hour == 6], aes(x = x, ymin = clima_pred30, ymax = clima_pred70, fill = "3-7"), alpha = 0.4) +
+    geom_ribbon(data = plot_dat2[hour == 6], aes(x = x, ymin = clima_pred40, ymax = clima_pred60, fill = "4-6"), alpha = 0.2) +
+        scale_fill_brewer(type = "seq", palette = "Blues", direction = -1, guide = 'none', na.value = "gray50") +
+    #geom_line(data = plot_dat2[hour == 6],  color = 'purple',aes(x = x, y = clima_pred50))+
+    coord_cartesian(ylim = c(-50, 320)) +
+     geom_line(data = plot_dat[hour == 6],  color = 'red',aes(x = x, y = NWP_PC1_q10))+
+    #geom_line(data = plot_dat[hour == 6],  color = 'red',aes(x = x, y = NWP_PC1_q20))+
+    geom_line(data = plot_dat[hour == 6], linetype = "dashed",  color = 'red',aes(x = x, y = NWP_PC1_q30))+
+    #geom_line(data = plot_dat[hour == 6],  color = 'red',aes(x = x, y = NWP_PC1_q40))+
+    geom_line(data = plot_dat[hour == 6], linetype = "dotted",  color = 'red',aes(x = x, y = NWP_PC1_q50))+
+    #geom_line(data = plot_dat[hour == 6],  color = 'red',aes(x = x, y = NWP_PC1_q60))+
+    geom_line(data = plot_dat[hour == 6], linetype = "dashed",  color = 'red',aes(x = x, y = NWP_PC1_q70))+
+    #geom_line(data = plot_dat[hour == 6],  color = 'red',aes(x = x, y = NWP_PC1_q80))+
+    geom_line(data = plot_dat[hour == 6],  color = 'red',aes(x = x, y = NWP_PC1_q90))+
+    geom_line(data = plot_dat2[hour == 6],  color = 'black',aes(x = x, y = PC1))+
+      labs(title = "Predictive Distributions for NWP and Climatology (Winter 13/14)", x = "Date", y = "Factor Loading Value") +
+    scale_x_date(date_labels = "%b-%d", breaks= c(as.Date('2013-11-01'), as.Date('2013-11-15'), as.Date('2013-12-01'), as.Date('2013-12-15'), as.Date('2014-01-01'), as.Date('2014-01-15'), as.Date('2014-02-01'), as.Date('2014-02-15'),as.Date('2014-03-01'),as.Date('2014-03-15')))+
+    scale_color_manual(values = c("Line 1" = "red", "Line 2" = "blue"),
+                     labels = c("Line 1", "Line 2")) +
+  scale_linetype_manual(values = c("Line 1" = "solid", "Line 2" = "dashed"),
+                        labels = c("Line 1", "Line 2")) +
+    theme_classic()
+```
+
+
 ```{r, eval  = FALSE}
-save(Mod_9_60_inter, file = 'Mod_9_60_inter.Rda')
-save(Mod_9_60_year_c, file = 'Mod_9_60_year_c.Rda')
-save(Mod_9_60_year_f, file = 'Mod_9_60_year_f.Rda')
-save(Mod_9_60_hour_c, file = 'Mod_9_60_hour_c.Rda')
-save(Mod_9_60_hour_f, file = 'Mod_9_60_hour_f.Rda')
-save(Mod_9_60_hour_sin, file = 'Mod_9_60_hour_sin.Rda')
-save(Mod_9_60_week_c, file = 'Mod_9_60_week_c.Rda')
-save(Mod_9_60_week_f, file = 'Mod_9_60_week_f.Rda')
-save(Mod_9_60_week_sin, file = 'Mod_9_60_week_sin.Rda')
-save(Mod_9_60_week_sin_2, file = 'Mod_9_60_week_sin_2.Rda')
-save(Mod_9_60_week_sin_3, file = 'Mod_9_60_week_sin_3.Rda')
-save(Mod_9_60_month_c, file = 'Mod_9_60_month_c.Rda')
-save(Mod_9_60_month_f, file = 'Mod_9_60_month_f.Rda')
-save(Mod_9_60_month_sin, file = 'Mod_9_60_month_sin.Rda')
-save(Mod_9_60_season_c, file = 'Mod_9_60_season_c.Rda')
-save(Mod_9_60_season_f, file = 'Mod_9_60_season_f.Rda')
-save(Mod_9_60_season_sin, file = 'Mod_9_60_season_sin.Rda')
-
-save(Mod_9_60_NWP1, file = 'Mod_9_60_NWP1.Rda')
-save(Mod_9_60_NWP2, file = 'Mod_9_60_NWP2.Rda')
-save(Mod_9_60_climatology, file = 'Mod_9_60_climatology.Rda')
-
-save(Mod_9_60_comb_a_0, file = 'Mod_9_60_comb_a_0.Rda')
-save(Mod_9_60_comb_a_1, file = 'Mod_9_60_comb_a_1.Rda') 
-save(Mod_9_60_comb_a_2, file = 'Mod_9_60_comb_a_2.Rda') 
-
-save(Mod_9_60_int_a_0, file = 'Mod_9_60_int_a_0.Rda')
-save(Mod_9_60_int_b_0, file = 'Mod_9_60_int_b_0.Rda')
-save(Mod_9_60_int_c_0, file = 'Mod_9_60_int_c_0.Rda')
-
-save(Mod_9_60_comb_int_c_0, file = 'Mod_9_60_comb_int_c_0.Rda')
-save(Mod_9_60_comb_int_c_1, file = 'Mod_9_60_comb_int_c_1.Rda')
-save(Mod_9_60_comb_int_c_2, file = 'Mod_9_60_comb_int_c_2.Rda')
-save(Mod_9_60_comb_int_b_0, file = 'Mod_9_60_comb_int_b_0.Rda')
-save(Mod_9_60_comb_int_b_1, file = 'Mod_9_60_comb_int_b_1.Rda')
-save(Mod_9_60_comb_int_b_2, file = 'Mod_9_60_comb_int_b_2.Rda')
-save(Mod_9_60_comb_int_a_0, file = 'Mod_9_60_comb_int_b_0.Rda')
-save(Mod_9_60_comb_int_a_1, file = 'Mod_9_60_comb_int_a_1.Rda')
-save(Mod_9_60_comb_int_a_2, file = 'Mod_9_60_comb_int_a_2.Rda')
-save(Mod_9_60_comb_hour_1, file = 'Mod_9_60_comb_hour_1')
-save(Mod_9_60_comb_hour_2, file = 'Mod_9_60_comb_hour_2')
-save(Mod_9_60_comb_week_1, file = 'Mod_9_60_comb_week_1')
-save(Mod_9_60_comb_week_2, file = 'Mod_9_60_comb_week_2')
-
-
-
+# save(Mod_9_60_inter, file = 'Mod_9_60_inter.Rda')
+# save(Mod_9_60_year_c, file = 'Mod_9_60_year_c.Rda')
+# save(Mod_9_60_year_f, file = 'Mod_9_60_year_f.Rda')
+# save(Mod_9_60_hour_c, file = 'Mod_9_60_hour_c.Rda')
+# save(Mod_9_60_hour_f, file = 'Mod_9_60_hour_f.Rda')
+# save(Mod_9_60_hour_sin, file = 'Mod_9_60_hour_sin.Rda')
+# save(Mod_9_60_week_c, file = 'Mod_9_60_week_c.Rda')
+# save(Mod_9_60_week_f, file = 'Mod_9_60_week_f.Rda')
+# save(Mod_9_60_week_sin, file = 'Mod_9_60_week_sin.Rda')
+# save(Mod_9_60_week_sin_2, file = 'Mod_9_60_week_sin_2.Rda')
+# save(Mod_9_60_week_sin_3, file = 'Mod_9_60_week_sin_3.Rda')
+# save(Mod_9_60_month_c, file = 'Mod_9_60_month_c.Rda')
+# save(Mod_9_60_month_f, file = 'Mod_9_60_month_f.Rda')
+# save(Mod_9_60_month_sin, file = 'Mod_9_60_month_sin.Rda')
+# save(Mod_9_60_season_c, file = 'Mod_9_60_season_c.Rda')
+# save(Mod_9_60_season_f, file = 'Mod_9_60_season_f.Rda')
+# save(Mod_9_60_season_sin, file = 'Mod_9_60_season_sin.Rda')
+# 
+# save(Mod_9_60_NWP1, file = 'Mod_9_60_NWP1.Rda')
+# save(Mod_9_60_NWP2, file = 'Mod_9_60_NWP2.Rda')
+# save(Mod_9_60_climatology, file = 'Mod_9_60_climatology.Rda')
+# 
+# save(Mod_9_60_comb_a_0, file = 'Mod_9_60_comb_a_0.Rda')
+# save(Mod_9_60_comb_a_1, file = 'Mod_9_60_comb_a_1.Rda') 
+# save(Mod_9_60_comb_a_2, file = 'Mod_9_60_comb_a_2.Rda') 
+# 
+# save(Mod_9_60_int_a_0, file = 'Mod_9_60_int_a_0.Rda')
+# save(Mod_9_60_int_b_0, file = 'Mod_9_60_int_b_0.Rda')
+# save(Mod_9_60_int_c_0, file = 'Mod_9_60_int_c_0.Rda')
+# 
+# save(Mod_9_60_comb_int_c_0, file = 'Mod_9_60_comb_int_c_0.Rda')
+# save(Mod_9_60_comb_int_c_1, file = 'Mod_9_60_comb_int_c_1.Rda')
+# save(Mod_9_60_comb_int_c_2, file = 'Mod_9_60_comb_int_c_2.Rda')
+# save(Mod_9_60_comb_int_b_0, file = 'Mod_9_60_comb_int_b_0.Rda')
+# save(Mod_9_60_comb_int_b_1, file = 'Mod_9_60_comb_int_b_1.Rda')
+# save(Mod_9_60_comb_int_b_2, file = 'Mod_9_60_comb_int_b_2.Rda')
+# save(Mod_9_60_comb_int_a_0, file = 'Mod_9_60_comb_int_b_0.Rda')
+# save(Mod_9_60_comb_int_a_1, file = 'Mod_9_60_comb_int_a_1.Rda')
+# save(Mod_9_60_comb_int_a_2, file = 'Mod_9_60_comb_int_a_2.Rda')
+# save(Mod_9_60_comb_hour_1, file = 'Mod_9_60_comb_hour_1')
+# save(Mod_9_60_comb_hour_2, file = 'Mod_9_60_comb_hour_2')
+# save(Mod_9_60_comb_week_1, file = 'Mod_9_60_comb_week_1')
+# save(Mod_9_60_comb_week_2, file = 'Mod_9_60_comb_week_2')
 
 ```
 ,(?<=\,)(.*?)(?=\))
 
-
+#Load model output
 ```{r, cache = TRUE}
 path = "~/Desktop/Master2023/Data/Output_data/New_Best_NWP_model_output/"
 load(paste0(path, "Mod_9_60_inter.Rda"))
@@ -141,44 +339,57 @@ load(paste0(path, "Mod_9_120_NWP1_per2.Rda"))
 load(paste0(path, "Mod_9_120_NWP1_per1.Rda"))
 ```
 
+# 4) Quantile Regression Models with All lead Times
+In this section we first look at: 
+- 4a) Single time covariates 
+- 4b) Climatology and NWP vars as single predictors.
+- 4c) Full time covariates
+- 4d) Interaction models
+- 4e) NWP with Interaction (hour:week)
+- 4f) NWP with Interaction (hour:month)
+- 4g) NWP with Interaction (hour:season)
+- 4h) NWP with just hour
+- 4g) NWP with just week
+
+## 4a) Single Time covariate models
 ```{r, eval = FALSE}
-Mod_9_60_inter = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+Mod_9_60_inter = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'qreg', 
                                      window = 60, cores = 48, formula  = 'PC1 ~ 1')
-Mod_9_60_year_c = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+Mod_9_60_year_c = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'qreg', 
                                      window = 60, cores = 48, formula  = 'PC1 ~ year')
-Mod_9_60_year_f = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+Mod_9_60_year_f = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'qreg', 
                                      window = 60, cores = 48, formula  = 'PC1 ~ as.factor(year)')
 
-Mod_9_60_hour_c = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+Mod_9_60_hour_c = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'qreg', 
                                      window = 60, cores = 48, formula  = 'PC1 ~ hour')
-Mod_9_60_hour_f = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+Mod_9_60_hour_f = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'qreg', 
                                      window = 60, cores = 48, formula  = 'PC1 ~ as.factor(hour)')
-Mod_9_60_hour_sin = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+Mod_9_60_hour_sin = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'qreg', 
                                      window = 60, cores = 48, formula  = 'PC1 ~ cos(2*pi * hour/4) + sin(2*pi * hour/4)')
 
-Mod_9_60_week_c = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+Mod_9_60_week_c = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'qreg', 
                                      window = 60, cores = 48, formula  = 'PC1 ~ week')
-Mod_9_60_week_f = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+Mod_9_60_week_f = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'qreg', 
                                      window = 60, cores = 48, formula  = 'PC1 ~ as.factor(week)')
-Mod_9_60_week_sin = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+Mod_9_60_week_sin = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'qreg', 
                                      window = 60, cores = 48, formula  = 'PC1 ~ cos(2*pi * week/52) + sin(2*pi * week/52)')
-Mod_9_60_week_sin_2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+Mod_9_60_week_sin_2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'qreg', 
                                      window = 60, cores = 48, formula  = 'PC1 ~ cos(2*pi * week/53) + sin(2*pi * week/53)')
-Mod_9_60_week_sin_3 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+Mod_9_60_week_sin_3 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'qreg', 
                                      window = 60, cores = 48, formula  = 'PC1 ~ cos(2*pi * week/52.5) + sin(2*pi * week/52.5)')
 
-Mod_9_60_month_c = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+Mod_9_60_month_c = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'qreg', 
                                      window = 60, cores = 48, formula  = 'PC1 ~ month')
-Mod_9_60_month_f = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+Mod_9_60_month_f = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'qreg', 
                                      window = 60, cores = 48, formula  = 'PC1 ~ as.factor(month)')
-Mod_9_60_month_sin = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+Mod_9_60_month_sin = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'qreg', 
                                      window = 60, cores = 48, formula  = 'PC1 ~ cos(2*pi * month/12) + sin(2*pi * month/12)')
 
-Mod_9_60_season_c = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+Mod_9_60_season_c = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'qreg', 
                                      window = 60, cores = 48, formula  = 'PC1 ~ season')
-Mod_9_60_season_f = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+Mod_9_60_season_f = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'qreg', 
                                      window = 60, cores = 48, formula  = 'PC1 ~ as.factor(season)')
-Mod_9_60_season_sin = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+Mod_9_60_season_sin = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'qreg', 
                                      window = 60, cores = 48, formula  = 'PC1 ~ cos(2*pi * season/4) + sin(2*pi * season/4)')
 
 ```
@@ -192,7 +403,7 @@ plot_func = function(function_list = c(),
                      climatology_ref = FALSE,
                      legend_place = 'top'){
     low = 1
-    upp = 240
+    upp = 500
     ax = pretty(low:upp, 9)
     cols = c('black', 'brown1', 'dodgerblue1', 'orange', 'green')
     dat = get(function_list[1])
@@ -246,10 +457,10 @@ plot_month = function(function_list = c(),
 }
 ```
 
-
+## Plotting Time Covariates
 ```{r, cache=TRUE}
 plot_func(c('Mod_9_60_inter', 'Mod_9_60_year_c', 'Mod_9_60_year_f'),
-          legend_input = c('Intercept', 'Year (cont)', 'Year (factor)'), legend_place = 'bottomright')
+          title = 'Year', legend_input = c('Intercept', 'Year (cont)', 'Year (factor)'), legend_place = 'bottomright')
 plot_func(c('Mod_9_60_hour_c', 'Mod_9_60_hour_f', 'Mod_9_60_hour_sin'), legend_place = 'bottomright',
           title = 'Hour', legend_input = c('Hour (cont)', 'Hour (factor)', 'Hour sinusoidal'))
 plot_func(c('Mod_9_60_week_c', 'Mod_9_60_week_f', 'Mod_9_60_week_sin', 'Mod_9_60_week_sin_2','Mod_9_60_week_sin_3'), legend_place = 'bottomright',
@@ -266,41 +477,42 @@ plot_func(c('Mod_9_60_season_c', 'Mod_9_60_season_f', 'Mod_9_60_season_sin'), le
 4) Month as factor is better 10.48
 5) Season as factor 13.48
 
-# Trying climatology and NWP vars
+## 4b) Trying climatology and NWP vars
 ```{r, eval=FALSE}
-Mod_9_60_NWP1 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg', 
+Mod_9_60_NWP1 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'qreg', 
                                       window = 60, cores = 48, formula  = 'PC1 ~ 1')
-Mod_9_60_NWP2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg', 
+Mod_9_60_NWP2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'qreg', 
                                       window = 60, cores = 48, formula  = 'PC1 ~ 1')
-Mod_9_60_climatology = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+Mod_9_60_climatology = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'qreg', 
                                       window = 60, cores = 48, formula  = 'PC1 ~ 1', incl_climatology = TRUE)
 ```
 
-
 ```{r, cahce = TRUE}
 plot_func(c('Mod_9_60_climatology','Mod_9_60_NWP1', 'Mod_9_60_NWP2'), 
-          title = 'Climatology + NWP1 + NWP2', climatology_ref = TRUE,lead_time_interval = c(1,240))
+          title = 'Climatology + NWP1 + NWP2', climatology_ref = TRUE,lead_time_interval = c(1,240),
+          legend_input= c('Climatology','NWP1','NWP2'))
 plot_month(c('Mod_9_60_climatology','Mod_9_60_NWP1', 'Mod_9_60_NWP2'), 
-          title = 'Climatology + NWP1 + NWP2', climatology_ref = TRUE) 
+           title = 'Climatology + NWP1 + NWP2', climatology_ref = TRUE,
+          legend_input= c('Climatology','NWP1','NWP2')) 
 ```
 
 1) climatology is very good, 
-2) there seems to be pretty good 
+2) there seems to be pretty good skill at the beginning
 3) we are doing better in winter than in summer. 
 4) Virtually no skill using information from previous month NWP2. 
 5) Can we improve model with the time covariates?
 
-# Time covariate models
+## 4c) FullTime covariate models
 ```{r, eval = FALSE}
-Mod_9_60_comb_a_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', window = 60, cores = 48, 
+Mod_9_60_comb_a_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'qreg', window = 60, cores = 48, 
                                     formula  = 'PC1 ~ 1 + as.factor(hour) + cos(2*pi * week/52) + sin(2*pi * week/52) + 
                                     cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year')
 
-Mod_9_60_comb_a_1 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg',window = 60, cores = 48, 
+Mod_9_60_comb_a_1 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'qreg',window = 60, cores = 48, 
                                     formula  = 'PC1 ~ 1 + as.factor(hour) + cos(2*pi * week/52) + sin(2*pi * week/52) + 
                                     cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year')
 
-Mod_9_60_comb_a_2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg', window = 60, cores = 48, 
+Mod_9_60_comb_a_2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'qreg', window = 60, cores = 48, 
                                     formula  = 'PC1 ~ 1 + as.factor(hour) + cos(2*pi * week/52) + sin(2*pi * week/52) + 
                                     cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year')
 ```
@@ -326,17 +538,17 @@ days 10-20 i 7.6550 vs 7.6658
 
 We can again outperform the climatology model on a predictive task by using time covariates.
 
-# Interaction models
+## 4d) Interaction models
 ```{r, eval = FALSE}
-Mod_9_60_int_a_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+Mod_9_60_int_a_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'qreg', 
                                       window = 60, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(season)')
-Mod_9_60_int_b_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+Mod_9_60_int_b_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'qreg', 
                                       window = 60, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(month)')
-Mod_9_60_int_c_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+Mod_9_60_int_c_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'qreg', 
                                       window = 60, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(week)')
 ```
 
-# Plot
+### Plot
 ```{r, cache = TRUE}
 plot_func(c('Mod_9_60_int_a_0','Mod_9_60_int_b_0', 'Mod_9_60_int_c_0'), 
           title = 'Interactions hour with season, month week', climatology_ref = FALSE,
@@ -347,19 +559,18 @@ plot_month(c('Mod_9_60_int_a_0','Mod_9_60_int_b_0', 'Mod_9_60_int_c_0'),
 ```
 1) Hour:Week is the best one, and a better model than climatology. 
 
-
-```{r}
-Mod_9_60_comb_int_c_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+## 4e) NWP with Interaction models (hour:week)
+```{r, eval = FALSE}
+Mod_9_60_comb_int_c_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'qreg', 
                                       window = 60, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(week) + cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year')
-Mod_9_60_comb_int_c_1 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg', 
+Mod_9_60_comb_int_c_1 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'qreg', 
                                       window = 60, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(week) + cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year')
-Mod_9_60_comb_int_c_2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg', 
+Mod_9_60_comb_int_c_2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'qreg', 
                                       window = 60, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(week) + cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year')
-
 ```
 1) Here we cannot run week and sin(week) together. 
 
-```{r}
+```{r, cache=TRUE}
 plot_func(c('Mod_9_60_climatology', 'Mod_9_60_comb_int_c_0','Mod_9_60_comb_int_c_1', 'Mod_9_60_comb_int_c_2'), 
           title = 'Interaction hour:week + NWP1 + NWP2', climatology_ref = TRUE,lead_time_interval = c(1,240))
 plot_month(c('Mod_9_60_climatology', 'Mod_9_60_comb_int_c_0','Mod_9_60_comb_int_c_1', 'Mod_9_60_comb_int_c_2'), 
@@ -367,15 +578,15 @@ plot_month(c('Mod_9_60_climatology', 'Mod_9_60_comb_int_c_0','Mod_9_60_comb_int_
 ```
 -Interactions worsens the NWP models
 
-
+## 4f) NWP with Interaction models (hour:month)
 ```{r, eval = FALSE}
-Mod_9_60_comb_int_b_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', 
+Mod_9_60_comb_int_b_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'qreg', 
                                       window = 60, cores = 48, 
                                       formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(month) + cos(2*pi * week/52) + sin(2*pi * week/52) + year')
-Mod_9_60_comb_int_b_1 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg', 
+Mod_9_60_comb_int_b_1 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'qreg', 
                                       window = 60, cores = 48, 
                                       formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(month) + cos(2*pi * week/52) + sin(2*pi * week/52) + year')
-Mod_9_60_comb_int_b_2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg', 
+Mod_9_60_comb_int_b_2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'qreg', 
                                       window = 60, cores = 48, 
                                       formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(month) + cos(2*pi * week/52) + sin(2*pi * week/52) + year')
 ```
@@ -387,17 +598,17 @@ plot_month(c('Mod_9_60_climatology', 'Mod_9_60_comb_int_b_0','Mod_9_60_comb_int_
           title = 'Interaction hour:month + NWP1 + NWP2', climatology_ref = TRUE) # lead_time< 80
 ```
 
-
+## 4g) NWP with Interaction models (hour:season)
 ```{r, eval = FALSE}
-Mod_9_60_comb_int_a_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'reg', window = 60, cores = 48, 
+Mod_9_60_comb_int_a_0 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'qreg', window = 60, cores = 48, 
                                     formula  = 'PC1 ~ 1 + as.factor(hour):as.factor(season) + cos(2*pi * week/52) + sin(2*pi * week/52) + 
                                     cos(2*pi * month/12) + sin(2*pi * month/12) +as.factor(season) + year')
 
-Mod_9_60_comb_int_a_1 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg',window = 60, cores = 48, 
+Mod_9_60_comb_int_a_1 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'qreg',window = 60, cores = 48, 
                                     formula  = 'PC1 ~ 1 + as.factor(hour):as.factor(season)  + cos(2*pi * week/52) + 
                                     sin(2*pi * week/52) + cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year')
 
-Mod_9_60_comb_int_a_2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg', window = 60, cores = 48, 
+Mod_9_60_comb_int_a_2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'qreg', window = 60, cores = 48, 
                                     formula  = 'PC1 ~ 1 + as.factor(hour):as.factor(season)  + cos(2*pi * week/52) + 
                                     sin(2*pi * week/52) + cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year')
 ```
@@ -409,475 +620,470 @@ plot_month(c('Mod_9_60_climatology', 'Mod_9_60_comb_int_a_0','Mod_9_60_comb_int_
           title = 'Interaction hour:month + NWP1 + NWP2', climatology_ref = TRUE) # lead_time< 80
 ```
 
-
-
-
 So based on this is seems that the best model is the one with just the NWP, at least for the first 20 days. 
 Might be interesting to check if we can add hour and week a simpler comb model basically. 
 
-```{r}
-Mod_9_60_comb_hour_1 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg',window = 60, cores = 4, 
+## 4h) NWP with Just hour
+```{r, eval = FALSE}
+Mod_9_60_comb_hour_1 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'qreg',window = 60, cores = 4, 
                                     formula  = 'PC1 ~ 1 + as.factor(hour)')
 
-Mod_9_60_comb_hour_2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg',window = 60, cores = 4, 
+Mod_9_60_comb_hour_2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'qreg',window = 60, cores = 4, 
                                     formula  = 'PC1 ~ 1 + as.factor(hour)')
 
 ```
 
 
-```{r}
+```{r, cache = TRUE}
 plot_func(c('Mod_9_60_climatology', 'Mod_9_60_comb_hour_1','Mod_9_60_comb_hour_2'), 
-          title = 'Interaction hour:month + NWP1 + NWP2', climatology_ref = TRUE,lead_time_interval = c(1,240))
+          title = 'Just hour + NWP1 + NWP2', climatology_ref = TRUE,lead_time_interval = c(1,240))
 plot_month(c('Mod_9_60_climatology', 'Mod_9_60_comb_hour_1','Mod_9_60_comb_hour_2'), 
-          title = 'Interaction hour:month + NWP1 + NWP2', climatology_ref = TRUE) 
+          title = 'Just hour + NWP1 + NWP2', climatology_ref = TRUE) 
 ```
-
-```{r}
-Mod_9_60_comb_week_1 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg',window = 60, cores = 4, 
+## 4i) NWP with Just week
+```{r, eval = FALSE}
+Mod_9_60_comb_week_1 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'qreg',window = 60, cores = 4, 
                                     formula  = 'PC1 ~ 1 + as.factor(week)')
 
-Mod_9_60_comb_week_2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'reg',window = 60, cores = 4, 
+Mod_9_60_comb_week_2 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 2, model = 'qreg',window = 60, cores = 4, 
                                     formula  = 'PC1 ~ 1 + as.factor(week)')
 ```
 
 ```{r}
 plot_func(c('Mod_9_60_climatology', 'Mod_9_60_comb_week_1','Mod_9_60_comb_week_2'), 
-          title = 'Interaction hour:month + NWP1 + NWP2', climatology_ref = TRUE,lead_time_interval = c(1,240))
+          title = 'Just week + NWP1 + NWP2', climatology_ref = TRUE,lead_time_interval = c(1,240))
 plot_month(c('Mod_9_60_climatology', 'Mod_9_60_comb_week_1','Mod_9_60_comb_week_2'), 
-          title = 'Interaction hour:month + NWP1 + NWP2', climatology_ref = TRUE) 
+          title = 'Just week + NWP1 + NWP2', climatology_ref = TRUE) 
 ```
 
+
+
+
+
+# 5) Quantile Regression with daily training and prediction 
+```{r}
+Interval_Mod_9_125_NWP1_1day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1', interval_k = 1*4)
+Interval_Mod_9_125_NWP1_2day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1', interval_k = 2*4)
+
+Interval_Mod_9_125_NWP1_4day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1', interval_k = 4*4)
+
+Interval_Mod_9_125_NWP1_8day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1', interval_k = 8*4)
+
+Interval_Mod_9_125_NWP1_16day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1', interval_k = 16*4)
+
+Interval_Mod_9_125_NWP1_32day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1', interval_k = 32*4)
+
+save(Interval_Mod_9_125_NWP1_1day, file = "Interval_Mod_9_125_NWP1_1day.Rda")
+save(Interval_Mod_9_125_NWP1_2day, file = "Interval_Mod_9_125_NWP1_2day.Rda")
+save(Interval_Mod_9_125_NWP1_4day, file = "Interval_Mod_9_125_NWP1_4day.Rda")
+save(Interval_Mod_9_125_NWP1_8day, file = "Interval_Mod_9_125_NWP1_8day.Rda")
+save(Interval_Mod_9_125_NWP1_16day, file = "Interval_Mod_9_125_NWP1_16day.Rda")
+save(Interval_Mod_9_125_NWP1_32day, file = "Interval_Mod_9_125_NWP1_32day.Rda")
+
+```
 
 
 ```{r}
-Mod_9_60_climatology_daily = Mod_9_60_climatology$Results[,.(daily_pca =mean(PC1), daily_pred =mean(clima_pred)), by = .(init_date, date)]
-Mod_9_60_climatology_daily[, daily_loss := pinball_loss(0.9, daily_pred,daily_pca)]
-Mod_9_60_climatology_daily[, lead_time := as.integer(date - init_date) + 1]
-
-plot(Mod_9_60_climatology_daily[,mean(daily_loss), by = lead_time], type = 'l')
-
-Mod_9_60_NWP1_daily = Mod_9_60_NWP1$Results[,.(daily_pca =mean(PC1), daily_pred =mean(pred)), by = .(init_date, date)]
-Mod_9_60_NWP1_daily[, daily_loss := pinball_loss(0.9, daily_pred,daily_pca)]
-Mod_9_60_NWP1_daily[, lead_time := as.integer(date - init_date) + 1]
-
-plot(Mod_9_60_climatology_daily[,mean(daily_loss), by = lead_time], type = 'l',col = 'red', ylim = c(0, 12))
-lines(Mod_9_60_NWP1_daily[,mean(daily_loss), by = lead_time])
-par(new= TRUE)
-plot(Mod_9_60_climatology$Results[,mean(clima_loss), by = lead_time], type = 'l',col = 'blue', ylim = c(0, 12),axes = FALSE)
-lines(Mod_9_60_NWP1$Results[,mean(test_loss), by = lead_time], col = 'green')
-
-plot(1 - (Mod_9_60_NWP1_daily[,mean(daily_loss), by = lead_time][,V1]/
-    Mod_9_60_climatology_daily[,mean(daily_loss), by = lead_time][,V1]),
-              type = 'l', ylim = c(-0.1, 1))
-par(new =TRUE)
-plot(1 - (Mod_9_60_NWP1$Results[,mean(test_loss), by = lead_time][,V1]/
-              Mod_9_60_climatology$Results[,mean(clima_loss), by = lead_time][,V1]),
-              type = 'l',col = 'blue', ylim = c(-0.1, 1),axes = FALSE)
-
-#By 7 days
-Mod_9_60_climatology_weekly = Mod_9_60_climatology$Results[,.(daily_pca =sum(PC1), daily_pred =sum(clima_pred)), by = .(init_date, week(date))]
-
-```
-
-
-# Considering different prediction intervals (daily prediction)
-```{r, cache = TRUE}
-
-Mod_9_120_climatology$Results[, clima_loss := pinball_loss(0.9, clima_pred,PC1)]
-
-#Making interval groups 1-days
-Mod_9_120_climatology$Results[, group1 := (lead_time-1)%/%4]
-Mod_9_120_climatology$Results[, c("PC_1days", "mean1days"):= .(mean(PC1),  mean(clima_pred)), by = .(group1, init_date)]
-Mod_9_120_climatology$Results[, loss1days := pinball_loss(0.9, mean1days,PC_1days)]
-
-Mod_9_120_NWP1$Results[, group1 := (lead_time-1)%/%4]
-Mod_9_120_NWP1$Results[, c("PC_1days", "mean1days"):= .(mean(PC1),  mean(pred)), by = .(group1, init_date)]
-Mod_9_120_NWP1$Results[, loss1days := pinball_loss(0.9, mean1days,PC_1days)]
-plot(Mod_9_120_NWP1$Results[, mean(loss1days), by = group1], type = 'l', ylim = c(0, 12))
-lines(Mod_9_120_climatology$Results[, mean(loss1days), by = group1], col = 'red')
-
-#Making interval groups 2-days
-Mod_9_120_climatology$Results[, group2 := (lead_time-1)%/%8]
-Mod_9_120_climatology$Results[, c("PC_2days", "mean2days"):= .(mean(PC1),  mean(clima_pred)), by = .(group2, init_date)]
-Mod_9_120_climatology$Results[, loss2days := pinball_loss(0.9, mean2days,PC_2days)]
-
-Mod_9_120_NWP1$Results[, group2 := (lead_time-1)%/%8]
-Mod_9_120_NWP1$Results[, c("PC_2days", "mean2days"):= .(mean(PC1),  mean(pred)), by = .(group2, init_date)]
-Mod_9_120_NWP1$Results[, loss2days := pinball_loss(0.9, mean2days,PC_2days)]
-plot(Mod_9_120_NWP1$Results[, mean(loss2days), by = group2], type = 'l', ylim = c(0, 12))
-lines(Mod_9_120_climatology$Results[, mean(loss2days), by = group2], col = 'red')
-
-#Making interval groups 4-days
-Mod_9_120_climatology$Results[, group4 := (lead_time-1)%/%16]
-Mod_9_120_climatology$Results[, c("PC_4days", "mean4days"):= .(mean(PC1),  mean(clima_pred)), by = .(group4, init_date)]
-Mod_9_120_climatology$Results[, loss4days := pinball_loss(0.9, mean4days,PC_4days)]
-
-Mod_9_120_NWP1$Results[, group4 := (lead_time-1)%/%16]
-Mod_9_120_NWP1$Results[, c("PC_4days", "mean4days"):= .(mean(PC1),  mean(pred)), by = .(group4, init_date)]
-Mod_9_120_NWP1$Results[, loss4days := pinball_loss(0.9, mean4days,PC_4days)]
-plot(Mod_9_120_NWP1$Results[, mean(loss4days), by = group4], type = 'l', ylim = c(0, 12))
-lines(Mod_9_120_climatology$Results[, mean(loss4days), by = group4], col = 'red')
-
-#Making interval groups 8-days
-Mod_9_120_climatology$Results[, group8 := (lead_time-1)%/%32]
-Mod_9_120_climatology$Results[, c("PC_8days", "mean8days"):= .(mean(PC1),  mean(clima_pred)), by = .(group8, init_date)]
-Mod_9_120_climatology$Results[, loss8days := pinball_loss(0.9, mean8days,PC_8days)]
-
-Mod_9_120_NWP1$Results[, group8 := (lead_time-1)%/%32]
-Mod_9_120_NWP1$Results[, c("PC_8days", "mean8days"):= .(mean(PC1),  mean(pred)), by = .(group8, init_date)]
-Mod_9_120_NWP1$Results[, loss8days := pinball_loss(0.9, mean8days,PC_8days)]
-plot(Mod_9_120_NWP1$Results[, mean(loss8days), by = group8], type = 'l', ylim = c(0, 12))
-lines(Mod_9_120_climatology$Results[, mean(loss8days), by = group8], col = 'red')
-
-#Making interval groups 16-days
-Mod_9_120_climatology$Results[, group16 := (lead_time-1)%/%64]
-Mod_9_120_climatology$Results[, c("PC_16days", "mean16days"):= .(mean(PC1),  mean(clima_pred)), by = .(group16, init_date)]
-Mod_9_120_climatology$Results[, loss16days := pinball_loss(0.9, mean16days,PC_16days)]
-
-Mod_9_120_NWP1$Results[, group16 := (lead_time-1)%/%64]
-Mod_9_120_NWP1$Results[, c("PC_16days", "mean16days"):= .(mean(PC1),  mean(pred)), by = .(group16, init_date)]
-Mod_9_120_NWP1$Results[, loss16days := pinball_loss(0.9, mean16days,PC_16days)]
-plot(Mod_9_120_NWP1$Results[, mean(loss16days), by = group16], type = 'l', ylim = c(0, 12))
-lines(Mod_9_120_climatology$Results[, mean(loss16days), by = group16], col = 'red')
-
-#Making interval groups 32-days
-Mod_9_120_climatology$Results[, group32 := (lead_time-1)%/%128]
-Mod_9_120_climatology$Results[, c("PC_32days", "mean32days"):= .(mean(PC1),  mean(clima_pred)), by = .(group32, init_date)]
-Mod_9_120_climatology$Results[, loss32days := pinball_loss(0.9, mean32days,PC_32days)]
-
-Mod_9_120_NWP1$Results[, group32 := (lead_time-1)%/%128]
-Mod_9_120_NWP1$Results[, c("PC_32days", "mean32days"):= .(mean(PC1),  mean(pred)), by = .(group32, init_date)]
-Mod_9_120_NWP1$Results[, loss32days := pinball_loss(0.9, mean32days,PC_32days)]
-plot(Mod_9_120_NWP1$Results[, mean(loss32days), by = group32], type = 'l', ylim = c(0, 12))
-lines(Mod_9_120_climatology$Results[, mean(loss32days), by = group32], col = 'red')
+plot(Interval_Mod_9_125_NWP1_1day$Results[, mean(coef_NWP1_90), by = lead_time], type = 'l', ylab = expression("NWP " * beta *  " -coefficient"))
+lines(Interval_Mod_9_125_NWP1_2day$Results[, mean(coef_NWP1_90), by = lead_time], col = 1)
+lines(Interval_Mod_9_125_NWP1_4day$Results[, mean(coef_NWP1_90), by = lead_time], col = 2)
+lines(Interval_Mod_9_125_NWP1_8day$Results[, mean(coef_NWP1_90), by = lead_time], col = 3)
+lines(Interval_Mod_9_125_NWP1_16day$Results[, mean(coef_NWP1_90), by = lead_time], col = 4)
+lines(Interval_Mod_9_125_NWP1_32day$Results[, mean(coef_NWP1_90), by = lead_time], col = 5)
 
 
 ```
 
-```{r, cache = TRUE}
-plot(1 - (Mod_9_120_NWP1$Results[,mean(test_loss), by = lead_time][,V1]/
-              Mod_9_120_climatology$Results[,mean(clima_loss), by = lead_time][,V1]),xaxt = 'n',
-              type = 'l',col = rgb(0,0,0,0.5), lty = 2, ylim = c(-0.1, 0.6), main = "Skill by Period", xlab = "Lead Time (Days)", ylab = "Skill Score")
-abline(h = 0)
-lines(rep(1 - (Mod_9_120_NWP1$Results[,mean(loss1days), by = group1][,V1]/
-              Mod_9_120_climatology$Results[,mean(loss1days), by = group1][,V1]), each = 4),col = 'grey')
-
-lines(rep(1 - (Mod_9_120_NWP1$Results[,mean(loss2days), by = group2][,V1]/
-               Mod_9_120_climatology$Results[,mean(loss2days), by = group2][,V1]), each = 8), col = 'grey')
-lines(rep(1-  (Mod_9_120_NWP1$Results[,mean(loss4days), by = group4][,V1]/
-              Mod_9_120_climatology$Results[,mean(loss4days), by = group4][,V1]), each = 16), col = 'grey')
-lines(rep(1 - (Mod_9_120_NWP1$Results[,mean(loss8days), by = group8][,V1]/
-              Mod_9_120_climatology$Results[,mean(loss8days), by = group8][,V1]), each = 32),col = 'red')
-lines(rep(1 - (Mod_9_120_NWP1$Results[,mean(loss16days), by = group16][,V1]/
-              Mod_9_120_climatology$Results[,mean(loss16days), by = group16][,V1]),each = 64),col = 'blue')
-lines(rep(1 - (Mod_9_120_NWP1$Results[,mean(loss32days), by = group32][,V1]/
-              Mod_9_120_climatology$Results[,mean(loss32days), by = group32][,V1]),each = 128),col = 'orange')
-legend("topright", lty = 1, title = "Period:", cex = 1, pch = 16, col = c('black','grey','grey','grey', 'red', 'blue', 'orange'), legend = c("6-hour", "Daily", "2 days", "4 days","8 days", "16 days", "32 days"))
-axis(labels = c(1,20,40,60,80,100,120), side = 1, at = c(1,c(20,40,60,80,100,120)*4))
+```{r}
+plot_func(c('Mod_9_60_climatology','Interval_Mod_9_125_NWP1_1day','Interval_Mod_9_125_NWP1_2day','Interval_Mod_9_125_NWP1_2day','Interval_Mod_9_125_NWP1_4day','Interval_Mod_9_125_NWP1_8day','Interval_Mod_9_125_NWP1_8day','Interval_Mod_9_125_NWP1_8day'), 
+          title = 'NWP1 models for different training', climatology_ref = TRUE,lead_time_interval = c(1,500))
+plot_month(c('Mod_9_60_climatology', 'Interval_Mod_9_125_NWP1_1day','Interval_Mod_9_125_NWP1_2day'), 
+          title = 'Just week + NWP1', climatology_ref = TRUE) 
 ```
 
+# 6) Considering different scoring intervals 
 
-
-# Skill Interval Rolling mean version
+## 6a) Static intervals
 ```{r, cache = TRUE}
 for (i in c(0.5,1,2,4,8,16,32)){
-    Mod_9_120_climatology$Results[, c(paste0("PC_", i, "days_roll"), 
-                                      paste0("pred", i, "days_roll")):= 
-                                      .(rollapply(PC1, width = i*4, partial = TRUE, FUN = mean),
-                                        rollapply(clima_pred, width = i*4, partial = TRUE, FUN = mean)), 
-                                  by = .(init_date)]
-    Mod_9_120_climatology$Results[, paste0("loss", i, "days_roll") := pinball_loss(0.9,get(paste0("pred", i, "days_roll")),get(paste0("PC_", i, "days_roll")))]
-    Mod_9_120_NWP1$Results[, c(paste0("PC_", i, "days_roll"), 
-                               paste0("pred", i, "days_roll")):= 
-                               .(rollapply(PC1, width = i*4, partial = TRUE, FUN = mean),  
-                                 rollapply(pred, width = i*4, partial = TRUE, FUN = mean)), 
-                           by = .(init_date)]
-    Mod_9_120_NWP1$Results[, paste0("loss", i, "days_roll") := pinball_loss(0.9,get(paste0("pred", i, "days_roll")),get(paste0("PC_", i, "days_roll")))]
+    Mod_9_120_NWP1_check_climat$Results[, paste0('group',i):= (lead_time-1)%/%(4*i)]
+    Mod_9_120_NWP1_check_climat$Results[, c(paste0("PC_", i, "days"), 
+                                      paste0("clima_pred", i, "days")):= .(mean(PC1),  mean(clima_pred)), by = .(get(paste0('group',i)), init_date)]
+    Mod_9_120_NWP1_check_climat$Results[, paste0("loss_clima", i, "days") := pinball_loss(0.9,get(paste0("clima_pred", i, "days")),get(paste0("PC_", i, "days")))]
+    Mod_9_120_NWP1_check_climat$Results[, paste0("pred", i, "days"):= .(mean(pred)), by = .(get(paste0('group',i)), init_date)]
+
+    Mod_9_120_NWP1_check_climat$Results[, paste0("loss", i, "days") := pinball_loss(0.9,get(paste0("pred", i, "days")),get(paste0("PC_", i, "days")))]
 }
+
+Mod_9_120_NWP1_check_climat$Results[, clima_loss := pinball_loss(0.9, clima_pred,PC1)]
+plot(Mod_9_120_NWP1_check_climat$Results[, mean(loss0.5days), by = group1], type = 'l', ylim = c(0, 12))
+lines(Mod_9_120_NWP1_check_climat$Results[, mean(loss_clima0.5days), by = group1], col = 'red')
+
+plot(Mod_9_120_NWP1_check_climat$Results[, mean(loss1days), by = group1], type = 'l', ylim = c(0, 12))
+lines(Mod_9_120_NWP1_check_climat$Results[, mean(loss_clima1days), by = group1], col = 'red')
+
+plot(Mod_9_120_NWP1_check_climat$Results[, mean(loss2days), by = group2], type = 'l', ylim = c(0, 12))
+lines(Mod_9_120_NWP1_check_climat$Results[, mean(loss_clima2days), by = group2], col = 'red')
+
+plot(Mod_9_120_NWP1_check_climat$Results[, mean(loss4days), by = group4], type = 'l', ylim = c(0, 12))
+lines(Mod_9_120_NWP1_check_climat$Results[, mean(loss_clima4days), by = group4], col = 'red')
+
+plot(Mod_9_120_NWP1_check_climat$Results[, mean(loss8days), by = group8], type = 'l', ylim = c(0, 12))
+lines(Mod_9_120_NWP1_check_climat$Results[, mean(loss_clima8days), by = group8], col = 'red')
+
+plot(Mod_9_120_NWP1_check_climat$Results[, mean(loss16days), by = group16], type = 'l', ylim = c(0, 12))
+lines(Mod_9_120_NWP1_check_climat$Results[, mean(loss_clima16days), by = group16], col = 'red')
+
+plot(Mod_9_120_NWP1_check_climat$Results[, mean(loss32days), by = group32], type = 'l', ylim = c(0, 12))
+lines(Mod_9_120_NWP1_check_climat$Results[, mean(loss_clima32days), by = group32], col = 'red')
 ```
+
 
 ```{r, cache = TRUE}
-plot(Mod_9_120_NWP1$Results[,mean(test_loss), by = lead_time][,V1],xaxt = 'n',
-              type = 'l',col = rgb(0,0,0,1), lty = 1, ylim = c(0,14), main = "Pinball Loss by Scoring Interval (NWP1)", xlab = "Lead Time (Days)", ylab = "Pinball Loss")
-lines(Mod_9_120_NWP1$Results[,mean(loss0.5days_roll), by = lead_time][,V1],col = 'grey')
-lines(Mod_9_120_NWP1$Results[,mean(loss1days_roll), by = lead_time][,V1],col = 'grey')
-lines(Mod_9_120_NWP1$Results[,mean(loss2days_roll), by = lead_time][,V1],col = 'grey')
-lines(Mod_9_120_NWP1$Results[,mean(loss4days_roll), by = lead_time][,V1],col = 'pink')
-lines(Mod_9_120_NWP1$Results[,mean(loss8days_roll), by = lead_time][,V1],col = 'red')
-lines(Mod_9_120_NWP1$Results[,mean(loss16days_roll), by = lead_time][,V1],col = 'blue')
-lines(Mod_9_120_NWP1$Results[,mean(loss32days_roll), by = lead_time][,V1],col = 'orange')
-
-legend("bottomright", lty = 1, title = "Period:", cex = 0.7, pch = 16, col = c('black','grey','grey','grey','pink', 'red', 'blue', 'orange'), legend = c("6 hours", "12 hours","1 day", "2 days", "4 days","8 days", "16 days", "32 days"))
-axis(labels = c(1,20,40,60,80,100,120), side = 1, at = c(1,c(20,40,60,80,100,120)*4))
-
-plot(Mod_9_120_climatology$Results[,mean(pinball_loss(0.9,clima_pred,PC1)), by = lead_time][,V1],xaxt = 'n',
-              type = 'l',col = rgb(0,0,0,1), lty = 1, ylim = c(0,14), main = "Pinball Loss by Scoring Interval (Climatology)", xlab = "Lead Time (Days)", ylab = "Pinball Loss")
-lines(Mod_9_120_climatology$Results[,mean(loss0.5days_roll), by = lead_time][,V1],col = 'grey')
-lines(Mod_9_120_climatology$Results[,mean(loss1days_roll), by = lead_time][,V1],col = 'grey')
-lines(Mod_9_120_climatology$Results[,mean(loss2days_roll), by = lead_time][,V1],col = 'grey')
-lines(Mod_9_120_climatology$Results[,mean(loss4days_roll), by = lead_time][,V1],col = 'pink')
-lines(Mod_9_120_climatology$Results[,mean(loss8days_roll), by = lead_time][,V1],col = 'red')
-lines(Mod_9_120_climatology$Results[,mean(loss16days_roll), by = lead_time][,V1],col = 'blue')
-lines(Mod_9_120_climatology$Results[,mean(loss32days_roll), by = lead_time][,V1],col = 'orange')
-
-legend("bottomright", lty = 1, title = "Period:", cex = 0.7, pch = 16, col = c('black','grey','grey','grey','pink', 'red', 'blue', 'orange'), legend = c("6 hours", "12 hours","1 day", "2 days", "4 days","8 days", "16 days", "32 days"))
-axis(labels = c(1,20,40,60,80,100,120), side = 1, at = c(1,c(20,40,60,80,100,120)*4))
-
-plot(1 - (Mod_9_120_NWP1$Results[,mean(test_loss), by = lead_time][,V1]/
-              Mod_9_120_climatology$Results[,mean(clima_loss), by = lead_time][,V1]),xaxt = 'n',
-              type = 'l',col = rgb(0,0,0,1), lty =1, ylim = c(-0.2, 0.8), main = "Skill by Period", xlab = "Lead Time (Days)", ylab = "Skill Score")
+plot(1 - (Mod_9_120_NWP1_check_climat$Results[,mean(test_loss), by = lead_time][,V1]/
+              Mod_9_120_NWP1_check_climat$Results[,mean(pinball_loss(0.9,clima_pred,PC1)), by = lead_time][,V1]),xaxt = 'n',
+              type = 'l',col = rgb(0,0,0,1), lty = 1, ylim = c(-0.1, 0.6), main = "Skill by Period", xlab = "Lead Time (Days)", ylab = "Skill Score")
 abline(h = 0)
-# lines(1 - (Mod_9_120_NWP1$Results[,mean(loss0.5days_roll), by = lead_time][,V1]/
-#               Mod_9_120_climatology$Results[,mean(loss0.5days_roll), by = lead_time][,V1]),col = 'grey')
-# lines(1 - (Mod_9_120_NWP1$Results[,mean(loss1days_roll), by = lead_time][,V1]/
-#               Mod_9_120_climatology$Results[,mean(loss1days_roll), by = lead_time][,V1]),col = 'grey')
-lines(1 - (Mod_9_120_NWP1$Results[,mean(loss2days_roll), by = lead_time][,V1]/
-              Mod_9_120_climatology$Results[,mean(loss2days_roll), by = lead_time][,V1]),col = 'grey')
-lines(1 - (Mod_9_120_NWP1$Results[,mean(loss4days_roll), by = lead_time][,V1]/
-              Mod_9_120_climatology$Results[,mean(loss4days_roll), by = lead_time][,V1]),col = 'pink')
-lines(1 - (Mod_9_120_NWP1$Results[,mean(loss8days_roll), by = lead_time][,V1]/
-              Mod_9_120_climatology$Results[,mean(loss8days_roll), by = lead_time][,V1]),col = 'red')
-lines(1 - (Mod_9_120_NWP1$Results[,mean(loss16days_roll), by = lead_time][,V1]/
-              Mod_9_120_climatology$Results[,mean(loss16days_roll), by = lead_time][,V1]),col = 'blue')
-lines(1 - (Mod_9_120_NWP1$Results[,mean(loss32days_roll), by = lead_time][,V1]/
-              Mod_9_120_climatology$Results[,mean(loss32days_roll), by = lead_time][,V1]),col = 'orange')
-
-legend("topright", lty = 1, title = "Period:", cex = 1, pch = 16, col = c('black','grey','grey','grey','grey', 'red', 'blue', 'orange'), legend = c("6 hours", "12 hours","1 day", "2 days", "4 days","8 days", "16 days", "32 days"))
+# lines(rep(1 - (Mod_9_120_NWP1_check_climat$Results[,mean(loss1days), by = group1][,V1]/
+#               Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima1days), by = group1][,V1]), each = 4),col = 'grey')
+# 
+# lines(rep(1 - (Mod_9_120_NWP1_check_climat$Results[,mean(loss2days), by = group2][,V1]/
+#                Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima2days), by = group2][,V1]), each = 8), col = 'grey')
+lines(rep(1-  (Mod_9_120_NWP1_check_climat$Results[,mean(loss4days), by = group4][,V1]/
+              Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima4days), by = group4][,V1]), each = 16), col = 'pink')
+lines(rep(1 - (Mod_9_120_NWP1_check_climat$Results[,mean(loss8days), by = group8][,V1]/
+              Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima8days), by = group8][,V1]), each = 32),col = 'red')
+lines(rep(1 - (Mod_9_120_NWP1_check_climat$Results[,mean(loss16days), by = group16][,V1]/
+              Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima16days), by = group16][,V1]),each = 64),col = 'blue')
+lines(rep(1 - (Mod_9_120_NWP1_check_climat$Results[,mean(loss32days), by = group32][,V1]/
+              Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima32days), by = group32][,V1]),each = 128),col = 'orange')
+legend("topright", lty = 1, title = "Scoring Interval:", cex = 0.7, pch = 16, col = c('black','grey', 'red', 'blue', 'orange'), legend = c("6-hour", "4 days","8 days", "16 days", "32 days"))
 axis(labels = c(1,20,40,60,80,100,120), side = 1, at = c(1,c(20,40,60,80,100,120)*4))
 ```
 
-## Now trying for shorter test period
-```{r}
+
+## 6b) Skill Interval Rolling mean version
+```{r, cache = TRUE}
 for (i in c(0.5,1,2,4,8,16,32)){
-    Mod_9_120_NWP1_check_17_23$Results[, c(paste0("PC_", i, "days_roll"), 
-                                      paste0("pred", i, "days_roll")):= 
+    Mod_9_120_NWP1_check_climat$Results[, c(paste0("PC_", i, "days_roll"), 
+                                      paste0("clima_pred", i, "days_roll")):= 
                                       .(rollapply(PC1, width = i*4, partial = TRUE, FUN = mean),
                                         rollapply(clima_pred, width = i*4, partial = TRUE, FUN = mean)), 
                                   by = .(init_date)]
-    Mod_9_120_NWP1_check_17_23$Results[, paste0("loss_clima", i, "days_roll") := pinball_loss(0.9,get(paste0("pred", i, "days_roll")),get(paste0("PC_", i, "days_roll")))]
-    Mod_9_120_NWP1_check_17_23$Results[, c(paste0("pred", i, "days_roll")):= 
+    Mod_9_120_NWP1_check_climat$Results[, paste0("loss_clima", i, "days_roll") := pinball_loss(0.9,get(paste0("clima_pred", i, "days_roll")),get(paste0("PC_", i, "days_roll")))]
+    Mod_9_120_NWP1_check_climat$Results[, c(paste0("pred", i, "days_roll")):= 
                                .(rollapply(pred, width = i*4, partial = TRUE, FUN = mean)), 
                            by = .(init_date)]
-    Mod_9_120_NWP1_check_17_23$Results[, paste0("loss", i, "days_roll") := pinball_loss(0.9,get(paste0("pred", i, "days_roll")),get(paste0("PC_", i, "days_roll")))]
+    Mod_9_120_NWP1_check_climat$Results[, paste0("loss", i, "days_roll") := pinball_loss(0.9,get(paste0("pred", i, "days_roll")),get(paste0("PC_", i, "days_roll")))]
 }
 ```
 
+### Plot output for Scoring_interval.pdf
 ```{r, cache = TRUE}
-plot(Mod_9_120_NWP1_check_17_23$Results[,mean(test_loss), by = lead_time][,V1],xaxt = 'n',
-              type = 'l',col = rgb(0,0,0,1), lty = 1, ylim = c(0,14), main = "Pinball Loss by Scoring Interval (NWP1)", xlab = "Lead Time (Days)", ylab = "Pinball Loss")
-lines(Mod_9_120_NWP1_check_17_23$Results[,mean(loss0.5days_roll), by = lead_time][,V1],col = 'grey')
-lines(Mod_9_120_NWP1_check_17_23$Results[,mean(loss1days_roll), by = lead_time][,V1],col = 'grey')
-lines(Mod_9_120_NWP1_check_17_23$Results[,mean(loss2days_roll), by = lead_time][,V1],col = 'grey')
-lines(Mod_9_120_NWP1_check_17_23$Results[,mean(loss4days_roll), by = lead_time][,V1],col = 'pink')
-lines(Mod_9_120_NWP1_check_17_23$Results[,mean(loss8days_roll), by = lead_time][,V1],col = 'red')
-lines(Mod_9_120_NWP1_check_17_23$Results[,mean(loss16days_roll), by = lead_time][,V1],col = 'blue')
-lines(Mod_9_120_NWP1_check_17_23$Results[,mean(loss32days_roll), by = lead_time][,V1],col = 'orange')
+pdf("/Users/Eirik/Desktop/Master2023/ExportedPlots/Scoring_interval.pdf", height = 9, width = 9, pointsize = 12)
+layout(matrix(c(1,2,3,3), 4, 1, byrow = TRUE))
+par(mar = c(1, 3.4, 3, 3))
 
-legend("bottomright", lty = 1, title = "Period:", cex = 0.7, pch = 16, col = c('black','grey','grey','grey','pink', 'red', 'blue', 'orange'), legend = c("6 hours", "12 hours","1 day", "2 days", "4 days","8 days", "16 days", "32 days"))
+ ######## Climatology #############
+plot(Mod_9_120_NWP1_check_climat$Results[,mean(pinball_loss(0.9,clima_pred,PC1)), by = lead_time][,V1],xaxt = 'n',
+              type = 'l',col = rgb(0,0,0,1), lty = 1, ylim = c(2.7,11.2), main = "Scoring Intervals for Pinball Loss (Climatology) by Lead Time", xlab = "", ylab = "")
+# lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima0.5days_roll), by = lead_time][,V1],col = 'grey')
+# lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima1days_roll), by = lead_time][,V1],col = 'grey')
+lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima2days_roll), by = lead_time][,V1],col = 'grey')
+lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima4days_roll), by = lead_time][,V1],col = 'pink')
+lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima8days_roll), by = lead_time][,V1],col = 'orange')
+lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima16days_roll), by = lead_time][,V1],col = 'blue')
+lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima32days_roll), by = lead_time][,V1],col = 'red')
+mtext("Pinball Loss", side = 2, line = 3, cex = 0.8, padj = 1.2)
+abline(v = 24*4 +2, lty = 3)
+# legend("bottomright", lty = 1, title = "Scoring Interval:", cex = 0.7, pch = 16, col = c('black','grey','pink', 'red', 'blue', 'orange'), legend = c("6 hours", "2 days", "4 days","8 days", "16 days", "32 days"))
 axis(labels = c(1,20,40,60,80,100,120), side = 1, at = c(1,c(20,40,60,80,100,120)*4))
-
-
-plot(Mod_9_120_NWP1_check_17_23$Results[,mean(pinball_loss(0.9,clima_pred,PC1)), by = lead_time][,V1],xaxt = 'n',
-              type = 'l',col = rgb(0,0,0,1), lty = 1, ylim = c(0,14), main = "Pinball Loss by Scoring Interval (Climatology)", xlab = "Lead Time (Days)", ylab = "Pinball Loss")
-lines(Mod_9_120_NWP1_check_17_23$Results[,mean(loss_clima0.5days_roll), by = lead_time][,V1],col = 'grey')
-lines(Mod_9_120_NWP1_check_17_23$Results[,mean(loss_clima1days_roll), by = lead_time][,V1],col = 'grey')
-lines(Mod_9_120_NWP1_check_17_23$Results[,mean(loss_clima2days_roll), by = lead_time][,V1],col = 'grey')
-lines(Mod_9_120_NWP1_check_17_23$Results[,mean(loss_clima4days_roll), by = lead_time][,V1],col = 'pink')
-lines(Mod_9_120_NWP1_check_17_23$Results[,mean(loss_clima8days_roll), by = lead_time][,V1],col = 'red')
-lines(Mod_9_120_NWP1_check_17_23$Results[,mean(loss_clima16days_roll), by = lead_time][,V1],col = 'blue')
-lines(Mod_9_120_NWP1_check_17_23$Results[,mean(loss_clima32days_roll), by = lead_time][,V1],col = 'orange')
-
-legend("bottomright", lty = 1, title = "Period:", cex = 0.7, pch = 16, col = c('black','grey','grey','grey','pink', 'red', 'blue', 'orange'), legend = c("6 hours", "12 hours","1 day", "2 days", "4 days","8 days", "16 days", "32 days"))
+par(mar = c(1, 3.4, 3, 3))
+############ NWP1 ##################
+plot(Mod_9_120_NWP1_check_climat$Results[,mean(test_loss), by = lead_time][,V1],xaxt = 'n',
+              type = 'l',col = rgb(0,0,0,1), lty = 1, ylim = c(2.7,11.2), main = "Scoring Intervals for Pinball Loss (NWP1) by Lead Time", xlab = "", ylab = "")
+# lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss0.5days_roll), by = lead_time][,V1],col = 'grey')
+# lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss1days_roll), by = lead_time][,V1],col = 'grey')
+lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss2days_roll), by = lead_time][,V1],col = 'grey')
+lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss4days_roll), by = lead_time][,V1],col = 'pink')
+lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss8days_roll), by = lead_time][,V1],col = 'orange')
+lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss16days_roll), by = lead_time][,V1],col = 'blue')
+lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss32days_roll), by = lead_time][,V1],col = 'red')
+mtext("Pinball Loss", side = 2, line = 3, cex = 0.8, padj = 1.2)
+# legend("bottomright", lty = 1, title = "Scoring Interval:", cex = 0.7, pch = 16, col = c('black','grey','pink', 'red', 'blue', 'orange'), legend = c("6 hours", "2 days", "4 days","8 days", "16 days", "32 days"))
 axis(labels = c(1,20,40,60,80,100,120), side = 1, at = c(1,c(20,40,60,80,100,120)*4))
+abline(v = 24*4 +2, lty = 3)
 
-plot(1 - (Mod_9_120_NWP1_check_17_23$Results[,mean(test_loss), by = lead_time][,V1]/
-              Mod_9_120_NWP1_check_17_23$Results[,mean(pinball_loss(0.9,clima_pred,PC1)), by = lead_time][,V1]),xaxt = 'n',
-              type = 'l',col = rgb(0,0,0,1), lty =1, ylim = c(-0.2, 0.8), main = "Skill by Period", xlab = "Lead Time (Days)", ylab = "Skill Score")
+par(mar = c(5, 3.4, 3, 3))
+###### SKILL ############
+plot(1 - (Mod_9_120_NWP1_check_climat$Results[,mean(test_loss), by = lead_time][,V1]/
+              Mod_9_120_NWP1_check_climat$Results[,mean(pinball_loss(0.9,clima_pred,PC1)), by = lead_time][,V1]),xaxt = 'n',
+              type = 'l',col = rgb(0,0,0,1), lty =1, ylim = c(-0.09, 0.7), main = "Scoring Intervals for Skill of NWP1 relative to Climatology by Lead Time", xlab = "", ylab = "")
 abline(h = 0)
-# lines(1 - (Mod_9_120_NWP1_check_17_23$Results[,mean(loss0.5days_roll), by = lead_time][,V1]/
-#               Mod_9_120_NWP1_check_17_23$Results[,mean(loss0.5days_roll), by = lead_time][,V1]),col = 'grey')
-# lines(1 - (Mod_9_120_NWP1_check_17_23$Results[,mean(loss1days_roll), by = lead_time][,V1]/
-#               Mod_9_120_NWP1_check_17_23$Results[,mean(loss1days_roll), by = lead_time][,V1]),col = 'grey')
-lines(1 - (Mod_9_120_NWP1_check_17_23$Results[,mean(loss2days_roll), by = lead_time][,V1]/
-              Mod_9_120_NWP1_check_17_23$Results[,mean(loss_clima2days_roll), by = lead_time][,V1]),col = 'grey')
-lines(1 - (Mod_9_120_NWP1_check_17_23$Results[,mean(loss4days_roll), by = lead_time][,V1]/
-              Mod_9_120_NWP1_check_17_23$Results[,mean(loss_clima4days_roll), by = lead_time][,V1]),col = 'pink')
-lines(1 - (Mod_9_120_NWP1_check_17_23$Results[,mean(loss8days_roll), by = lead_time][,V1]/
-              Mod_9_120_NWP1_check_17_23$Results[,mean(loss_clima8days_roll), by = lead_time][,V1]),col = 'red')
-lines(1 - (Mod_9_120_NWP1_check_17_23$Results[,mean(loss16days_roll), by = lead_time][,V1]/
-              Mod_9_120_NWP1_check_17_23$Results[,mean(loss_clima16days_roll), by = lead_time][,V1]),col = 'blue')
-lines(1 - (Mod_9_120_NWP1_check_17_23$Results[,mean(loss32days_roll), by = lead_time][,V1]/
-              Mod_9_120_NWP1_check_17_23$Results[,mean(loss_clima32days_roll), by = lead_time][,V1]),col = 'orange')
+# lines(1 - (Mod_9_120_NWP1_check_climat$Results[,mean(loss0.5days_roll), by = lead_time][,V1]/
+#               Mod_9_120_NWP1_check_climat$Results[,mean(loss0.5days_roll), by = lead_time][,V1]),col = 'grey')
+# lines(1 - (Mod_9_120_NWP1_check_climat$Results[,mean(loss1days_roll), by = lead_time][,V1]/
+#               Mod_9_120_NWP1_check_climat$Results[,mean(loss1days_roll), by = lead_time][,V1]),col = 'grey')
+lines(1 - (Mod_9_120_NWP1_check_climat$Results[,mean(loss2days_roll), by = lead_time][,V1]/
+              Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima2days_roll), by = lead_time][,V1]),col = 'grey')
+lines(1 - (Mod_9_120_NWP1_check_climat$Results[,mean(loss4days_roll), by = lead_time][,V1]/
+              Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima4days_roll), by = lead_time][,V1]),col = 'pink')
+lines(1 - (Mod_9_120_NWP1_check_climat$Results[,mean(loss8days_roll), by = lead_time][,V1]/
+              Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima8days_roll), by = lead_time][,V1]),col = 'orange')
+lines(1 - (Mod_9_120_NWP1_check_climat$Results[,mean(loss16days_roll), by = lead_time][,V1]/
+              Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima16days_roll), by = lead_time][,V1]),col = 'blue')
+lines(1 - (Mod_9_120_NWP1_check_climat$Results[,mean(loss32days_roll), by = lead_time][,V1]/
+              Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima32days_roll), by = lead_time][,V1]),col = 'red')
 
-legend("topright", lty = 1, title = "Period:", cex = 1, pch = 16, col = c('black','grey','grey','grey','grey', 'red', 'blue', 'orange'), legend = c("6 hours", "12 hours","1 day", "2 days", "4 days","8 days", "16 days", "32 days"))
+legend("topright", lty = 1, title = "Scoring Interval:", cex = 1.1, pch = 16, col = c('black','grey','pink','orange', 'blue', 'red'), legend = c("6 hours", "2 days","4 days","8 days", "16 days", "32 days"))
 axis(labels = c(1,20,40,60,80,100,120), side = 1, at = c(1,c(20,40,60,80,100,120)*4))
-
-
+mtext("Skill Score", side = 2, line = 3, cex = 0.8, padj = 1.2)
+mtext("Lead Time (Days)", side = 1, line = 3, cex = 0.8, padj = -1.)
+abline(v = 24*4, lty = 3)
+dev.off()
 ```
 
+### Plot output for Scoring_interval_by_month.pdf
 ```{r}
-for (i in c(0.5,1,2,4,8,16,32)){
-    Mod_9_120_NWP1_check_97_23$Results[, c(paste0("PC_", i, "days_roll"), 
-                                      paste0("pred", i, "days_roll")):= 
-                                      .(rollapply(PC1, width = i*4, partial = TRUE, FUN = mean),
-                                        rollapply(clima_pred, width = i*4, partial = TRUE, FUN = mean)), 
-                                  by = .(init_date)]
-    Mod_9_120_NWP1_check_97_23$Results[, paste0("loss_clima", i, "days_roll") := pinball_loss(0.9,get(paste0("pred", i, "days_roll")),get(paste0("PC_", i, "days_roll")))]
-    Mod_9_120_NWP1_check_97_23$Results[, c(paste0("pred", i, "days_roll")):= 
-                               .(rollapply(pred, width = i*4, partial = TRUE, FUN = mean)), 
-                           by = .(init_date)]
-    Mod_9_120_NWP1_check_97_23$Results[, paste0("loss", i, "days_roll") := pinball_loss(0.9,get(paste0("pred", i, "days_roll")),get(paste0("PC_", i, "days_roll")))]
+pdf("/Users/Eirik/Desktop/Master2023/ExportedPlots/Scoring_interval_by_month.pdf", height = 9, width = 9, pointsize = 12)
+layout(matrix(c(1,2,3,3), 4, 1, byrow = TRUE))
+par(mar = c(1, 3.4, 3, 3))
+
+ ######## Climatology #############
+plot(Mod_9_120_NWP1_check_climat$Results[,mean(pinball_loss(0.9,clima_pred,PC1)), by = month][,V1],xaxt = 'n',
+              type = 'l',col = rgb(0,0,0,1), lty = 1, ylim = c(0,15), main = "Scoring Intervals for Pinball Loss (Climatology) by Month", xlab = "", ylab = "")
+# lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima0.5days_roll), by = month][,V1],col = 'grey')
+# lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima1days_roll), by = month][,V1],col = 'grey')
+lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima2days_roll), by = month][,V1],col = 'grey')
+lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima4days_roll), by = month][,V1],col = 'pink')
+lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima8days_roll), by = month][,V1],col = 'orange')
+lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima16days_roll), by = month][,V1],col = 'blue')
+lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima32days_roll), by = month][,V1],col = 'red')
+mtext("Pinball Loss", side = 2, line = 3, cex = 0.8, padj = 1.2)
+abline(v = 24*4 +2, lty = 3)
+# legend("bottomright", lty = 1, title = "Scoring Interval:", cex = 0.7, pch = 16, col = c('black','grey','pink', 'red', 'blue', 'orange'), legend = c("6 hours", "2 days", "4 days","8 days", "16 days", "32 days"))
+axis(1, at = 1:12, labels = month.abb)
+par(mar = c(1, 3.4, 3, 3))
+############ NWP1 ##################
+plot(Mod_9_120_NWP1_check_climat$Results[,mean(test_loss), by = month][,V1],xaxt = 'n',
+              type = 'l',col = rgb(0,0,0,1), lty = 1, ylim = c(0,15), main = "Scoring Intervals for Pinball Loss (NWP1) by Month", xlab = "", ylab = "")
+# lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss0.5days_roll), by = month][,V1],col = 'grey')
+# lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss1days_roll), by = month][,V1],col = 'grey')
+lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss2days_roll), by = month][,V1],col = 'grey')
+lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss4days_roll), by = month][,V1],col = 'pink')
+lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss8days_roll), by = month][,V1],col = 'orange')
+lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss16days_roll), by = month][,V1],col = 'blue')
+lines(Mod_9_120_NWP1_check_climat$Results[,mean(loss32days_roll), by = month][,V1],col = 'red')
+mtext("Pinball Loss", side = 2, line = 3, cex = 0.8, padj = 1.2)
+# legend("bottomright", lty = 1, title = "Scoring Interval:", cex = 0.7, pch = 16, col = c('black','grey','pink', 'red', 'blue', 'orange'), legend = c("6 hours", "2 days", "4 days","8 days", "16 days", "32 days"))
+axis(1, at = 1:12, labels = month.abb)
+abline(v = 24*4 +2, lty = 3)
+
+par(mar = c(5, 3.4, 3, 3))
+###### SKILL ############
+plot(1 - (Mod_9_120_NWP1_check_climat$Results[,mean(test_loss), by = month][,V1]/
+              Mod_9_120_NWP1_check_climat$Results[,mean(pinball_loss(0.9,clima_pred,PC1)), by = month][,V1]),xaxt = 'n',
+              type = 'l',col = rgb(0,0,0,1), lty =1, ylim = c(-0.05, 0.25), main = "Scoring Intervals for Skill of NWP1 relative to Climatology by Month", xlab = "", ylab = "")
+abline(h = 0)
+# lines(1 - (Mod_9_120_NWP1_check_climat$Results[,mean(loss0.5days_roll), by = month][,V1]/
+#               Mod_9_120_NWP1_check_climat$Results[,mean(loss0.5days_roll), by = month][,V1]),col = 'grey')
+# lines(1 - (Mod_9_120_NWP1_check_climat$Results[,mean(loss1days_roll), by = month][,V1]/
+#               Mod_9_120_NWP1_check_climat$Results[,mean(loss1days_roll), by = month][,V1]),col = 'grey')
+lines(1 - (Mod_9_120_NWP1_check_climat$Results[,mean(loss2days_roll), by = month][,V1]/
+              Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima2days_roll), by = month][,V1]),col = 'grey')
+lines(1 - (Mod_9_120_NWP1_check_climat$Results[,mean(loss4days_roll), by = month][,V1]/
+              Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima4days_roll), by = month][,V1]),col = 'pink')
+lines(1 - (Mod_9_120_NWP1_check_climat$Results[,mean(loss8days_roll), by = month][,V1]/
+              Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima8days_roll), by = month][,V1]),col = 'orange')
+lines(1 - (Mod_9_120_NWP1_check_climat$Results[,mean(loss16days_roll), by = month][,V1]/
+              Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima16days_roll), by = month][,V1]),col = 'blue')
+lines(1 - (Mod_9_120_NWP1_check_climat$Results[,mean(loss32days_roll), by = month][,V1]/
+              Mod_9_120_NWP1_check_climat$Results[,mean(loss_clima32days_roll), by = month][,V1]),col = 'red')
+
+legend("topright", lty = 1, title = "Scoring Interval:", cex = 1.1, pch = 16, col = c('black','grey','pink','orange', 'blue', 'red'), legend = c("6 hours", "2 days","4 days","8 days", "16 days", "32 days"))
+axis(1, at = 1:12, labels = month.abb)
+mtext("Skill Score", side = 2, line = 3, cex = 0.8, padj = 1.2)
+mtext("Month", side = 1, line = 3, cex = 0.8, padj = -1.)
+abline(v = 24*4, lty = 3)
+dev.off()
+```
+
+### Plot function
+```{r}
+Scoring_interval_plot = function(data = Mod_9_120_NWP1_check_climat$Results, by_var = 'month', lead_time_less_than = 240, intervals = c(0.5, 1,2,4,8,16,32), monthofinterest = c(1:12)){
+    
+    layout(matrix(c(1,2,3,3), 4, 1, byrow = TRUE))
+    par(mar = c(1, 3.4, 3, 3))
+    mx1 = max(data[month %in% monthofinterest & lead_time<=lead_time_less_than,mean(pinball_loss(0.9,clima_pred,PC1)), by = by_var][,V1])
+        
+     ######## Climatology #############
+    plot(data[month %in% monthofinterest & lead_time<=lead_time_less_than,mean(pinball_loss(0.9,clima_pred,PC1)), by = by_var][,V1],xaxt = 'n',
+                  type = 'l',col = rgb(0,0,0,1), lty = 1, ylim = c(0,mx1+0.4), 
+         main = "Scoring Intervals for Pinball Loss (Climatology) by Month", xlab = "", ylab = "")
+    
+    colz = c('grey','grey','grey','pink','orange','blue','red')
+    for (i in intervals){
+        lines(data[month %in% monthofinterest &lead_time<=lead_time_less_than,mean(get(paste0('loss_clima',i,'days_roll'))), by = by_var][,V1],col = colz[log(i*2, base =2)+1])
+    }                  
+    mtext("Pinball Loss", side = 2, line = 3, cex = 0.8, padj = 1.2)
+    abline(v = 24*4 +2, lty = 3)
+    if (by_var == 'month'){ axis(1, at = 1:12, labels = month.abb)
+    } else{ axis(labels = c(1,20,40,60,80,100,120), side = 1, at = c(1,c(20,40,60,80,100,120)*4))}
+
+    par(mar = c(1, 3.4, 3, 3))
+    
+    ############ NWP1 ##################
+    plot(data[month %in% monthofinterest &lead_time<=lead_time_less_than,mean(test_loss), by = by_var][,V1],xaxt = 'n',
+                  type = 'l',col = rgb(0,0,0,1), lty = 1, ylim = c(0,mx1+0.4),
+         main = "Scoring Intervals for Pinball Loss (NWP1) by Month", xlab = "", ylab = "")
+
+    for (i in intervals){
+        lines(data[month %in% monthofinterest &lead_time<=lead_time_less_than,mean(get(paste0('loss',i,'days_roll'))), by = by_var][,V1],col = colz[log(i*2, base =2)+1])
+    }     
+    mtext("Pinball Loss", side = 2, line = 3, cex = 0.8, padj = 1.2)
+    # legend("bottomright", lty = 1, title = "Scoring Interval:", cex = 0.7, pch = 16, col = c('black','grey','pink', 'red', 'blue', 'orange'), legend = c("6 hours", "2 days", "4 days","8 days", "16 days", "32 days"))
+    if (by_var == 'month'){ axis(1, at = 1:12, labels = month.abb)
+    } else{ axis(labels = c(1,20,40,60,80,100,120), side = 1, at = c(1,c(20,40,60,80,100,120)*4))}
+    abline(v = 24*4 +2, lty = 3)
+    
+    par(mar = c(5, 3.4, 3, 3))
+    ###### SKILL ############
+    mx = max(1 - (data[month %in% monthofinterest &lead_time<=lead_time_less_than,mean(test_loss), by = by_var][,V1]/
+                  data[month %in% monthofinterest &lead_time<=lead_time_less_than,mean(pinball_loss(0.9,clima_pred,PC1)), by = by_var][,V1]))
+    plot(1 - (data[month %in% monthofinterest &lead_time<=lead_time_less_than,mean(test_loss), by = by_var][,V1]/
+                  data[month %in% monthofinterest &lead_time<=lead_time_less_than,mean(pinball_loss(0.9,clima_pred,PC1)), by = by_var][,V1]),xaxt = 'n',
+                  type = 'l',col = rgb(0,0,0,1), lty =1, ylim = c(-0.05, mx+0.03), 
+         main = "Scoring Intervals for Skill of NWP1 relative to Climatology by Month", xlab = "", ylab = "")
+    abline(h = 0)
+    for (i in intervals){
+        lines(1 -(data[month %in% monthofinterest &lead_time<=lead_time_less_than,mean(get(paste0('loss',i,'days_roll'))), by = by_var][,V1]/
+                  data[month %in% monthofinterest &lead_time<=lead_time_less_than,mean(get(paste0('loss_clima',i,'days_roll'))), by = by_var][,V1]),
+        col = colz[log(i*2, base =2)+1])
+    }  
+    
+    
+    if (by_var == 'month'){ 
+        axis(1, at = 1:12, labels = month.abb)
+        mtext("Month", side = 1, line = 3, cex = 0.8, padj = -1.)
+        legend("bottomright", lty = 1, title = "Scoring Interval:", cex = 1.1, pch = 16, col = c('black','grey','pink','orange', 'blue', 'red'), legend = c("6 hours", "2 days","4 days","8 days", "16 days", "32 days"))
+    
+    } else{ 
+        axis(labels = c(1,20,40,60,80,100,120), side = 1, at = c(1,c(20,40,60,80,100,120)*4))
+        mtext("Lead Time (Days)", side = 1, line = 3, cex = 0.8, padj = -1.)
+        legend("topright", lty = 1, title = "Scoring Interval:", cex = 1.1, pch = 16, col = c('black','grey','pink','orange', 'blue', 'red'), legend = c("6 hours", "2 days","4 days","8 days", "16 days", "32 days"))
+    
 }
+    mtext("Skill Score", side = 2, line = 3, cex = 0.8, padj = 1.2)
+    abline(v = 24*4, lty = 3)
+}
+
+pdf("/Users/Eirik/Desktop/Master2023/ExportedPlots/Scoring_interval_by month_lead_less60.pdf", height = 9, width = 9, pointsize = 12)
+    Scoring_interval_plot()
+    dev.off()
 ```
 
+### Attempt to plot vertical distribution
 ```{r}
-plot(Mod_9_120_NWP1_check_97_23$Results[,mean(test_loss), by = lead_time][,V1],xaxt = 'n',
-              type = 'l',col = rgb(0,0,0,1), lty = 1, ylim = c(0,14), main = "Pinball Loss by Scoring Interval (NWP1)", xlab = "Lead Time (Days)", ylab = "Pinball Loss")
-lines(Mod_9_120_NWP1_check_97_23$Results[,mean(loss0.5days_roll), by = lead_time][,V1],col = 'grey')
-lines(Mod_9_120_NWP1_check_97_23$Results[,mean(loss1days_roll), by = lead_time][,V1],col = 'grey')
-lines(Mod_9_120_NWP1_check_97_23$Results[,mean(loss2days_roll), by = lead_time][,V1],col = 'grey')
-lines(Mod_9_120_NWP1_check_97_23$Results[,mean(loss4days_roll), by = lead_time][,V1],col = 'pink')
-lines(Mod_9_120_NWP1_check_97_23$Results[,mean(loss8days_roll), by = lead_time][,V1],col = 'red')
-lines(Mod_9_120_NWP1_check_97_23$Results[,mean(loss16days_roll), by = lead_time][,V1],col = 'blue')
-lines(Mod_9_120_NWP1_check_97_23$Results[,mean(loss32days_roll), by = lead_time][,V1],col = 'orange')
-lines(ERA_NWP_clima[,mean(loss_clima), by = lead_time][,V1], xaxt = 'n', type = 'l',col = 'purple')
+unq = unique(Mod_9_120_NWP1_check_climat$Results[lead_time %in% c(186),init_date], col = 'red')
+plot(Mod_9_120_NWP1_check_climat$Results[, mean(test_loss), keyby = lead_time], col = 'red',
+     ylim = c(0,50))
+for (i in 1:length(unq)){
+points(Mod_9_120_NWP1_check_climat$Results[init_date ==unq[i] &lead_time %in% c(180:185), quantile(test_loss), keyby = lead_time], col = i)
+}
 
-legend("bottomright", lty = 1, title = "Period:", cex = 0.7, pch = 16, col = c('black','grey','grey','grey','pink', 'red', 'blue', 'orange'), legend = c("6 hours", "12 hours","1 day", "2 days", "4 days","8 days", "16 days", "32 days"))
-axis(labels = c(1,20,40,60,80,100,120), side = 1, at = c(1,c(20,40,60,80,100,120)*4))
-
-
-plot(Mod_9_120_NWP1_check_97_23$Results[,mean(pinball_loss(0.9,clima_pred,PC1)), by = lead_time][,V1],xaxt = 'n',
-              type = 'l',col = rgb(0,0,0,1), lty = 1, ylim = c(0,14), main = "Pinball Loss by Scoring Interval (Climatology)", xlab = "Lead Time (Days)", ylab = "Pinball Loss")
-lines(Mod_9_120_NWP1_check_97_23$Results[,mean(loss_clima0.5days_roll), by = lead_time][,V1],col = 'grey')
-lines(Mod_9_120_NWP1_check_97_23$Results[,mean(loss_clima1days_roll), by = lead_time][,V1],col = 'grey')
-lines(Mod_9_120_NWP1_check_97_23$Results[,mean(loss_clima2days_roll), by = lead_time][,V1],col = 'grey')
-lines(Mod_9_120_NWP1_check_97_23$Results[,mean(loss_clima4days_roll), by = lead_time][,V1],col = 'pink')
-lines(Mod_9_120_NWP1_check_97_23$Results[,mean(loss_clima8days_roll), by = lead_time][,V1],col = 'red')
-lines(Mod_9_120_NWP1_check_97_23$Results[,mean(loss_clima16days_roll), by = lead_time][,V1],col = 'blue')
-lines(Mod_9_120_NWP1_check_97_23$Results[,mean(loss_clima32days_roll), by = lead_time][,V1],col = 'orange')
-
-legend("bottomright", lty = 1, title = "Period:", cex = 0.7, pch = 16, col = c('black','grey','grey','grey','pink', 'red', 'blue', 'orange'), legend = c("6 hours", "12 hours","1 day", "2 days", "4 days","8 days", "16 days", "32 days"))
-axis(labels = c(1,20,40,60,80,100,120), side = 1, at = c(1,c(20,40,60,80,100,120)*4))
-
-# plot(1 - (Mod_9_120_NWP1_check_97_23$Results[,mean(test_loss), by = lead_time][,V1]/
-#               Mod_9_120_NWP1_check_97_23$Results[,mean(pinball_loss(0.9,clima_pred,PC1)), by = lead_time][,V1]),xaxt = 'n',
-#               type = 'l',col = rgb(0,0,0,1), lty =1, ylim = c(-0.2, 0.8), main = "Skill by Period", xlab = "Lead Time (Days)", ylab = "Skill Score")
-plot(1 - (Mod_9_120_NWP1_check_97_23$Results[,mean(test_loss), by = lead_time][,V1]/
-              ERA_NWP_clima[,mean(loss_clima), by = lead_time][,V1]),xaxt = 'n',
-              type = 'l',col = rgb(0,0,0,1), lty =1, ylim = c(-0.2, 0.8), main = "Skill by Period", xlab = "Lead Time (Days)", ylab = "Skill Score")
-
-
-abline(h = 0)
-# lines(1 - (Mod_9_120_NWP1_check_97_23$Results[,mean(loss0.5days_roll), by = lead_time][,V1]/
-#               Mod_9_120_NWP1_check_97_23$Results[,mean(loss0.5days_roll), by = lead_time][,V1]),col = 'grey')
-# lines(1 - (Mod_9_120_NWP1_check_97_23$Results[,mean(loss1days_roll), by = lead_time][,V1]/
-#               Mod_9_120_NWP1_check_97_23$Results[,mean(loss1days_roll), by = lead_time][,V1]),col = 'grey')
-lines(1 - (Mod_9_120_NWP1_check_97_23$Results[,mean(loss2days_roll), by = lead_time][,V1]/
-              Mod_9_120_NWP1_check_97_23$Results[,mean(loss_clima2days_roll), by = lead_time][,V1]),col = 'grey')
-lines(1 - (Mod_9_120_NWP1_check_97_23$Results[,mean(loss4days_roll), by = lead_time][,V1]/
-              Mod_9_120_NWP1_check_97_23$Results[,mean(loss_clima4days_roll), by = lead_time][,V1]),col = 'pink')
-lines(1 - (Mod_9_120_NWP1_check_97_23$Results[,mean(loss8days_roll), by = lead_time][,V1]/
-              Mod_9_120_NWP1_check_97_23$Results[,mean(loss_clima8days_roll), by = lead_time][,V1]),col = 'red')
-lines(1 - (Mod_9_120_NWP1_check_97_23$Results[,mean(loss16days_roll), by = lead_time][,V1]/
-              Mod_9_120_NWP1_check_97_23$Results[,mean(loss_clima16days_roll), by = lead_time][,V1]),col = 'blue')
-lines(1 - (Mod_9_120_NWP1_check_97_23$Results[,mean(loss32days_roll), by = lead_time][,V1]/
-              Mod_9_120_NWP1_check_97_23$Results[,mean(loss_clima32days_roll), by = lead_time][,V1]),col = 'orange')
-
-legend("topright", lty = 1, title = "Interval:", cex = 1, pch = 16, col = c('black','grey','grey','grey','grey', 'red', 'blue', 'orange'), legend = c("6 hours", "12 hours","1 day", "2 days", "4 days","8 days", "16 days", "32 days"))
-axis(labels = c(1,20,40,60,80,100,120), side = 1, at = c(1,c(20,40,60,80,100,120)*4))
-
-
-```
-
-```{r}
-plot(Mod_9_120_NWP1_check_97_23$Results[,mean(pinball_loss(0.9,clima_pred,PC1)), by = lead_time][,V1],xaxt = 'n',
-      type = 'l',col = rgb(0,0,0,1), lty = 1, ylim = c(0,17), main = "Pinball Loss 6-hour (Climatology)", xlab = "Lead Time (Days)", ylab = "Pinball Loss")
-lines(Mod_9_120_NWP1_check_17_23$Results[,mean(pinball_loss(0.9,clima_pred,PC1)), by = lead_time][,V1],col = 'orange')
-lines(Mod_9_120_climatology$Results[,mean(pinball_loss(0.9,clima_pred,PC1)), by = lead_time][,V1],xaxt = 'n',
-    type = 'l',col = 'red')
-lines(Mod_9_120_NWP1_check_97_10$Results[,mean(pinball_loss(0.9,clima_pred,PC1)), by = lead_time][,V1],xaxt = 'n',
-    type = 'l',col = 'blue')
-legend("bottomright", lty = 1, title = "Climatology Test Periods:", cex = 1, pch = 16, col = c('blue','black', 'red', 'orange'), legend = c("1997-2010", "1997-2023", "2007-2023 (Original)","2017-2023"))
-lines(ERA_NWP_clima[,mean(loss_clima), by = lead_time][,V1], xaxt = 'n', type = 'l',col = 'purple')
-
-axis(labels = c(1,20,40,60,80,100,120), side = 1, at = c(1,c(20,40,60,80,100,120)*4))
+plot(Mod_9_120_NWP1_check_climat$Results[lead_time<240, mean(test_loss), keyby = lead_time], col = 'red',type = 'l',
+     ylim = c(0,50))
+points(Mod_9_120_NWP1_check_climat$Results[lead_time %in% c(1,100,160, 185), quantile(test_loss), keyby = lead_time], cex = 0.7, pch = 16)
 ```
 
 
+### Plotting of outliers
 ```{r}
-plot(Mod_9_120_NWP1$Results[,mean(test_loss), by = lead_time][,V1],xaxt = 'n',
-              type = 'l',col = rgb(0,0,0,1), lty = 2, ylim = c(0,20), main = "Pinball Loss by Period", xlab = "Lead Time (Days)", ylab = "Pinball Loss")
-
-lines(Mod_9_120_NWP1_per1$Results[,mean(test_loss), by = lead_time][,V1],col = 'grey')
-lines(Mod_9_120_NWP1_per2$Results[,mean(test_loss), by = lead_time][,V1],col = 'grey')
-lines(Mod_9_120_NWP1_per4$Results[,mean(test_loss), by = lead_time][,V1],col = 'grey')
-lines(Mod_9_120_NWP1_per8$Results[,mean(test_loss), by = lead_time][,V1],col = 'grey')
-lines(Mod_9_120_NWP1_per16$Results[,mean(test_loss), by = lead_time][,V1],col = 'red')
-lines(Mod_9_120_NWP1_per32$Results[,mean(test_loss), by = lead_time][,V1],col = 'blue')
-```
-
-
-
-```{r}
-# Mod_9_60_NWP1_check = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP_keep, 1, model = 'reg', 
+# Mod_9_60_NWP1_check = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP_keep, 1, model = 'qreg', 
 #                                 window = 120, cores = 48, formula  = 'PC1 ~ 1')
 
-plot(Mod_9_120_NWP1_check$Results[!init_date%in% unique(Mod_9_120_NWP1_check$Results[test_loss >80, c(init_date)]), .(test_loss), by =lead_time], cex = 0.15, pch = 16, ylim = c(0,160), col = rgb(0,0,0,1))
+plot(Mod_9_120_NWP1_check$Results[!init_date%in% unique(Mod_9_120_NWP1_check$Results[test_loss >90, c(init_date)]), .(test_loss), by =lead_time], cex = 0.15, pch = 16, ylim = c(0,160), col = rgb(0,0,0,1))
 colz = c(2:7)
 for (i in c(1:26)){
     
-    points(Mod_9_120_NWP1_check$Results[init_date%in% unique(Mod_9_120_NWP1_check$Results[test_loss >80, c(init_date)])[i] & test_loss>40, .(test_loss), by =lead_time], cex = 0.35, pch = 16, col = colz[i%%6 +1])
+    points(Mod_9_120_NWP1_check$Results[init_date%in% unique(Mod_9_120_NWP1_check$Results[test_loss >80, c(init_date)])[i] & test_loss>25, .(test_loss), by =lead_time], cex = 0.35, pch = 16, col = colz[i%%6 +1])
 }
 
 plot(Mod_9_120_NWP1_check_97_23$Results[!init_date%in% unique(Mod_9_120_NWP1_check_97_23$Results[pinball_loss(0.9,clima_pred,PC1) >80, c(init_date)]), .(pinball_loss(0.9,clima_pred,PC1)), by =lead_time], cex = 0.3, pch = 16, ylim = c(0,160), col = rgb(0,0,0,1))
-for (i in 1:2){
+for (i in c(1:8, 9:20)){
     points(Mod_9_120_NWP1_check_97_23$Results[init_date%in% unique(Mod_9_120_NWP1_check_97_23$Results[pinball_loss(0.9,clima_pred,PC1) >80, c(init_date)])[i] & test_loss>40, .(pinball_loss(0.9,clima_pred,PC1)), by =lead_time], cex = 0.5, pch = 16, col = colz[i%%6 +1])
 }
 ```
 
-```{r}
-COMPDAT = merge(Mod_9_120_NWP1_check$Results[,.(date, init_date, lead_time, test_loss)], Mod_9_120_NWP1$Results[,.(date, init_date, lead_time, test_loss2=test_loss)])
-COMPDAT[, bool := test_loss - test_loss2!=0]
-COMPDAT[, sum(bool)] #These are equal
-```
-
 
 
 ```{r}
-ERA_NWP[,month_day := format(date, format ="%m-%d")]
-climatology = ERA_NWP[, .(quant =quantile(PC1,probs = q)), by = .(month_day = format(date, format ="%m-%d"), hour)]
-ERA_NWP_clima = merge(ERA_NWP, climatology , by = c("month_day", "hour"))
-ERA_NWP_clima[,loss_clima := pinball_loss(0.9,quant,PC1)]
-ERA_NWP_clima[,mean(loss_clima), by = lead_time]
-plot(ERA_NWP_clima[,mean(loss_clima), keyby = lead_time], type = 'l')
+ ######## Climatology #############
+II = Mod_9_120_NWP1_check_climat$Results[pinball_loss(0.9,clima_pred,PC1)<40,.I]
 
-ERA_SHORT = ERA_NWP[init_date>"2014-01-01"]
-ERA_SHORT[,month_day := format(date, format ="%m-%d")]
-climatology = ERA_SHORT[, .(quant =quantile(PC1,probs = q)), by = .(month_day = format(date, format ="%m-%d"), hour)]
-ERA_SHORT_clima = merge(ERA_SHORT, climatology , by = c("month_day", "hour"))
-ERA_SHORT_clima[,loss_clima := pinball_loss(0.9,quant,PC1)]
-plot(ERA_SHORT_clima[,mean(loss_clima), keyby = lead_time], type = 'l')
 
-ERA_SHORT = ERA_NWP[init_date<"1994-01-01"]
-ERA_SHORT[,month_day := format(date, format ="%m-%d")]
-climatology = ERA_SHORT[, .(quant =quantile(PC1,probs = q)), by = .(month_day = format(date, format ="%m-%d"), hour)]
-ERA_SHORT_clima = merge(ERA_SHORT, climatology , by = c("month_day", "hour"))
-ERA_SHORT_clima[,loss_clima := pinball_loss(0.9,quant,PC1)]
-plot(ERA_SHORT_clima[,mean(loss_clima), keyby = lead_time], type = 'l')
-
-ERA_correct = ERA$dt_test[hour %in% c(6,12,18,24)]
-ERA_correct[,month_day := format(date, format ="%m-%d")]
-climatology = ERA_correct[, .(quant =quantile(PC1,probs = q)), by = .(month_day = format(date, format ="%m-%d"), hour)]
-ERA_correct_clima = merge(ERA_correct, climatology , by = c("month_day", "hour"))
-ERA_correct_clima[,loss_clima := pinball_loss(0.9,quant,PC1)]
-plot(ERA_correct_clima[,mean(loss_clima), keyby = lead_time], type = 'l')
+plot(Mod_9_120_NWP1_check_climat$Results[II,mean(pinball_loss(0.9,clima_pred,PC1)), by = lead_time][,V1],xaxt = 'n',
+              type = 'l',col = rgb(0,0,0,1), lty = 1, ylim = c(2.7,11.2), main = "Scoring Intervals for Pinball Loss (Climatology) by Lead Time", xlab = "", ylab = "")
+# lines(Mod_9_120_NWP1_check_climat$Results[II,mean(loss_clima0.5days_roll), by = lead_time][,V1],col = 'grey')
+# lines(Mod_9_120_NWP1_check_climat$Results[II,mean(loss_clima1days_roll), by = lead_time][,V1],col = 'grey')
+lines(Mod_9_120_NWP1_check_climat$Results[II,mean(loss_clima2days_roll), by = lead_time][,V1],col = 'grey')
+lines(Mod_9_120_NWP1_check_climat$Results[II,mean(loss_clima4days_roll), by = lead_time][,V1],col = 'pink')
+lines(Mod_9_120_NWP1_check_climat$Results[II,mean(loss_clima8days_roll), by = lead_time][,V1],col = 'orange')
+lines(Mod_9_120_NWP1_check_climat$Results[II,mean(loss_clima16days_roll), by = lead_time][,V1],col = 'blue')
+lines(Mod_9_120_NWP1_check_climat$Results[II,mean(loss_clima32days_roll), by = lead_time][,V1],col = 'red')
+mtext("Pinball Loss", side = 2, line = 3, cex = 0.8, padj = 1.2)
+abline(v = 24*4 +2, lty = 3)
+# legend("bottomright", lty = 1, title = "Scoring Interval:", cex = 0.7, pch = 16, col = c('black','grey','pink', 'red', 'blue', 'orange'), legend = c("6 hours", "2 days", "4 days","8 days", "16 days", "32 days"))
+axis(labels = c(1,20,40,60,80,100,120), side = 1, at = c(1,c(20,40,60,80,100,120)*4))
 ```
-
-
+### Checking Effect of median/mean
 ```{r}
-Mod_9_120_NWP1_check_climat = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'reg', 
-                                window = 120, cores = 48, formula  = 'PC1 ~ 1', incl_climatology = TRUE)
+plot(Mod_9_120_NWP1_check_climat$Results[,median(pinball_loss(0.9,clima_pred,PC1)), by = lead_time][,V1],xaxt = 'n',
+     type = 'l',col = 'black', lty = 1, ylim = c(1.95,11), main = "Pinball Loss Effect of median/mean", xlab = "", ylab = "")
+lines(Mod_9_120_NWP1_check_climat$Results[,mean(pinball_loss(0.9,clima_pred,PC1)), by = lead_time][,V1],xaxt = 'n',
+      type = 'l',col = 'black', lty = 2)
+lines(Mod_9_120_NWP1_check_climat$Results[,mean(test_loss), by = lead_time][,V1],xaxt = 'n',
+     type = 'l',col = 'red', lty = 2)
+lines(Mod_9_120_NWP1_check_climat$Results[,median(test_loss), by = lead_time][,V1],xaxt = 'n',
+     type = 'l',col = 'red')
+legend('bottomright', legend = c('Median Climatology', 'Median NWP1','Mean Climatology', 'Mean NWP1'), pch = 16,lty = c(1,1,2,2), col = c('black', 'red', 'black', 'red'))
 ```
+
+### Fancy plot of monthly ERA distribution
+```{r}
+#library("patchwork")
+PC_Plotting = ERA$dt_test
+PC_Plotting[,Month := unique(lincoln_weather$Month)[month(date)]]
+
+pdf("/Users/Eirik/Desktop/Master2023/ExportedPlots/Factor_loadings_by_month.pdf", height = 7, width = 9, pointsize = 12)
+
+plot1 = ggplot(
+     PC_Plotting[], 
+     aes(x = `PC1`, y = `Month`, fill = stat(x))
+ ) +
+     geom_density_ridges_gradient(scale = 3, size = 0.3, rel_min_height = 0.01) +
+     scale_fill_viridis_c(name = "Temp. [F]", option = "C") +
+     theme(legend.position="none")+
+     labs(title = '', x = "First Factor Loading")
+
+plot2 =  ggplot(
+     PC_Plotting[], 
+     aes(x = `PC2`, y = `Month`, fill = stat(x))
+ ) +
+     geom_density_ridges_gradient(scale = 3, size = 0.3, rel_min_height = 0.01) +
+     scale_fill_viridis_c(name = "Temp. [F]", option = "C") +
+    theme(legend.position="none")+
+     labs(title = '', y ="", x = "Second Factor Loading") +
+    theme(axis.title.y = element_blank(), axis.text.y = element_blank(),axis.ticks.length = unit(0, "mm")) +
+    xlim(-400,400) 
+    
+ggp_all <- (plot1 + plot2) +    # Create grid of plots with title
+  plot_annotation(title = "First and Second Factor Loading of ERA temperature") & 
+  theme(plot.title = element_text(hjust = 0.5))
+ggp_all
+dev.off()
+```
+
 
 # Code for saving and relocating files
 

@@ -18,7 +18,7 @@
 #' @import data.table
 #'
 #' @examples
-#' ERA_NWP = get_ERA_NWP(NWP_preds = 2)
+#' ERA_NWP = get_ERA_NWP(NWP_preds = 2,reweight = FALSE)
 #'
 #'
 
@@ -27,7 +27,7 @@ get_ERA_NWP = function(ERA_path = '~/Desktop/Master2023/Data/PC_ERA/PC_ERA_79_92
                        quant = '90',
                        PC = 'PC1',
                        NWP_preds = 2,
-                       reweight = TRUE,
+                       reweight = FALSE,
                        tuning_k = 10
                        ){
     # Set vars to null for package reasons
