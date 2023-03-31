@@ -17,7 +17,8 @@ rolling_mod_NWP(
   formula = "PC1 ~ 1",
   incl_other = FALSE,
   skill_interval = 0,
-  cores = 4
+  cores = 4,
+  df_spline = 8
 )
 }
 \arguments{

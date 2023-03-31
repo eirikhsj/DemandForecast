@@ -139,10 +139,10 @@ Rolling_nwp_interval = function(i, ERA_NWP_vars, q, init_days, window, reweight,
             }   else if(model == 'spline'){
                 spline_var = paste0("NWP1_",q*100)
                 spline_form = paste0("test$PC1 ~ bs(test$",spline_var,", df=",df_spline,")")
-                X_test = model.matrix(as.formula(spline_form))
+                #X_test = model.matrix(as.formula(spline_form))
                 qreg = rq(PC1 ~ bs(get(spline_var), df=df_spline), data=train, tau=c(q))
-                test_l = pinball_loss(q,  X_test %*% qreg$coef, test$PC1)
-                results[, 'pred':= X_test %*% qreg$coef]
+                test_l = pinball_loss(q,  predict(qreg, newdata = test), test$PC1)
+                results[, 'pred':= predict(qreg, newdata = test)]
             }
 
             ## 3d) Register loss

@@ -866,6 +866,31 @@ legend("bottomleft", lty = 1, title = "Training Interval:", cex = 0.7, pch = 16,
 dev.off()
 ```
 
+#
+```{r}
+Interval_Mod_5_125_NWP1_32day_spl3 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.5, ERA_NWP, 1, model = 'spline', window = 125, cores = 48, formula  = 'PC1 ~ -1', interval_k = 32*4, df_spline = 3)
+```
+
+
+## Splines models 
+```{r}
+Interval_Mod_5_125_NWP1_1day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.5, ERA_NWP, 1, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1', interval_k = 1*4)
+Interval_Mod_5_125_NWP1_2day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.5, ERA_NWP, 1, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1', interval_k = 2*4)
+Interval_Mod_5_125_NWP1_4day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.5, ERA_NWP, 1, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1', interval_k = 4*4)
+Interval_Mod_5_125_NWP1_8day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.5, ERA_NWP, 1, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1', interval_k = 8*4)
+Interval_Mod_5_125_NWP1_16day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.5, ERA_NWP, 1, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1', interval_k = 16*4)
+Interval_Mod_5_125_NWP1_32day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.5, ERA_NWP, 1, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1', interval_k = 32*4)
+Interval_Mod_5_125_NWP1_125day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.5, ERA_NWP, 1, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1', interval_k = 125*4)
+
+save(Interval_Mod_5_125_NWP1_1day, file = "Interval_Mod_5_125_NWP1_1day.Rda")
+save(Interval_Mod_5_125_NWP1_2day, file = "Interval_Mod_5_125_NWP1_2day.Rda")
+save(Interval_Mod_5_125_NWP1_4day, file = "Interval_Mod_5_125_NWP1_4day.Rda")
+save(Interval_Mod_5_125_NWP1_8day, file = "Interval_Mod_5_125_NWP1_8day.Rda")
+save(Interval_Mod_5_125_NWP1_16day, file = "Interval_Mod_5_125_NWP1_16day.Rda")
+save(Interval_Mod_5_125_NWP1_32day, file = "Interval_Mod_5_125_NWP1_32day.Rda")
+save(Interval_Mod_5_125_NWP1_125day, file = "Interval_Mod_5_125_NWP1_125day.Rda")
+```
+
 ```{r}
 plot_func(c('Mod_9_60_climatology','Interval_Mod_9_125_NWP1_1day','Interval_Mod_9_125_NWP1_2day','Interval_Mod_9_125_NWP1_2day','Interval_Mod_9_125_NWP1_4day','Interval_Mod_9_125_NWP1_8day','Interval_Mod_9_125_NWP1_8day','Interval_Mod_9_125_NWP1_8day'), 
           title = 'NWP1 models for different training', climatology_ref = TRUE,lead_time_interval = c(1,500))

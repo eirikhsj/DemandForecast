@@ -18,7 +18,8 @@ rolling_mod_NWP_interval(
   incl_other = FALSE,
   interval_k = 4,
   skill_interval = 0,
-  cores = 4
+  cores = 4,
+  df_spline = 8
 )
 }
 \arguments{
