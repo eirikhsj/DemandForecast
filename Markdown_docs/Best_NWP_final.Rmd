@@ -684,13 +684,13 @@ save(Interval_Mod_9_125_NWP1_32day, file = "Interval_Mod_9_125_NWP1_32day.Rda")
 
 
 ```{r}
-plot(Interval_Mod_9_125_NWP1_1day$Results[, mean(coef_NWP1_90), by = lead_time], type = 'l', ylab = expression("NWP " * beta *  " -coefficient"))
-lines(Interval_Mod_9_125_NWP1_2day$Results[, mean(coef_NWP1_90), by = lead_time], col = 1)
+plot(Interval_Mod_9_125_NWP1_1day$Results[, mean(coef_NWP1_90), by = lead_time], type = 'l', ylab = expression("NWP " * beta *  " -coefficient"), main = expression(beta *  " -coefficient for NWP-models over different training periods"), xlab = "Lead time", col = 5)
+lines(Interval_Mod_9_125_NWP1_2day$Results[, mean(coef_NWP1_90), by = lead_time], col = 8)
 lines(Interval_Mod_9_125_NWP1_4day$Results[, mean(coef_NWP1_90), by = lead_time], col = 2)
 lines(Interval_Mod_9_125_NWP1_8day$Results[, mean(coef_NWP1_90), by = lead_time], col = 3)
 lines(Interval_Mod_9_125_NWP1_16day$Results[, mean(coef_NWP1_90), by = lead_time], col = 4)
-lines(Interval_Mod_9_125_NWP1_32day$Results[, mean(coef_NWP1_90), by = lead_time], col = 5)
-
+lines(Interval_Mod_9_125_NWP1_32day$Results[, mean(coef_NWP1_90), by = lead_time], col = 6)
+abline(h = 1)
 
 ```
 

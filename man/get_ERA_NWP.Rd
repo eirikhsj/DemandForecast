@@ -10,7 +10,7 @@ get_ERA_NWP(
   quant = "90",
   PC = "PC1",
   NWP_preds = 2,
-  reweight = TRUE,
+  reweight = FALSE,
   tuning_k = 10
 )
 }
@@ -35,7 +35,7 @@ NWP contains the PC of NWP forecasted temperature (e.g. NWP_1) .
 In rolling_mod we are building a rolling cross validation of PC1 ~ f(time) + NWP_PC1_t1 + NWP_PC1_t2
 }
 \examples{
-ERA_NWP = get_ERA_NWP(NWP_preds = 2)
+ERA_NWP = get_ERA_NWP(NWP_preds = 2,reweight = FALSE)
 
 
 }
