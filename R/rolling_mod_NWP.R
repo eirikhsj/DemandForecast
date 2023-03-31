@@ -22,9 +22,9 @@
 #' @examples mod = rolling_mod_NWP('2007-01-01', '2022-05-01', 0.9, ERA_NWP, 1, model = 'qreg', window = 60, reweight=FALSE)
 #' @name rolling_mod_NWP
 
-
-forc_start=as.Date('2007-01-01'); forc_end=as.Date('2023-01-01'); q=0.9; ERA_NWP; predictors=1; model='spline'; window = 125; reweight = FALSE;
-incl_climatology =TRUE; formula = 'PC1 ~ 1'; incl_other = FALSE; skill_interval = 0; cores = 4
+#
+# forc_start=as.Date('2007-01-01'); forc_end=as.Date('2023-01-01'); q=0.9; ERA_NWP; predictors=1; model='spline'; window = 125; reweight = FALSE;
+# incl_climatology =TRUE; formula = 'PC1 ~ 1'; incl_other = FALSE; skill_interval = 0; cores = 4
 
 #' @export
 rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2023-01-01'), q=0.9, ERA_NWP, predictors=1, model='qreg', window = 60, reweight = FALSE,
