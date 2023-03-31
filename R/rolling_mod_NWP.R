@@ -23,8 +23,8 @@
 #' @name rolling_mod_NWP
 
 
-# forc_start=as.Date('2007-01-01'); forc_end=as.Date('2023-01-01'); q=0.9; ERA_NWP; predictors=0; model='qreg'; window = 125; reweight = FALSE;
-# incl_climatology =TRUE; formula = 'PC1 ~ 1'; incl_other = FALSE; skill_interval = 0; cores = 4
+forc_start=as.Date('2007-01-01'); forc_end=as.Date('2023-01-01'); q=0.9; ERA_NWP; predictors=1; model='spline'; window = 125; reweight = FALSE;
+incl_climatology =TRUE; formula = 'PC1 ~ 1'; incl_other = FALSE; skill_interval = 0; cores = 4
 
 #' @export
 rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2023-01-01'), q=0.9, ERA_NWP, predictors=1, model='qreg', window = 60, reweight = FALSE,
@@ -133,7 +133,13 @@ Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, p
         results[,'pred' := predict(qreg, newdata = test)]
 
     }  else if(model == 'spline'){
-        qreg = rq(PC1 ~ bs(NWP1_roll1, df=5), data=train, tau=c(q))
+        print(formula)
+        spline_var = paste0("NWP1_",q*100)
+        spline_form = paste0("test$PC1 ~ bs(test$",spline_var,", df=5)")
+        X_test = model.matrix(as.formula(spline_form))
+        qreg = rq(PC1 ~ bs(get(spline_var), df=5), data=train, tau=c(q))
+        test_l = pinball_loss(q,  X_test %*% qreg$coef, test$PC1)
+        results[, 'pred':= X_test %*% qreg$coef]
     }
 
     ## 3d) Register loss
@@ -142,7 +148,7 @@ Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, p
 
     ## 3e) Register Beta coefficients
     print(pred_vars)
-    if(predictors >0){
+    if(predictors >0 & model == 'qreg'){
         betas = data.table(t(coef(qreg)))[,..pred_vars]
         colnames(betas) = paste0('coef_',pred_vars)
         betas = betas[rep(1,dim(test)[1]),] #unnecessary storage use, expand later

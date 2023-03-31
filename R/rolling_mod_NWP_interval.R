@@ -103,7 +103,7 @@ rolling_mod_NWP_interval = function(forc_start=as.Date('2007-01-01'), forc_end=a
 
 #' @export
 Rolling_nwp_interval = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, predictors,
-                       incl_climatology, formula, pred_vars, interval_k){
+                                incl_climatology, formula, pred_vars, interval_k){
     ## 3a) Time keeping
     init_day = init_days[i]
     target_days = seq(init_day, length.out = window,  by = '1 days')
@@ -123,7 +123,7 @@ Rolling_nwp_interval = function(i, ERA_NWP_vars, q, init_days, window, reweight,
         } else{
             test = ERA_NWP_final[init_date == init_day & lead_time %in% l_times[[lead]], .SD, keyby = .(date,hour)] #Use of several preds means target_days selects to many dates
         }
-
+        results = test
         if(dim(test)[1]!=0){
             ## 3c) Run qr-reg
             if (model == 'qreg'){
@@ -131,11 +131,18 @@ Rolling_nwp_interval = function(i, ERA_NWP_vars, q, init_days, window, reweight,
                 #qreg = gam(as.formula(formula), data = train)
                 train_l = pinball_loss(q, predict(qreg), train$PC1)
                 test_l = pinball_loss(q, predict(qreg, newdata = test), test$PC1)
+                results[,'pred' := predict(qreg, newdata = test)]
+
+            }   else if(model == 'spline'){
+                spline_var = paste0("NWP1_",q*100)
+                spline_form = paste0("test$PC1 ~ bs(test$",spline_var,", df=8)")
+                X_test = model.matrix(as.formula(spline_form))
+                qreg = rq(PC1 ~ bs(get(spline_var), df=8), data=train, tau=c(q))
+                test_l = pinball_loss(q,  X_test %*% qreg$coef, test$PC1)
+                results[, 'pred':= X_test %*% qreg$coef]
             }
 
             ## 3d) Register loss
-            results = test
-            results[,'pred' := predict(qreg, newdata = test)]
             results[,'test_loss' := test_l]
             if (lead == 1){
                 print(formula)
@@ -143,7 +150,7 @@ Rolling_nwp_interval = function(i, ERA_NWP_vars, q, init_days, window, reweight,
             }
 
             ## 3e) Register Beta coefficients
-            if(predictors >0){
+            if(predictors >0 & model == 'qreg'){
                 betas = data.table(t(coef(qreg)))[,..pred_vars]
                 colnames(betas) = paste0('coef_',pred_vars)
                 betas = betas[rep(1,dim(test)[1]),] #unnecessary storage use, expand later
@@ -155,7 +162,7 @@ Rolling_nwp_interval = function(i, ERA_NWP_vars, q, init_days, window, reweight,
                 if (skill_interval>0){
                     pc_int = paste0("PC_", skill_interval, "days_roll")
                     climatology = train[, .(quant =quantile(get(pc_int),probs = q)), by = .(month_day = format(date, format ="%m-%d"), hour)]
-                } else{
+                } else if(skill_interval<=0){
                     climatology = train[, .(quant =quantile(PC1,probs = q)), by = .(month_day = format(date, format ="%m-%d"), hour)]
                 }
 
@@ -170,10 +177,11 @@ Rolling_nwp_interval = function(i, ERA_NWP_vars, q, init_days, window, reweight,
                 results = merge(results,pred_clima, by = c("month_day", "hour"))
             }
 
-        } else{
+        } else if (dim(test)[1]==0){
             results = data.table()
+            print('Lacking data for this period')
         }
-
+        print(dim(results))
         detailed_results[[lead]] = results
     }
     out = data.table(rbindlist(detailed_results))
