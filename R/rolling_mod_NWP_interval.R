@@ -135,9 +135,9 @@ Rolling_nwp_interval = function(i, ERA_NWP_vars, q, init_days, window, reweight,
 
             }   else if(model == 'spline'){
                 spline_var = paste0("NWP1_",q*100)
-                spline_form = paste0("test$PC1 ~ bs(test$",spline_var,", df=8)")
+                spline_form = paste0("test$PC1 ~ bs(test$",spline_var,", df=3)")
                 X_test = model.matrix(as.formula(spline_form))
-                qreg = rq(PC1 ~ bs(get(spline_var), df=8), data=train, tau=c(q))
+                qreg = rq(PC1 ~ bs(get(spline_var), df=3), data=train, tau=c(q))
                 test_l = pinball_loss(q,  X_test %*% qreg$coef, test$PC1)
                 results[, 'pred':= X_test %*% qreg$coef]
             }
@@ -181,7 +181,6 @@ Rolling_nwp_interval = function(i, ERA_NWP_vars, q, init_days, window, reweight,
             results = data.table()
             print('Lacking data for this period')
         }
-        print(dim(results))
         detailed_results[[lead]] = results
     }
     out = data.table(rbindlist(detailed_results))
