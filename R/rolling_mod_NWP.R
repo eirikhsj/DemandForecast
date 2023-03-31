@@ -23,12 +23,12 @@
 #' @name rolling_mod_NWP
 
 #
-# forc_start=as.Date('2007-01-01'); forc_end=as.Date('2023-01-01'); q=0.9; ERA_NWP; predictors=1; model='spline'; window = 125; reweight = FALSE;
-# incl_climatology =TRUE; formula = 'PC1 ~ 1'; incl_other = FALSE; skill_interval = 0; cores = 4
+forc_start=as.Date('2007-01-01'); forc_end=as.Date('2023-01-01'); q=0.9; ERA_NWP; predictors=1; model='spline'; window = 125; reweight = FALSE;
+incl_climatology =TRUE; formula = 'PC1 ~ 1'; incl_other = FALSE; skill_interval = 0; cores = 4;df_spline = 8
 
 #' @export
 rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2023-01-01'), q=0.9, ERA_NWP, predictors=1, model='qreg', window = 60, reweight = FALSE,
-                       incl_climatology =FALSE, formula = 'PC1 ~ 1', incl_other = FALSE, skill_interval = 0, cores = 4){
+                       incl_climatology =FALSE, formula = 'PC1 ~ 1', incl_other = FALSE, skill_interval = 0, cores = 4, df_spline = 8){
 
     #1) Fix dates
     start =as.Date(forc_start)
@@ -78,7 +78,8 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
     arg8 = incl_climatology
     arg9 = formula
     arg10 = pred_vars
-    arg11 = cores
+    arg11 = df_spline
+        arg12 = cores
 
     ## **** Run parallel cores ****
     blas_set_num_threads(1)
@@ -89,8 +90,8 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
     detailed_results = mclapply(seq_along(init_days),
                                 "Rolling_nwp",
                                 ERA_NWP_vars = arg1, q = arg2, init_days= arg3, window = arg4, reweight = arg5, model = arg6,
-                                predictors = arg7, incl_climatology = arg8, formula = arg9, pred_vars = arg10,
-                                mc.cores = arg11)
+                                predictors = arg7, incl_climatology = arg8, formula = arg9, pred_vars = arg10,df_spline=arg11,
+                                mc.cores = arg12)
 
     #4) Store and return
     Results = rbindlist(detailed_results,use.names=FALSE)
@@ -103,7 +104,7 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
 
 #' @export
 Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, predictors,
-                       incl_climatology, formula, pred_vars){
+                       incl_climatology, formula, pred_vars,df_spline){
     ## 3a) Time keeping
     init_day = init_days[i]
     target_days = seq(init_day, length.out = window,  by = '1 days')
@@ -135,11 +136,11 @@ Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, p
     }  else if(model == 'spline'){
         print(formula)
         spline_var = paste0("NWP1_",q*100)
-        spline_form = paste0("test$PC1 ~ bs(test$",spline_var,", df=5)")
+        spline_form = paste0("test$PC1 ~ bs(test$",spline_var,", df=",df_spline,")")
         X_test = model.matrix(as.formula(spline_form))
-        qreg = rq(PC1 ~ bs(get(spline_var), df=5), data=train, tau=c(q))
-        test_l = pinball_loss(q,  X_test %*% qreg$coef, test$PC1)
-        results[, 'pred':= X_test %*% qreg$coef]
+        qreg = rq(PC1 ~ bs(get(spline_var), df=df_spline), data=train, tau=c(q))
+        test_l = pinball_loss(q,  predict(qreg, newdata = test), test$PC1)
+        results[, 'pred':= predict(qreg, newdata = test)]
     }
 
     ## 3d) Register loss
