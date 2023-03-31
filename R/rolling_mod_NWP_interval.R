@@ -87,12 +87,13 @@ rolling_mod_NWP_interval = function(forc_start=as.Date('2007-01-01'), forc_end=a
     omp_set_num_threads(1) #Set number of threads
 
     #3) Forecast iteration
+    print("Forecast ready to begin!")
     #mod = gam(Y ~X, data = data.table(X = rnorm(10), Y = rnorm(10)))
     detailed_results = mclapply(seq_along(init_days),
                                 "Rolling_nwp_interval",
                                 ERA_NWP_vars = arg1, q = arg2, init_days= arg3, window = arg4, reweight = arg5, model = arg6,
                                 predictors = arg7, incl_climatology = arg8, formula = arg9, pred_vars = arg10,
-                                interval_k = arg11,arg12 = df_spline,
+                                interval_k = arg11, df_spline = arg12,
                                 mc.cores = arg13)
 
     #4) Store and return
@@ -118,6 +119,7 @@ Rolling_nwp_interval = function(i, ERA_NWP_vars, q, init_days, window, reweight,
         seq(i, length.out = interval_k, by = 1) })
 
     detailed_results = list()
+
     for (lead in 1:(length(l_times))){
         ## 3b) Split train-test
         train = ERA_NWP_final[date<init_day & lead_time %in% l_times[[lead]], .SD, keyby = .(date,hour)]

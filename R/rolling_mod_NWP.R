@@ -23,8 +23,8 @@
 #' @name rolling_mod_NWP
 
 #
-# forc_start=as.Date('2007-01-01'); forc_end=as.Date('2023-01-01'); q=0.9; ERA_NWP; predictors=1; model='spline'; window = 125; reweight = FALSE;
-# incl_climatology =TRUE; formula = 'PC1 ~ 1'; incl_other = FALSE; skill_interval = 0; cores = 4;df_spline = 8
+forc_start=as.Date('2007-01-01'); forc_end=as.Date('2023-01-01'); q=0.9; ERA_NWP; predictors=1; model='spline'; window = 125; reweight = FALSE;
+incl_climatology =TRUE; formula = 'PC1 ~ 1'; incl_other = FALSE; skill_interval = 0; cores = 4;df_spline = 8
 
 #' @export
 rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2023-01-01'), q=0.9, ERA_NWP, predictors=1, model='qreg', window = 60, reweight = FALSE,
@@ -79,7 +79,7 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
     arg9 = formula
     arg10 = pred_vars
     arg11 = df_spline
-        arg12 = cores
+    arg12 = cores
 
     ## **** Run parallel cores ****
     blas_set_num_threads(1)
@@ -90,7 +90,7 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
     detailed_results = mclapply(seq_along(init_days),
                                 "Rolling_nwp",
                                 ERA_NWP_vars = arg1, q = arg2, init_days= arg3, window = arg4, reweight = arg5, model = arg6,
-                                predictors = arg7, incl_climatology = arg8, formula = arg9, pred_vars = arg10,df_spline=arg11,
+                                predictors = arg7, incl_climatology = arg8, formula = arg9, pred_vars = arg10, arg11=df_spline,
                                 mc.cores = arg12)
 
     #4) Store and return
