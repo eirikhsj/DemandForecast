@@ -35,17 +35,13 @@ rolling_mod_NWP_interval(
 
 \item{formula}{String. Regression formula.}
 
+\item{coef_to_print}{List of coefficients to include in output.}
+
+\item{interval_k}{Integer Number of days in traning interval}
+
+\item{skill_interval}{}
+
 \item{cores}{Integer. Number of cores to be used.}
-
-\item{predictors}{Integer. Number of NWP predictors.}
-
-\item{hour_v}{Boolean. Include hour covariate.}
-
-\item{week_v}{Boolean. Include week covariate.}
-
-\item{month_v}{Boolean. Include month covariate.}
-
-\item{year_v}{Boolean. Include year covariate.}
 }
 \value{
 Model output with predictions, loss and model coefficients.

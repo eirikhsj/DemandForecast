@@ -4,17 +4,16 @@
 #'
 #' @param q Float. Quantile of interest.
 #' @param ERA_NWP Data.table. Data of ERA observations and quantiles of NWP forecasts.
-#' @param predictors Integer. Number of NWP predictors.
 #' @param model String. Specify type of model, e.g. qreg, qgam, etc.
 #' @param window Integer. Max number of forecast days from initialization.
 #' @param reweight Boolean. Use reweighted data.
-#' @param hour_v Boolean. Include hour covariate.
-#' @param week_v Boolean. Include week covariate.
-#' @param month_v Boolean. Include month covariate.
-#' @param year_v Boolean. Include year covariate.
 #' @param incl_climatology Boolean. Include climatology model.
 #' @param cores Integer. Number of cores to be used.
 #' @param formula String. Regression formula.
+#' @param coef_to_print List of coefficients to include in output.
+#' @param interval_k Integer Number of days in traning interval
+#' @param skill_interval
+#'
 #'
 #' @return Model output with predictions, loss and model coefficients.
 #' @import quantreg
@@ -24,6 +23,7 @@
 #' @examples mod = rolling_mod_NWP_interval('2007-01-01', '2022-05-01', 0.9, ERA_NWP, 1, model = 'qreg', window = 60, reweight=FALSE)
 #' @name rolling_mod_NWP_interval
 
+#' @export
 rolling_mod_NWP_interval = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2023-01-01'), q=0.9, ERA_NWP, model='reg', window = 60, reweight = FALSE,
                                         incl_climatology =FALSE, formula = 'PC1 ~ 1', coef_to_print = c(), interval_k = 4, skill_interval = 0, cores = 4){
 
