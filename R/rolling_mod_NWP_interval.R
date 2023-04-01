@@ -69,7 +69,7 @@ rolling_mod_NWP_interval = function(forc_start=as.Date('2007-01-01'), forc_end=a
 
 #' @export
 Rolling_nwp_interval = function(i, ERA_NWP_vars, q, init_days, window, reweight, model,
-                                incl_climatology, formula, pred_vars, interval_k, coef_to_print){
+                                incl_climatology, formula, interval_k, coef_to_print){
     ## 3a) Time keeping
     init_day = init_days[i]
     target_days = seq(init_day, length.out = window,  by = '1 days')
