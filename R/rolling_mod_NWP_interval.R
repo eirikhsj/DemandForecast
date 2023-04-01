@@ -24,7 +24,7 @@
 #' @name rolling_mod_NWP_interval
 
 #' @export
-rolling_mod_NWP_interval = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2023-01-01'), q=0.9, ERA_NWP, model='reg', window = 60, reweight = FALSE,
+rolling_mod_NWP_interval = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2023-01-01'), q=0.9, ERA_NWP, model='qreg', window = 125, reweight = FALSE,
                                         incl_climatology =FALSE, formula = 'PC1 ~ 1', coef_to_print = c(), interval_k = 4, skill_interval = 0, cores = 4){
 
     #1) Fix dates
@@ -55,7 +55,7 @@ rolling_mod_NWP_interval = function(forc_start=as.Date('2007-01-01'), forc_end=a
                                 "Rolling_nwp_interval",
                                 ERA_NWP_vars = ERA_NWP_vars, q = q, init_days= init_days, window = window, reweight = reweight, model = model,
                                 incl_climatology = incl_climatology, formula = formula,coef_to_print=coef_to_print,
-                                interval_k = interval_k, df_spline = df_spline,
+                                interval_k = interval_k,
                                 mc.cores = cores)
 
     #4) Store and return
