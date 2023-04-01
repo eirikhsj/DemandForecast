@@ -92,52 +92,62 @@ Rolling_nwp_interval = function(i, ERA_NWP_vars, q, init_days, window, reweight,
         }
         results = test
         if(dim(test)[1]!=0){
-            ## 3c) Run model
-            if (model == 'qreg'){
-                qreg = rq(formula, data = train, tau = c(q))
-                train_l = pinball_loss(q, predict(qreg), train$PC1)
-                test_l = pinball_loss(q, predict(qreg, newdata = test), test$PC1)
-                results[,'pred' := predict(qreg, newdata = test)]
-            }
 
-            ## 3d) Register loss
-            results[,'test_loss' := test_l]
-            if (lead == 1){
-                print(formula)
-                print(paste0('Ave pinball loss for first batch on ', init_day, ' is = ', round(mean(test_l),digits = 2)))
-            }
+            tryCatch({
 
-            ## 3e) Register Beta coefficients
-            if(length(coef_to_print) >0 & model == 'qreg'){
-                betas = data.table(t(coef(qreg)))[,..coef_to_print]
-                colnames(betas) = paste0('coef_',coef_to_print)
-                betas = betas[rep(1,dim(test)[1]),] #unnecessary storage use, expand later
-                results = cbind(results, betas)
-            }
+                ## 3c) Run model
+                if (model == 'qreg'){
 
-            ## 3f) Include Climatology
-            if(incl_climatology == TRUE){
-                if (skill_interval>0){
-                    pc_int = paste0("PC_", skill_interval, "days_roll")
-                    climatology = train[, .(quant =quantile(get(pc_int),probs = q)), by = .(month_day = format(date, format ="%m-%d"), hour)]
-                } else if(skill_interval<=0){
-                    climatology = train[, .(quant =quantile(PC1,probs = q)), by = .(month_day = format(date, format ="%m-%d"), hour)]
+                    qreg = rq(formula, data = train, tau = c(q))
+                    train_l = pinball_loss(q, predict(qreg), train$PC1)
+                    test_l = pinball_loss(q, predict(qreg, newdata = test), test$PC1)
+                    results[,'pred' := predict(qreg, newdata = test)]
                 }
 
-                if ("02-29" %in% format(test$date, format ="%m-%d") & !("02-29" %in%climatology$month_day)){ #Leap year issue
-                    print('Correcting leap year')
-                    leap = climatology[month_day=="02-28",]
-                    leap[,month_day:=  rep("02-29", 4)]
-                    climatology = rbind(climatology, leap)
+                ## 3d) Register loss
+                results[,'test_loss' := test_l]
+                if (lead == 1){
+                    print(formula)
+                    print(paste0('Ave pinball loss for first batch on ', init_day, ' is = ', round(mean(test_l),digits = 2)))
                 }
-                pred_clima = climatology[month_day %in% format(test$date, format ="%m-%d"), .(month_day, hour,  clima_pred= quant)]
-                results[,month_day:=  format(date, format ="%m-%d")]
-                results = merge(results,pred_clima, by = c("month_day", "hour"))
-            }
+
+                ## 3e) Register Beta coefficients
+                if(length(coef_to_print) >0 & model == 'qreg'){
+                    betas = data.table(t(coef(qreg)))[,..coef_to_print]
+                    colnames(betas) = paste0('coef_',coef_to_print)
+                    betas = betas[rep(1,dim(test)[1]),] #unnecessary storage use, expand later
+                    results = cbind(results, betas)
+                }
+
+                ## 3f) Include Climatology
+                if(incl_climatology == TRUE){
+                    if (skill_interval>0){
+                        pc_int = paste0("PC_", skill_interval, "days_roll")
+                        climatology = train[, .(quant =quantile(get(pc_int),probs = q)), by = .(month_day = format(date, format ="%m-%d"), hour)]
+                    } else if(skill_interval<=0){
+                        climatology = train[, .(quant =quantile(PC1,probs = q)), by = .(month_day = format(date, format ="%m-%d"), hour)]
+                    }
+
+                    if ("02-29" %in% format(test$date, format ="%m-%d") & !("02-29" %in%climatology$month_day)){ #Leap year issue
+                        print('Correcting leap year')
+                        leap = climatology[month_day=="02-28",]
+                        leap[,month_day:=  rep("02-29", 4)]
+                        climatology = rbind(climatology, leap)
+                    }
+                    pred_clima = climatology[month_day %in% format(test$date, format ="%m-%d"), .(month_day, hour,  clima_pred= quant)]
+                    results[,month_day:=  format(date, format ="%m-%d")]
+                    results = merge(results,pred_clima, by = c("month_day", "hour"))
+                }
+
+            },
+            error = function(e) {
+                results = data.table()
+                print('Problem for this period (',init_day, ' for lead time ', l_times[[lead]],')#########################################')
+            })
 
         } else if (dim(test)[1]==0){
             results = data.table()
-            print('Lacking data for this period')
+            print('Lacking data for this period (',init_day, ' for lead time ', l_times[[lead]],')')
         }
         detailed_results[[lead]] = results
     }
