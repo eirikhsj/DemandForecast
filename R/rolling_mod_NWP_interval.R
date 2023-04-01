@@ -54,7 +54,7 @@ rolling_mod_NWP_interval = function(forc_start=as.Date('2007-01-01'), forc_end=a
     detailed_results = mclapply(seq_along(init_days),
                                 "Rolling_nwp_interval",
                                 ERA_NWP_vars = ERA_NWP_vars, q = q, init_days= init_days, window = window, reweight = reweight, model = model,
-                                incl_climatology = incl_climatology, formula = formula, pred_vars = pred_vars,coef_to_print=coef_to_print,
+                                incl_climatology = incl_climatology, formula = formula,coef_to_print=coef_to_print,
                                 interval_k = interval_k, df_spline = df_spline,
                                 mc.cores = cores)
 
