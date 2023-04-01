@@ -9,25 +9,21 @@ rolling_mod_NWP_interval(
   forc_end = as.Date("2023-01-01"),
   q = 0.9,
   ERA_NWP,
-  predictors = 1,
   model = "reg",
   window = 60,
   reweight = FALSE,
   incl_climatology = FALSE,
   formula = "PC1 ~ 1",
-  incl_other = FALSE,
+  coef_to_print = c(),
   interval_k = 4,
   skill_interval = 0,
-  cores = 4,
-  df_spline = 8
+  cores = 4
 )
 }
 \arguments{
 \item{q}{Float. Quantile of interest.}
 
 \item{ERA_NWP}{Data.table. Data of ERA observations and quantiles of NWP forecasts.}
-
-\item{predictors}{Integer. Number of NWP predictors.}
 
 \item{model}{String. Specify type of model, e.g. qreg, qgam, etc.}
 
@@ -40,6 +36,8 @@ rolling_mod_NWP_interval(
 \item{formula}{String. Regression formula.}
 
 \item{cores}{Integer. Number of cores to be used.}
+
+\item{predictors}{Integer. Number of NWP predictors.}
 
 \item{hour_v}{Boolean. Include hour covariate.}
 
