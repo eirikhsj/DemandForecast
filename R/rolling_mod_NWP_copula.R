@@ -20,7 +20,7 @@
 #' @import data.table
 #' @import stats
 #'
-#' @examples mod = rolling_mod_NWP_copula('2007-01-01', '2022-05-01', 0.9, ERA_NWP, model = 'copula', window = 60, reweight=FALSE)
+#' @examples mod = rolling_mod_NWP_copula(as.Date('2007-01-01'), as.Date('2022-05-01'), 0.9, ERA_NWP, model = 'copula', window = 60, reweight=FALSE,formula = 'PC1 ~ NWP1_90')
 #' @name rolling_mod_NWP_copula
 
 #' @export
@@ -86,7 +86,6 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
 
     for (lead in 1:(length(l_times))){
         ## 3b) Split train-test
-        print(lead)
         train = ERA_NWP_final[date<init_day & lead_time %in% l_times[[lead]], .SD, keyby = .(date,hour)]
         if (reweight ==TRUE){
             test = ERA_NWP_final[date %in% target_days & lead_time %in% l_times[[lead]], .SD, keyby = .(date,hour)] #Here we only use 1 predictor, cant use init_day but no confusion in target_days
@@ -146,10 +145,8 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
 
                 #Utilize the copula quantile
                 copula_quant = quantile(W, probs = 0.9)
-                print(copula_quant)
 
                 test_loss = pinball_loss(0.9, copula_quant, test[,mean(PC1)])
-                print(test_loss)
                 results[,'copula_loss' := test_loss ]
             }
 
