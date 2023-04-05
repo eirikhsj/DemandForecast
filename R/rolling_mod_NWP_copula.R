@@ -20,7 +20,7 @@
 #' @import data.table
 #' @import stats
 #'
-#' @examples mod = rolling_mod_NWP_copula(as.Date('2007-01-01'), as.Date('2022-05-01'), 0.9, ERA_NWP, model = 'copula', window = 60, reweight=FALSE,formula = 'PC1 ~ NWP1_90')
+#' @examples copula_mod = rolling_mod_NWP_copula(as.Date('2007-01-01'), as.Date('2023-01-01'), 0.9, ERA_NWP, model = 'copula', window = 60, reweight=FALSE,formula = 'PC1 ~ NWP1_90')
 #' @name rolling_mod_NWP_copula
 
 #' @export
@@ -109,7 +109,6 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
                 }
             } else if(model == "copula"){
                 #Create predictions based on training interval
-                print('copula')
                 mod_copula = suppressWarnings(rq(formula, data = train, tau = tau_vals))
 
                 pred_mat_train = predict(mod_copula, interval = 'none')
@@ -120,7 +119,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
                 check_train =  data.table(t(pred_mat_train > train))
                 q_train = t(check_train[, lapply(.SD, function(x) ifelse(is.na(match(TRUE, x)),(m-1),
                                                                          ifelse(match(TRUE, x)>2,match(TRUE, x)-2, 1)) )]/m)
-                q_mat = data.table(matrix(q_train, ncol = 4, byrow = TRUE))
+                q_mat = data.table(matrix(q_train, ncol = 4*interval_k, byrow = TRUE))
 
                 #Normalize
                 z_train = q_mat[, lapply(.SD, function(x)  qnorm(x))]
@@ -130,13 +129,13 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
 
                 #Simulate from multivariate normal with mu = 0 and sigma = sigma
                 z_sim = data.table(mvrnorm(n = N, mu = rep(0,dim(sigma)[1]), Sigma = sigma))
-                print(dim(z_sim))
+
                 #Find the quantile index
                 q2 = as.matrix(z_sim[, lapply(.SD, function(x)  round(pnorm(x),log(m, 10))*m)])
 
                 # Get back U values from q-index
                 U = data.table()
-                for (b in 1:(1*interval_k)){
+                for (b in 1:(4*interval_k)){
                     U[, paste0("col", b)  := pred_mat_test[b,q2[,b]+1] ]
                 }
 
