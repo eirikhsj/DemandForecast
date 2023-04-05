@@ -3,14 +3,14 @@
 #' Finds the correct file of NWP forecast month, gets PCA of forecasts,
 #' and fetches quantiles (0.1-0.9) of 1 selected principle component.
 #' Used in cover-function get_all_NWP_quantiles.R
-#' Specifying reweight = TRUE will also provide reweighted quantiles.
+#' Specifying rew = TRUE will also provide reweighted quantiles.
 #'
-#' @param i Integer. File number of forecast month
+#' @param files_i Integer. File number of forecast month
 #' @param PC_ERA List. The PC_ERA used to get the NWP factor loadings.
 #' @param pc_comp Integer. The principle component of interest for
 #' @param rew Boolean. Whether or not to find reweighted quantiles.
 #' @return Data.table with quantiles 0.1-0.9 and mean of NWP PC of choice.
-#' @export
+
 #' @import ncdf4
 #'
 #' @examples files = list.files(path = "~/Desktop/Master2023/Data/NWP_monthly/", pattern = '*.nc4', full.names=TRUE)
@@ -18,7 +18,7 @@
 #'
 #' @export
 get_one_month_NWP_quantiles= function(files_i = "/mn/kadingir/datascience_000000/eirikhsj/sfe_nordic_temperature/sfe_nordic_temperature_1993_1.nc4",
-                                      PC_ERA, pc_comp, rew= FALSE, dt = dt_check){
+                                      PC_ERA, pc_comp=1, rew= FALSE, rew_int = c(15,2), dt = dt_check){
 
     #Open nc4, assign file and close nc4
     nc = nc_open(files_i)
@@ -58,33 +58,22 @@ get_one_month_NWP_quantiles= function(files_i = "/mn/kadingir/datascience_000000
         init_day = as.Date(paste0(year_nwp,'-',month_nwp,'-01'))
         date_seq = seq(init_day, length=125, by='1 days')
         target_date = as.character(rep(date_seq, each=4))
-        reweight_day = as.Date(paste0(year_nwp,'-',month_nwp,'-15'))
+        reweight_day = as.Date(paste0(year_nwp,'-',month_nwp,'-', rew_int[1]))
+        reweight_days = seq(reweight_day, length=rew_int[2], by='-1 days')
+        print(paste0('We are using these days to reweigh:', reweight_days))
+        ERA_PC1_rew = PC_ERA$dt_test[date %in% reweight_days & hour %in% c(6,12,18,24), get(paste0('PC', pc_comp))]
 
-        ERA_PC1_15 = PC_ERA$dt_test[date == reweight_day & hour %in% c(6,12,18,24), get(paste0('PC', pc_comp))]
-        #ERA_PC1_15 = mean(PC_ERA$dt_test[(date == d), get(paste0('PC', pc_comp))])
-        #ERA_PC1_15 = PC_ERA$dt_test[(date == d & hour %in% c(6,12,18,24)), get(paste0('PC', pc_comp))]
-
-        #1b find the matching NWP
-        #reweight_results_final = list()
-        #Find weight
+        #1b find and apply weights
         sq = exp(seq(log(0.000001), log(0.01), length.out = 25))
-
-        arg1 = pc_data
-        arg2 = ERA_PC1_15
-        arg3 = init_day
-        arg4 = target_date
-        arg5 = sq
-
         blas_set_num_threads(1)
         omp_set_num_threads(1)
-        print(reweight_day)
         reweight_results_final = mclapply(seq_along(sq),
                                           'get_weights',
-                                          pc_data= arg1, ERA_PC1_15 =arg2,init_day=arg3,
-                                          target_date= arg4, sq = arg5,
+                                          pc_data= pc_data, ERA_PC1_rew =ERA_PC1_rew,init_day=init_day,
+                                          target_date= target_date, sq = sq, rew_int = rew_int,
                                         mc.cores = 25)
 
-
+        #1c return
         NWP_quant_rew = rbindlist(reweight_results_final)
         names(NWP_quant_rew) = c('Tuning_k', paste0('NWP_PC',pc_comp, '_rew_q', seq(10, 90, 10)), 'hour', 'init_date', 'date')
     } else{
@@ -100,13 +89,14 @@ get_one_month_NWP_quantiles= function(files_i = "/mn/kadingir/datascience_000000
 
 
 #' @export
-get_weights = function(k, pc_data, ERA_PC1_15,init_day,target_date, sq){
+get_weights = function(k, pc_data, ERA_PC1_rew,init_day,target_date, rew_int, sq){
     print(k)
     w = rep(0,dim(pc_data$NWP_PC_mat)[3])
-    NWP_15 = pc_data$NWP_PC_mat[57:60,1,] # time 57:60 is day 15 hours 6,12,18,24
-    for (m in 1:4){
-        w = w + -0.5*sq[k]*(ERA_PC1_15[m] - NWP_15[m,])^2
-        #w = w + -0.5*sq[k]*(ERA_PC1_15[m-56] - NWP_15)^2
+    indx = rev(seq(rew_int[1]*4, length.out = rew_int[2]*4, by = -1))
+    NWP_rew = pc_data$NWP_PC_mat[indx,1,] # time 57:60 is day 15 hours 6,12,18,24
+
+    for (m in 1:length(indx)){
+        w = w + -0.5*sq[k]*(ERA_PC1_rew[m] - NWP_rew[m,])^2
     }
 
     mx = max(w)

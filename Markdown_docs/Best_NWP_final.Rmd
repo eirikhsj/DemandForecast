@@ -23,14 +23,9 @@ It contains model runs from:
 
 6) Scoring Intervals
 
-# Load data
+# Load data (Example for not reweighted and 0.9 quantile)
 ```{r, cache = TRUE}
 library(DemandForecast)
-# library(data.table)
-# library(ncdf4)
-# library(parallel)
-# library(mgcv)
-# library(quantreg)
 
 ERA_NWP = get_ERA_NWP(ERA_path = "/mn/kadingir/datascience_000000/eirikhsj/PC_ERA_79_92.Rda", 
                       NWP_path ="/mn/kadingir/datascience_000000/eirikhsj/NWP_quant_1993_2023.Rda",
@@ -47,9 +42,10 @@ ERA_NWP[, season:= ifelse(month(date) %in% c(12,1,2), 1,
 ERA_NWP[,raw_loss := pinball_loss(0.9, NWP1_90, PC1)]
 #ERA_NWP[,mean(raw_loss)]
 plot(ERA_NWP[,mean(raw_loss), keyby = lead_time], type = 'l', ylim = c(0, 13))
+plot(ERA_NWP[date>"2007-01-01",mean(raw_loss), keyby = lead_time], type = 'l', ylim = c(0, 13), col = 'purple')
 lines(Mod_9_120_NWP1_check_climat$Results[,mean(test_loss), by = lead_time],col = 'red')
 #lines(TTTT$Results[,mean(test_loss), keyby = lead_time], col = 'purple')
-legend('bottomright', col = c('black','red', 'purple'), title = 'Model', legend = c('NWP1 (Weighted /direct)', 'NWP1 (Qreg All data)', "NWP1 (Qreg 6-hour Beta)"), pch = 16, lty = 1)
+legend('bottomright', col = c('black','red', 'purple'), title = 'Model', legend = c('NWP1 (Weighted /direct)', 'NWP1 (Qreg All data)', "NWP1 (After 2007)"), pch = 16, lty = 1)
 ```
 
 ### Plot of Weighted quantile estimate for specific month
@@ -71,7 +67,7 @@ ggplot() +
 ```
 # Climatology models (Out-of-sample for all quantiles)
 ```{r}
-Clima_90 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.8, ERA_NWP, 0, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1', incl_climatology = TRUE)                                            
+Clima_90 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 0, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1', incl_climatology = TRUE)                                            
 Clima_80 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.8, ERA_NWP, 0, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1', incl_climatology = TRUE)                                              
 Clima_70 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.7, ERA_NWP, 0, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1', incl_climatology = TRUE)  
 Clima_60 = rolling_mod_NWP('2007-01-01', '2023-01-31', 0.6, ERA_NWP, 0, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1', incl_climatology = TRUE)                                            
@@ -102,7 +98,7 @@ Clima = merge(Clima, Clima_80$Results[,.(date, hour, month_day, PC1, init_date, 
 Clima = merge(Clima, Clima_90$Results[,.(date, hour, month_day, PC1, init_date, lead_time, clima_pred90)], by = c('date', 'hour', 'init_date', 'PC1', 'lead_time', 'month_day'))
 ```
 
-### Comparison of Wegihted NWP1 with Climatology at different quantiles 0.1-0.9
+### Comparison of Weighted NWP1 with Climatology at different quantiles 0.1-0.9
 ```{r}
 #pdf("/Users/Eirik/Desktop/Master2023/ExportedPlots/NWP_WQE_pin_score.pdf", height = 7, width = 9, pointsize = 12)
 
@@ -112,38 +108,39 @@ ERA_NWP_raw_loss[,'lead_time':= ((as.integer(difftime(date, init_date, units = '
 colz = c('red', 'blue', 'green', 'yellow', 'brown', 'purple', 'grey', 'pink', 'orange')
 colz = rep('red',9)
 par(mar=c(4.5,4.5,4.5,4.5))
-for (i in c(1:9)){
-    plot(ERA_NWP_raw_loss[, mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1)), by = lead_time], col = 'red', type = 'l', main = paste0('Pinball Loss and Skill Score of NWP WQE (0.', i," quantile)"), xaxt = 'n',ylab = 'Pinball Loss', xlab = 'Lead Time (Days after Forecast Initialization)', ylim = c(0, 13))
-    lines(Clima[, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1)), by = lead_time], col = 'blue')
-    par(new = TRUE)
-    plot(1 - (ERA_NWP_raw_loss[, mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1)), by = lead_time][,V1]/Clima[, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1)), by = lead_time][,V1]), type = 'l', axes = FALSE, xlab = "", ylab = "", ylim = c(-0.15, 0.75))
-    axis(side = 4, at = seq(-0.1, 1, by = 0.2))
-    abline(h = 0, lty = 2, col = 'black')
-    abline(h = 0.1, lty = 2, col = 'grey')
-    abline(h = -0.1, lty = 2, col = 'grey')
-    if (ERA_NWP_raw_loss[, mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1)), by = lead_time][500,V1]>17){
-        l = 'right'
-    } else{ l = 'topright'}
-    legend(l, col = c('red', 'blue', 'black'), title = paste0("Performance at q = ", i/10), legend =  c(paste0("NWP WQE"), paste0("Climatology"), "Skill Score NWP"),pch = 16,lty = c(1))
-    mtext("Skill Score", side = 4, line = 3, cex = 1)
-    axis(side = 1, at = c(0,100-2,200-2,300-2,400-2,500-2), labels = c(0,25,50,75,100,125))
-
-    point1 = which(1 - (ERA_NWP_raw_loss[, mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1)), by = lead_time][,V1]/Clima[, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1)), by = lead_time][,V1])<0.1)[1]
-    point0 = which(1 - (ERA_NWP_raw_loss[, mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1)), by = lead_time][,V1]/Clima[, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1)), by = lead_time][,V1])<0)[1]
-    #print(c(point1, point0))
-    abline(v = point1, col = 'grey', lty = 2)
-    abline(v =point0 , col = 'grey', lty = 2)
-    text(x = 4*6, y = 0.75, labels = paste0("Day ", ceiling(point1/4)))
-    text(x = 4*30, y = 0.7, labels = paste0("Day ", ceiling(point0/4)))
-    print(c(Clima[lead_time %in% 1:240, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1))],
-              ERA_NWP_raw_loss[lead_time %in% 1:240, mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1))]))
-    print(c(
-        1 - (ERA_NWP_raw_loss[lead_time %in% 1:80, mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1))]/Clima[lead_time %in% 1:80, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1))]),
-        1 - (ERA_NWP_raw_loss[lead_time %in% 81:160, mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1))]/Clima[lead_time %in% 81:160, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1))]),
-        1 - (ERA_NWP_raw_loss[lead_time %in% 161:240, mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1))]/Clima[lead_time %in% 161:240, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1))]),
-
-        1 - (ERA_NWP_raw_loss[lead_time %in% 1:240, mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1))]/Clima[lead_time %in% 1:240, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1))])))
-    # acf(1 - (ERA_NWP_raw_loss[100:500, mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1)), by = lead_time][,V1]/Clima[100:500, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1)), by = lead_time][,V1]))
+for (i in 1:9){
+    # plot(ERA_NWP_raw_loss[date>"2007-01-01", mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1)), keyby = lead_time], col = 'red', type = 'l', main = paste0('Pinball Loss and Skill Score of NWP-WQE (0.', i," quantile)"), xaxt = 'n',ylab = 'Pinball Loss', xlab = 'Lead Time (Days after Forecast Initialization)', ylim = c(0, 13))
+    # lines(Clima[, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1)), keyby = lead_time], col = 'blue')
+    # par(new = TRUE)
+    # plot(1 - (ERA_NWP_raw_loss[date>"2007-01-01", mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1)), keyby = lead_time][,V1]/Clima[, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1)), keyby = lead_time][,V1]), type = 'l', axes = FALSE, xlab = "", ylab = "", ylim = c(-0.15, 0.75))
+    # axis(side = 4, at = seq(-0.1, 1, by = 0.2))
+    # abline(h = 0, lty = 2, col = 'black')
+    # abline(h = 0.1, lty = 2, col = 'grey')
+    # abline(h = -0.1, lty = 2, col = 'grey')
+    # if (ERA_NWP_raw_loss[date>"2007-01-01", mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1)), keyby = lead_time][500,V1]>17){
+    #     l = 'right'
+    # } else{ l = 'topright'}
+    # legend(l, col = c('red', 'blue', 'black'), title = paste0("Performance at q = ", i/10), legend =  c(paste0("NWP-WQE"), paste0("Climatology"), "Skill Score NWP"),pch = 16,lty = c(1))
+    # mtext("Skill Score", side = 4, line = 3, cex = 1)
+    # axis(side = 1, at = c(0,100-2,200-2,300-2,400-2,500-2), labels = c(0,25,50,75,100,125))
+    # 
+    # point1 = which(1 - (ERA_NWP_raw_loss[date>"2007-01-01", mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1)), keyby = lead_time][,V1]/Clima[, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1)), keyby = lead_time][,V1])<0.1)[1]
+    # point0 = which(1 - (ERA_NWP_raw_loss[date>"2007-01-01", mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1)), keyby = lead_time][,V1]/Clima[, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1)), keyby = lead_time][,V1])<0)[1]
+    # #print(c(point1, point0))
+    # abline(v = point1, col = 'grey', lty = 2)
+    # abline(v = point0 , col = 'grey', lty = 2)
+    # text(x = 4*6, y = 0.75, labels = paste0("Day ", ceiling(point1/4)))
+    # text(x = 4*31, y = 0.7, labels = paste0("Day ", ceiling(point0/4)))
+     print(c(Clima[lead_time %in% 1:240, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1))],
+               ERA_NWP_raw_loss[date>"2007-01-01"&lead_time %in% 1:240, mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1))]))
+    # print(c(
+    #     1 - (ERA_NWP_raw_loss[date>"2007-01-01"&lead_time %in% 1:240, mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1))]/Clima[lead_time %in% 1:240, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1))]),
+    #     1 - (ERA_NWP_raw_loss[date>"2007-01-01"&lead_time %in% 1:80, mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1))]/Clima[lead_time %in% 1:80, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1))]),
+    #     1 - (ERA_NWP_raw_loss[date>"2007-01-01"&lead_time %in% 81:160, mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1))]/Clima[lead_time %in% 81:160, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1))]),
+    #     1 - (ERA_NWP_raw_loss[date>"2007-01-01"&lead_time %in% 161:240, mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1))]/Clima[lead_time %in% 161:240, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1))])))
+    acf(1 - (ERA_NWP_raw_loss[160:500, mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1)), keyby = lead_time][,V1]/Clima[160:500, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1)), keyby = lead_time][,V1]), lag.max = 240)
+    acf(ERA_NWP_raw_loss[160:500, mean(pinball_loss(i/10, get(paste0("NWP_PC1_q",i,"0")), PC1)), keyby = lead_time][,V1], lag.max = 240)
+    acf(Clima[160:500, mean(pinball_loss(i/10, get(paste0("clima_pred",i*10)), PC1)), keyby = lead_time][,V1], lag.max = 240)
 }
 #dev.off()
 ```
@@ -151,21 +148,21 @@ Looking at inter-quantile differences.
 ```{r}
 Clima[,dist90_10:= clima_pred90 -clima_pred10]
 Clima[,mean(dist90_10), by = month(date)]
-ERA_NWP_raw_loss[,dist90_10:= NWP_PC1_q90 -NWP_PC1_q10]
-ERA_NWP_raw_loss[,mean(dist90_10), by = month(date)]
+ERA_NWP_raw_loss[date > "2007-01-01",dist90_10:= NWP_PC1_q90 -NWP_PC1_q10]
+ERA_NWP_raw_loss[date > "2007-01-01",mean(dist90_10), by = month(date)]
 
 Clima[,dist70_30:= clima_pred70 -clima_pred30]
 Clima[,mean(dist70_30), by = month(date)]
-ERA_NWP_raw_loss[,dist70_30:= NWP_PC1_q70 -NWP_PC1_q30]
-ERA_NWP_raw_loss[,mean(dist70_30), by = month(date)]
+ERA_NWP_raw_loss[date > "2007-01-01",dist70_30:= NWP_PC1_q70 -NWP_PC1_q30]
+ERA_NWP_raw_loss[date > "2007-01-01",mean(dist70_30), by = month(date)]
 
-data.table(cbind(Clima[,mean(dist90_10), by = month(date)],ERA_NWP_raw_loss[,mean(dist90_10), by = month(date)][,V1]))
-
-
-data.table(cbind(Clima[,mean(dist70_30), by = month(date)],ERA_NWP_raw_loss[,mean(dist70_30), by = month(date)][,V1]))
+data.table(cbind(Clima[,mean(dist90_10), by = month(date)],ERA_NWP_raw_loss[date > "2007-01-01",mean(dist90_10), by = month(date)][,V1]))
 
 
-ERA_NWP_raw_loss[lead_time>80,mean(NWP_PC1_q90 -NWP_PC1_q10)]
+data.table(cbind(Clima[,mean(dist70_30), by = month(date)],ERA_NWP_raw_loss[date > "2007-01-01",mean(dist70_30), by = month(date)][,V1]))
+
+
+ERA_NWP_raw_loss[date > "2007-01-01" & lead_time>80,mean(NWP_PC1_q90 -NWP_PC1_q10)]
 Clima[lead_time>80,mean(clima_pred90 -clima_pred10)]
 
 ERA_CLIMA = merge(Clima, ERA_NWP_raw_loss, by = c('date', 'hour', 'lead_time', 'PC1', 'init_date'))
@@ -709,13 +706,13 @@ plot_month(c('Mod_9_60_climatology', 'Mod_9_60_comb_week_1','Mod_9_60_comb_week_
 
 # 5) Quantile Regression with daily training and prediction 
 ```{r}
-Interval_Mod_9_125_NWP1_1day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1', interval_k = 1*4)
-Interval_Mod_9_125_NWP1_2day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1', interval_k = 2*4)
-Interval_Mod_9_125_NWP1_4day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1', interval_k = 4*4)
-Interval_Mod_9_125_NWP1_8day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1', interval_k = 8*4)
-Interval_Mod_9_125_NWP1_16day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1', interval_k = 16*4)
-Interval_Mod_9_125_NWP1_32day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1', interval_k = 32*4)
-Interval_Mod_9_125_NWP1_125day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, 1, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1', interval_k = 125*4)
+Interval_Mod_9_125_NWP1_1day = rolling_mod_NWP_interval('2007-01-01', '2007-03-01', 0.9, ERA_NWP,  model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1 + NWP1_90', interval_k = 1*4)
+Interval_Mod_9_125_NWP1_2day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP,  model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1+ NWP1_90', interval_k = 2*4)
+Interval_Mod_9_125_NWP1_4day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP,  model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1+ NWP1_90', interval_k = 4*4)
+Interval_Mod_9_125_NWP1_8day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1+ NWP1_90', interval_k = 8*4)
+Interval_Mod_9_125_NWP1_16day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP,  model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1+ NWP1_90', interval_k = 16*4)
+Interval_Mod_9_125_NWP1_32day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP,  model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1+ NWP1_90', interval_k = 32*4)
+Interval_Mod_9_125_NWP1_125day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP,  model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1+ NWP1_90', interval_k = 125*4)
 
 save(Interval_Mod_9_125_NWP1_1day, file = "Interval_Mod_9_125_NWP1_1day.Rda")
 save(Interval_Mod_9_125_NWP1_2day, file = "Interval_Mod_9_125_NWP1_2day.Rda")
@@ -744,7 +741,11 @@ Interval_Mod_5_125_NWP1_125day = rolling_mod_NWP_interval('2007-01-01', '2023-01
 # save(Interval_Mod_5_125_NWP1_16day, file = "Interval_Mod_5_125_NWP1_16day.Rda")
 # save(Interval_Mod_5_125_NWP1_32day, file = "Interval_Mod_5_125_NWP1_32day.Rda")
 # save(Interval_Mod_5_125_NWP1_125day, file = "Interval_Mod_5_125_NWP1_125day.Rda")
+
+
 ```
+
+
 
 
 ### Beta coef plot for single NWP1 pred linear
@@ -775,6 +776,23 @@ for (i in c(1,2,4,8,16,32,125)){
           mod$Results[lead_time >240 ,mean(test_loss)]))
 }
 ```
+
+[1] "h" "3"
+[1] 8.110075 6.323267
+[1] "h"   "lin"
+[1] 8.167454 6.350355
+[1] "w" "3"
+[1] 8.549734 6.796749
+[1] "w"   "lin"
+[1] 8.444641 6.605891
+[1] "m" "3"
+[1] 8.278978 6.630665
+[1] "m"   "lin"
+[1] 8.259447 6.468121
+[1] "s" "3"
+[1] 8.210623 6.424823
+[1] "s"   "lin"
+[1] 8.200692 6.375891
 
 
 ## Plot 0.5 quantile to check for overdisp
@@ -857,14 +875,14 @@ Interval_Mod_9_125_NWP1_32day_spl40 = rolling_mod_NWP_interval('2007-01-01', '20
 ```
 
 ```{r}
-for (i in c(3,4,5,6,8,10,12,15,20,25,30,40)){
+for (i in c(3,4,6,8,10,12,15,20,25,30,40)){
     mode_name = paste0("Interval_Mod_9_125_NWP1_32day_spl",i)
     mod = get(mode_name)
     print(c(mod$Results[lead_time <81,mean(test_loss)],
           mod$Results[lead_time >80 & lead_time <161,mean(test_loss)],
           mod$Results[lead_time >160 & lead_time <241,mean(test_loss)],
-          mod$Results[lead_time >240 ,mean(test_loss)],
-          mod$Results[,mean(test_loss)]))
+          mod$Results[lead_time <241 ,mean(test_loss)],
+          mod$Results[lead_time >240,mean(test_loss)]))
 }
 
 for (i in c(3,4,6,8,10,12,15,20,25,30,40)){
@@ -873,8 +891,8 @@ for (i in c(3,4,6,8,10,12,15,20,25,30,40)){
     print(c(mod$Results[lead_time <81,mean(test_loss)],
           mod$Results[lead_time >80 & lead_time <161,mean(test_loss)],
           mod$Results[lead_time >160 & lead_time <241,mean(test_loss)],
-          mod$Results[lead_time >240 ,mean(test_loss)],
-          mod$Results[,mean(test_loss)]))
+          mod$Results[lead_time <241 ,mean(test_loss)],
+          mod$Results[lead_time >240,mean(test_loss)]))
 }
 # 
 # save(Interval_Mod_9_125_NWP1_32day_spl3, file = "Interval_Mod_9_125_NWP1_32day_spl3.Rda")
@@ -890,6 +908,47 @@ for (i in c(3,4,6,8,10,12,15,20,25,30,40)){
 # save(Interval_Mod_9_125_NWP1_32day_spl6, file = "Interval_Mod_9_125_NWP1_32day_spl6.Rda")
 # save(Interval_Mod_9_125_NWP1_32day_spl10, file = "Interval_Mod_9_125_NWP1_32day_spl10.Rda")
 ```
+32 days
+8.154
+8.156
+8.161
+8.165
+8.167
+8.169
+8.171
+8.174
+8.177
+8.178
+8.175
+8.182
+
+
+64 days
+8.166
+8.168
+8.173
+8.170
+8.175
+8.177
+8.183
+8.184
+8.186
+8.188
+8.263
+
+125 days
+8.177
+8.179
+8.189
+8.185
+8.198
+8.196
+8.207
+8.207
+8.214
+8.215
+8.263
+
 
 ```{r}
 plot(Interval_Mod_9_125_NWP1_32day_spl3$Results[, mean(test_loss), by = lead_time], type = 'l', ylab = expression("NWP " * beta *  " -coefficient"), main = expression(beta *  " -coefficient for NWP-models over different training periods"), xlab = "Lead time", col = 5)
@@ -906,50 +965,322 @@ abline(h = 1, col = 'grey', lty = 2)
 abline(h = 0, col = 1)
 legend("bottomleft", lty = 1, title = "Spline df:", cex = 0.7, pch = 16, col = c(5,8, 2, 3, 4,6, 'red'), legend = c("3", "5 days", "8 days","12 days", "15 days", "20 days", "25 days", "30 days", "40 days"))
 ```
-## Splines models 
+## Splines models NWP1:time for differen df
 ```{r}
 
-Interval_Mod_9_125_NWP1_32day_int_h_lin = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ NWP1_90:as.factor(hour)', interval_k = 32*4)
-# Interval_Mod_9_125_NWP1_32day_int_w_lin = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ NWP1_90:as.factor(week)', interval_k = 32*4)
-# Interval_Mod_9_125_NWP1_32day_int_m_lin = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ NWP1_90:as.factor(month)', interval_k = 32*4)
-# Interval_Mod_9_125_NWP1_32day_int_s_lin = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ NWP1_90:as.factor(season)', interval_k = 32*4)
-# Interval_Mod_9_125_NWP1_32day_int_y_lin = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ NWP1_90:as.factor(year)', interval_k = 32*4)
+Interval_Mod_9_125_NWP1_125day_int_h_lin = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ NWP1_90:as.factor(hour)', interval_k = 125*4)
+Interval_Mod_9_125_NWP1_125day_int_w_lin = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ NWP1_90:as.factor(week)', interval_k = 125*4)
+Interval_Mod_9_125_NWP1_125day_int_m_lin = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ NWP1_90:as.factor(month)', interval_k = 125*4)
+Interval_Mod_9_125_NWP1_125day_int_s_lin = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ NWP1_90:as.factor(season)', interval_k = 125*4)
+
 
 # df = 3
-Interval_Mod_9_125_NWP1_32day_int_h_3 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =3):as.factor(hour)', interval_k = 32*4)
-Interval_Mod_9_125_NWP1_32day_int_w_3 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =3):as.factor(week)', interval_k = 32*4)
-Interval_Mod_9_125_NWP1_32day_int_m_3 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =3):as.factor(month)', interval_k = 32*4)
-Interval_Mod_9_125_NWP1_32day_int_s_3 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =3):as.factor(season)', interval_k = 32*4)
-Interval_Mod_9_125_NWP1_32day_int_y_3 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =3):as.factor(year)', interval_k = 32*4)
+Interval_Mod_9_125_NWP1_125day_int_h_3 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =3):as.factor(hour)', interval_k = 125*4)
+Interval_Mod_9_125_NWP1_125day_int_w_3 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =3):as.factor(week)', interval_k = 125*4)
+Interval_Mod_9_125_NWP1_125day_int_m_3 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =3):as.factor(month)', interval_k = 125*4)
+Interval_Mod_9_125_NWP1_125day_int_s_3 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =3):as.factor(season)', interval_k = 125*4)
 
-# df = 5
-Interval_Mod_9_125_NWP1_32day_int_h_5 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =5):as.factor(hour)', interval_k = 32*4)
-Interval_Mod_9_125_NWP1_32day_int_w_5 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =5):as.factor(week)', interval_k = 32*4)
-Interval_Mod_9_125_NWP1_32day_int_m_5 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =5):as.factor(month)', interval_k = 32*4)
-Interval_Mod_9_125_NWP1_32day_int_s_5 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =5):as.factor(season)', interval_k = 32*4)
-Interval_Mod_9_125_NWP1_32day_int_y_5 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =5):as.factor(year)', interval_k = 32*4)
+
+# df = 4
+Interval_Mod_9_125_NWP1_125day_int_h_4 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =4):as.factor(hour)', interval_k = 125*4)
+Interval_Mod_9_125_NWP1_125day_int_w_4 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =4):as.factor(week)', interval_k = 125*4)
+Interval_Mod_9_125_NWP1_125day_int_m_4 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =4):as.factor(month)', interval_k = 125*4)
+Interval_Mod_9_125_NWP1_125day_int_s_4 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =4):as.factor(season)', interval_k = 125*4)
+
 
 # df = 8
-Interval_Mod_9_125_NWP1_32day_int_h_8 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =8):as.factor(hour)', interval_k = 32*4)
-Interval_Mod_9_125_NWP1_32day_int_w_8 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =8):as.factor(week)', interval_k = 32*4)
-Interval_Mod_9_125_NWP1_32day_int_m_8 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =8):as.factor(month)', interval_k = 32*4)
-Interval_Mod_9_125_NWP1_32day_int_s_8 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =8):as.factor(season)', interval_k = 32*4)
-Interval_Mod_9_125_NWP1_32day_int_y_8 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =8):as.factor(year)', interval_k = 32*4)
+Interval_Mod_9_125_NWP1_125day_int_h_8 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =8):as.factor(hour)', interval_k = 125*4)
+Interval_Mod_9_125_NWP1_125day_int_w_8 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =8):as.factor(week)', interval_k = 125*4)
+Interval_Mod_9_125_NWP1_125day_int_m_8 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =8):as.factor(month)', interval_k = 125*4)
+Interval_Mod_9_125_NWP1_125day_int_s_8 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =8):as.factor(season)', interval_k = 125*4)
 
-save(Interval_Mod_9_125_NWP1_32day_int_h_lin, file = "Interval_Mod_9_125_NWP1_32day_int_h_lin.Rda")
+# lead_time interaction
+Interval_Mod_9_125_NWP1_125day_int_m_3_lead = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ bs(NWP1_90, df =3):as.factor(month):as.factor(lead_time_seg)', interval_k = 125*4)
+
+
+Interval_Mod_9_125_NWP2_125day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1 +NWP2_90', interval_k = 125*4)
 
 ```
 
 
+
+
 ```{r}
-for (i in c('h', 'w', 'm', 's', 'y')){
-    for(type in c(3,5,8,'lin')){
-        mode_name = paste0("Interval_Mod_9_125_NWP1_32day_int_",i,"_",type)
+for (i in c('h', 'w', 'm', 's')){
+    for(type in c(3,'lin')){
+        mode_name = paste0("Interval_Mod_9_125_NWP1_125day_int_",i,"_",type)
         mod = get(mode_name)
         print(c(i, type))
-        print(c(mod$Results[lead_time <240 ,mean(test_loss)]))
+        print(c(mod$Results[lead_time <241 ,mean(test_loss)],
+                mod$Results[lead_time <81 ,mean(test_loss)]))
     }
 }
+```
+
+# Final NWP models
+```{r}
+Interval_Mod_9_125_1_2 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + NWP1_90 + NWP2_90', interval_k = 125*4)
+Interval_Mod_9_125_1_2spl = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + bs(NWP1_90, df = 3) + bs(NWP2_90, df = 3)', interval_k = 125*4)
+
+
+Interval_Mod_9_125_tot_0 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour) + cos(2*pi * week/52) + sin(2*pi * week/52) + 
+                                    cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year', interval_k = 125*4)
+Interval_Mod_9_125_tot_1 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour) + cos(2*pi * week/52) + sin(2*pi * week/52) + 
+                                    cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year + NWP1_90', interval_k = 125*4)
+Interval_Mod_9_125_tot_1_spl = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour) + cos(2*pi * week/52) + sin(2*pi * week/52) + 
+                                    cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year + bs(NWP1_90, df = 3)', interval_k = 125*4)
+Interval_Mod_9_125_tot_1_2 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour) + cos(2*pi * week/52) + sin(2*pi * week/52) + 
+                                    cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year+ NWP1_90 + NWP2_90 ', interval_k = 125*4)
+Interval_Mod_9_125_tot_1_2_spl = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour) + cos(2*pi * week/52) + sin(2*pi * week/52) + 
+                                    cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year+ bs(NWP1_90, df = 3) + NWP2_90 ', interval_k = 125*4)
+Interval_Mod_9_125_tot_1_2_spl = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour) + cos(2*pi * week/52) + sin(2*pi * week/52) + 
+                                    cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year+ bs(NWP1_90, df = 3) + bs(NWP2_90, df = 3) ', interval_k = 125*4)
+Interval_Mod_9_125_tot_1_2_spl_Nh = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour) + cos(2*pi * week/52) + sin(2*pi * week/52) + 
+                                    cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year+ bs(NWP1_90, df = 3):as.factor(hour)', interval_k = 125*4)
+############## hour:week
+
+Interval_Mod_9_125_hw_0 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(week) + cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year', interval_k = 125*4)
+Interval_Mod_9_125_hw_1 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(week) + cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year+ NWP1_90', interval_k = 125*4)
+
+# Interval_Mod_9_125_hw_1_spl = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 as.factor(hour)*as.factor(week) + bs(NWP1_90, df = 3)', interval_k = 125*4)
+Interval_Mod_9_125_hw_1_2 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(week) + cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year + NWP1_90 + NWP2_90 ', interval_k = 125*4)
+
+Interval_Mod_9_125_hw_1_2_spl = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(week) + cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year+ bs(NWP1_90, df = 3) + NWP2_90 ', interval_k = 125*4)
+
+Interval_Mod_9_125_hw_1_2_spl2 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(week) + cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year+ bs(NWP1_90, df = 3) + bs(NWP2_90, df = 3) ', interval_k = 125*4)
+################## hour:month (all but one model runs)
+
+    Interval_Mod_9_125_hm_0 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(month) + cos(2*pi * week/52) + sin(2*pi * week/52) + year', interval_k = 125*4)
+    Interval_Mod_9_125_hm_1 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(month) + cos(2*pi * week/52) + sin(2*pi * week/52) + year+ NWP1_90', interval_k = 125*4)
+    
+# Interval_Mod_9_125_hm_1_spl = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 as.factor(hour)*as.factor(month) + cos(2*pi * week/52) + sin(2*pi * week/52) + year + bs(NWP1_90, df = 3)', interval_k = 125*4)
+    
+    Interval_Mod_9_125_hm_1_2 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(month) + cos(2*pi * week/52) + sin(2*pi * week/52) + year+ NWP1_90 + NWP2_90 ', interval_k = 125*4)
+    
+    Interval_Mod_9_125_hm_1_2_spl = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(month) + cos(2*pi * week/52) + sin(2*pi * week/52) + year+ bs(NWP1_90, df = 3) + NWP2_90 ', interval_k = 125*4)
+    
+    Interval_Mod_9_125_hm_1_2_spl2 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(month) + cos(2*pi * week/52) + sin(2*pi * week/52) + year+ bs(NWP1_90, df = 3) + bs(NWP2_90, df = 3) ', interval_k = 125*4)
+
+################## hour:season
+Interval_Mod_9_125_hs_0 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(season) + cos(2*pi * week/52) + sin(2*pi * week/52) + 
+                                    cos(2*pi * month/12) + sin(2*pi * month/12)  + year', interval_k = 125*4)
+Interval_Mod_9_125_hs_1 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(season) + cos(2*pi * week/52) + sin(2*pi * week/52) + 
+                                    cos(2*pi * month/12) + sin(2*pi * month/12)  + year+ NWP1_90', interval_k = 125*4)
+
+# Interval_Mod_9_125_hs_1_spl = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 as.factor(hour)*as.factor(season) + cos(2*pi * week/52) + sin(2*pi * week/52) +
+#                                     cos(2*pi * month/12) + sin(2*pi * month/12)  + year + bs(NWP1_90, df = 3)', interval_k = 125*4)
+Interval_Mod_9_125_hs_1_2 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(season) + cos(2*pi * week/52) + sin(2*pi * week/52) + 
+                                    cos(2*pi * month/12) + sin(2*pi * month/12)  + year+ NWP1_90 + NWP2_90 ', interval_k = 125*4)
+
+Interval_Mod_9_125_hs_1_2_spl = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(season) + cos(2*pi * week/52) + sin(2*pi * week/52) + 
+                                    cos(2*pi * month/12) + sin(2*pi * month/12) + year+ bs(NWP1_90, df = 3) + NWP2_90 ', interval_k = 125*4)
+
+Interval_Mod_9_125_hs_1_2_spl2 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(season) + cos(2*pi * week/52) + sin(2*pi * week/52) + 
+                                    cos(2*pi * month/12) + sin(2*pi * month/12) + year+ bs(NWP1_90, df = 3) + bs(NWP2_90, df = 3) ', interval_k = 125*4)
+
+################## NWP:hour interactions Weeks
+# Interval_Mod_9_125_hm_1_Nh = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 as.factor(hour)*as.factor(month) + year + bs(NWP1_90, df = 3):as.factor(hour)', interval_k = 125*4)
+################## NWP:hour interactions Seasons
+Interval_Mod_9_125_hw_1_Nh = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(week) + cos(2*pi * month/12) + sin(2*pi * month/12) + as.factor(season) + year+ bs(NWP1_90, df = 3):hour', interval_k = 125*4)
+
+
+Interval_Mod_9_125_hs_1_Nh = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour):as.factor(season) + cos(2*pi * week/52) + sin(2*pi * week/52) + 
+                                    cos(2*pi * month/12) + sin(2*pi * month/12) +as.factor(season) + year+ bs(NWP1_90, df = 3):as.factor(hour)', interval_k = 125*4)
+```
+
+
+# Plot of variablity
+
+```{r}
+plot(Clima[lead_time <241, quantile(pinball_loss(0.9, clima_pred90, PC1),  0.1), by = month(date)], type ='l', ylim = c(0,100), col = 'blue')
+for (i in c(1,3,5,7,9)){
+    lines(Clima[lead_time <241, quantile(pinball_loss(0.9, clima_pred90, PC1),  i/10), by = month(date)], col = 'blue')
+    lines(ERA_NWP_raw_loss[ init_date>="2007-01-01" &lead_time <241, quantile(raw_loss_09, i/10), by = month(date)], col = 'red')
+}
+```
+
+
+How often do we get a better prediction?
+```{r}
+Clima_ERA_raw = merge(Clima[,.(date, hour, lead_time, init_date, PC1, clima_pred90)], ERA_NWP_raw_loss[,.(date, hour, lead_time, init_date, PC1, raw_loss_09)], by = c("date", "hour", "lead_time", "init_date", "PC1"))
+
+sum(Clima_ERA_raw[init_date>="2007-01-01" & lead_time <41, pinball_loss(0.9, clima_pred90, PC1) > raw_loss_09])/dim(Clima_ERA_raw[ init_date>="2007-01-01" &lead_time <41,])[1]
+sum(Clima_ERA_raw[init_date>="2007-01-01" &lead_time > 40& lead_time <81, pinball_loss(0.9, clima_pred90, PC1) > raw_loss_09])/dim(Clima_ERA_raw[ init_date>="2007-01-01" &lead_time >  40& lead_time <81,])[1]
+sum(Clima_ERA_raw[init_date>="2007-01-01" &lead_time > 80& lead_time <121, pinball_loss(0.9, clima_pred90, PC1) > raw_loss_09])/dim(Clima_ERA_raw[ init_date>="2007-01-01" &lead_time >  80& lead_time <121,])[1]
+sum(Clima_ERA_raw[init_date>="2007-01-01" &lead_time > 120 & lead_time <241, pinball_loss(0.9, clima_pred90, PC1) > raw_loss_09])/dim(Clima_ERA_raw[ init_date>="2007-01-01" &lead_time >  120& lead_time <241,])[1]
+sum(Clima_ERA_raw[init_date>="2007-01-01" &lead_time <241, pinball_loss(0.9, clima_pred90, PC1) > raw_loss_09])/dim(Clima_ERA_raw[ init_date>="2007-01-01" & lead_time <241,])[1]
+
+Clima_Int_mod = merge(Clima[,.(date, hour, lead_time, init_date, PC1, clima_pred90)], Interval_Mod_9_125_hs_1_2$Results[,.(date, hour, lead_time, init_date, PC1, test_loss)], by = c("date", "hour", "lead_time", "init_date", "PC1"))
+
+print("Other model")
+# Best interaction Model
+sum(Clima_Int_mod[init_date>="2007-01-01" & lead_time <41, pinball_loss(0.9, clima_pred90, PC1) > test_loss])/dim(Clima_ERA_raw[ init_date>="2007-01-01" &lead_time <41,])[1]
+sum(Clima_Int_mod[init_date>="2007-01-01" &lead_time > 40& lead_time <81, pinball_loss(0.9, clima_pred90, PC1) > test_loss])/dim(Clima_ERA_raw[ init_date>="2007-01-01" &lead_time >  40& lead_time <81,])[1]
+sum(Clima_Int_mod[init_date>="2007-01-01" &lead_time > 80& lead_time <121, pinball_loss(0.9, clima_pred90, PC1) > test_loss])/dim(Clima_ERA_raw[ init_date>="2007-01-01" &lead_time >  80& lead_time <121,])[1]
+sum(Clima_Int_mod[init_date>="2007-01-01" &lead_time > 120 & lead_time <241, pinball_loss(0.9, clima_pred90, PC1) > test_loss])/dim(Clima_ERA_raw[ init_date>="2007-01-01" &lead_time >  120& lead_time <241,])[1]
+sum(Clima_Int_mod[init_date>="2007-01-01" &lead_time <241, pinball_loss(0.9, clima_pred90, PC1) > test_loss])/dim(Clima_ERA_raw[ init_date>="2007-01-01" & lead_time <241,])[1]
+
+
+```
+scp   eirikhsj@abacus-as.uio.no:~/ERA_NWP_RQE1.Rda eirikhsj@abacus-as.uio.no:~/ERA_NWP_RQE2.Rda eirikhsj@abacus-as.uio.no:~/ERA_NWP_RQE3.Rda /Users/Eirik/Desktop/Master2023/Output_data/Reweighted_data  
+
+#Fancy plot for uncertainty in loss
+```{r}
+PC_Plotting2 = Clima[,.(date, hour, init_date, lead_time, clima_pred90, PC1)]
+PC_Plotting2[,loss:= pinball_loss(0.9, clima_pred90, PC1)]
+PC_Plotting2[,Option := 'Climatology']
+
+PC_Plotting2b = ERA_NWP_raw_loss[init_date>= as.Date("2007-01-01"), .(date, hour, init_date, lead_time, raw_loss_09, PC1)]
+PC_Plotting2b[,Option := 'NWP-WQE']
+PC_Plotting2b[,loss := raw_loss_09]
+
+PC_Plotting_final = rbind(PC_Plotting2[,.(date, hour, init_date, lead_time, loss, Option)], 
+PC_Plotting2b[,.(date, hour, init_date, lead_time, loss, Option)])
+#PC_Plotting_final[,Month := unique(lincoln_weather$Month)[month(date)]]
+PC_Plotting_final[,Month :=fct_rev(as.factor(month(date)/100))]  # Idiotic workaround
+#pdf("/Users/Eirik/Desktop/Master2023/ExportedPlots/Loss_uncertainty.pdf", height = 7, width = 7, pointsize = 12)
+setorder(PC_Plotting_final, "Month")
+plot1 = ggplot(
+     PC_Plotting_final[lead_time<241,], 
+     aes(y = Month)
+ ) +
+    # geom_vline(xintercept = 8.172, 
+    #             color = "#0000ff", size=0.6)+
+    # geom_vline(xintercept = 9.361, 
+    #             color = "#ff0000", size=0.6)+
+     stat_density_ridges(aes(x = loss, fill = paste(Month, Option)),
+                         alpha = .5, color = "white", from = 0, to = 100
+                         #,quantile_lines = TRUE, quantiles = 0.9
+  ) +
+    
+ # stat_density_ridges(quantile_lines = TRUE, quantiles = 0.5)+
+     #scale_fill_viridis_c(name = "Temp. [F]", option = "C") +
+     
+     labs(title = '', x = "Pinball Loss") +
+  scale_fill_cyclical(
+    breaks = c("0.01 Climatology", "0.01 NWP-WQE"),
+    labels = c(`0.01 Climatology` = "Climatology", `0.01 NWP-WQE` = "NWP-WQE"),
+    values = c("#ff0000", "#0000ff","#ff8080", "#8080ff" ),
+    name = "Model", guide = "legend"
+  ) +
+    xlim(0,35) +
+    scale_y_discrete(
+    "Month",
+    labels = c(month.name[rev(1:length(month.name))]))+
+
+    labs(title = "Distribution of Pinball Loss per Month ",
+                    subtitle = "Lead times 1:60 days (n = 46204)") & 
+  theme(legend.position = c(0.9, 0.5)) 
+plot1
+#dev.off()
+```
+
+
+```{r}
+PC_Plotting_final2 = cbind(PC_Plotting2[lead_time<241,.(date, hour, init_date, lead_time, loss)], 
+                          PC_Plotting2b[lead_time<241,.(raw_loss_09)])
+PC_Plotting_final2[,Diff:= loss-raw_loss_09]
+PC_Plotting_final2[,Month :=fct_rev(as.factor(month(date)/100))]  # Idiotic workaround
+setorder(PC_Plotting_final, "Month")
+pdf("/Users/Eirik/Desktop/Master2023/ExportedPlots/Loss_uncertainty2.pdf", height = 7, width = 7, pointsize = 12)
+
+plot2 = ggplot(
+     PC_Plotting_final2[lead_time<241,], 
+     aes(y = Month)
+ ) +
+     stat_density_ridges(aes(x = Diff, fill = paste(Month)),
+                         alpha = .6, color = "white", from = -100, to = 100
+  ) +
+  scale_fill_cyclical(
+    breaks = c("0.01"),
+    labels = c(`0.01` = "Difference"),
+    values = c("#ff0000", "#ff8080"),
+    name = "Model", guide = "legend"
+  ) +
+    xlim(-6,12) +
+    scale_y_discrete(
+    "Month",
+    labels = c(month.name[rev(1:length(month.name))]))+
+
+    labs(title = "Distribution of Pinball Loss per Month ",
+                    subtitle = "Lead times 1:60 days (n = 46204)",
+         x = "Difference in Pinball Loss") & 
+  theme(legend.position = c(0.8, 0.5)) 
+plot2
+dev.off()
+```
+
+
+```{r}
+pdf("/Users/Eirik/Desktop/Master2023/ExportedPlots/Loss_uncertainty3.pdf", height = 7, width = 7, pointsize = 12)
+
+plot1 = ggplot(
+     PC_Plotting_final[lead_time<241,], 
+     aes(y = Month)
+ ) +
+    # geom_vline(xintercept = 8.172, 
+    #             color = "#0000ff", size=0.6)+
+    # geom_vline(xintercept = 9.361, 
+    #             color = "#ff0000", size=0.6)+
+     stat_density_ridges(aes(x = loss, fill = paste(Month, Option)),
+                         alpha = .5, color = "white", from = 0, to = 100
+                         #,quantile_lines = TRUE, quantiles = 0.9
+  ) +
+    
+ # stat_density_ridges(quantile_lines = TRUE, quantiles = 0.5)+
+     #scale_fill_viridis_c(name = "Temp. [F]", option = "C") +
+     
+     labs(title = '', x = "Pinball Loss") +
+  scale_fill_cyclical(
+    breaks = c("0.01 Climatology", "0.01 NWP-WQE"),
+    labels = c(`0.01 Climatology` = "Climatology", `0.01 NWP-WQE` = "NWP-WQE"),
+    values = c("#ff0000", "#0000ff","#ff8080", "#8080ff" ),
+    name = "Model", guide = "legend"
+  ) +
+    xlim(-2,35) +
+    ylim(0,13)+
+    scale_y_discrete(
+    "Month",
+    labels = c(month.name[rev(1:length(month.name))]))+
+
+    labs(title = "Climatology vs NWP-WQE") & 
+  theme(legend.position = c(0.85, 0.5)) 
+plot2 = ggplot(
+     PC_Plotting_final2[lead_time<241,], 
+     aes(y = Month)
+ ) +
+     stat_density_ridges(aes(x = Diff, fill = stat(quantile)),  #fill = paste(Month)
+                         alpha = .6, color = "white", from = -100, to = 100
+                         ,quantile_lines = FALSE,
+                      calc_ecdf = TRUE,
+                      geom = "density_ridges_gradient",
+                      quantiles = c(0.25,0.75)
+  ) +
+    geom_vline(xintercept = 0, color = "black", size=0.5, alpha = 0.3)+
+  scale_fill_cyclical(
+    breaks = c("0.01"),
+    labels = c(`0.01` = "Difference"),
+    values = c("#B818E7", "#de94f4"),
+    name = "Model", guide = "legend"
+  ) +
+    xlim(-6,12) +
+    scale_y_discrete(
+    "Month",
+    labels = c(month.name[rev(1:length(month.name))]))+
+    theme(legend.position="none",axis.title.y = element_blank(), axis.text.y = element_blank(),axis.ticks.length = unit(0, "mm"))+
+
+    labs(title = "Difference (Climatology - NWP-WQE)",
+         x = "Difference in Pinball Loss") 
+ # theme(legend.position = c(0.9, 0.5)) 
+
+
+ggp_all <- (plot1 + plot2) +    # Create grid of plots with title
+  plot_annotation(title = "Distribution of Pinball Loss per Month",
+                  subtitle = "Lead times 1:60 days (n = 46204)") & 
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
+ggp_all
+dev.off()
 ```
 
 
@@ -1311,6 +1642,7 @@ legend('bottomright', legend = c('Median Climatology', 'Median NWP1','Mean Clima
 ### Fancy plot of monthly ERA distribution
 ```{r}
 #library("patchwork")
+#library(ggridges)
 PC_Plotting = ERA$dt_test
 PC_Plotting[,Month := unique(lincoln_weather$Month)[month(date)]]
 
@@ -1334,14 +1666,15 @@ plot2 =  ggplot(
     theme(legend.position="none")+
      labs(title = '', y ="", x = "Second Factor Loading") +
     theme(axis.title.y = element_blank(), axis.text.y = element_blank(),axis.ticks.length = unit(0, "mm")) +
-    xlim(-400,400) 
+    xlim(-150,150) 
     
 ggp_all <- (plot1 + plot2) +    # Create grid of plots with title
-  plot_annotation(title = "First and Second Factor Loading of ERA temperature") & 
+  plot_annotation(title = "Monthly Distributions of First and Second Factor Loading of ERA temperature") & 
   theme(plot.title = element_text(hjust = 0.5))
 ggp_all
 dev.off()
 ```
+
 
 
 # Code for saving and relocating files

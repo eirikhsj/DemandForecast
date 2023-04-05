@@ -16,7 +16,8 @@ get_all_NWP_quantiles(
   forc_months = 362,
   PC_ERA_path = "/mn/kadingir/datascience_000000/eirikhsj/PC_ERA_79_92.Rda",
   pc_comp = 1,
-  reweight = FALSE
+  reweight = FALSE,
+  rew_int = c(15, 4)
 )
 }
 \arguments{
@@ -46,5 +47,5 @@ Output can then be merged with ERA-data using a get_ERA_NWP function to be used 
 }
 \examples{
 NWP_quantiles_93_93 = get_all_NWP_quantiles(path = "~/Desktop/MasterNR/Prob2_data",start_month  = '01', start_year = 1993, forc_months = 4,
-PC_ERA = PC_ERA_79_92, pc_comp = 1,reweight = FALSE)
+PC_ERA = PC_ERA_79_92, pc_comp = 2,reweight = FALSE)
 }

@@ -32,6 +32,11 @@ ERA_NWP[, season:= ifelse(month(date) %in% c(12,1,2), 1,
                           ifelse(month(date) %in% c(3,4,5), 2,
                                  ifelse(month(date) %in% c(6,7,8), 3, 4)))]
 
+ERA_NWP[, lead_time_seg:= ifelse(lead_time < 40, 1,
+                          ifelse(lead_time < 240, 2, 3))]
+
+
+
 for (i in c(1,2,4,8,16,32)){
     ERA_NWP[, c(paste0("PC_", i, "days_roll"), paste0("NWP1_roll", i)):=
                  .(rollapply(PC1, width = i*4, partial = TRUE, FUN = mean),

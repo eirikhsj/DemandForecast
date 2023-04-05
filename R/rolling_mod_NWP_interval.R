@@ -32,7 +32,7 @@ rolling_mod_NWP_interval = function(forc_start=as.Date('2007-01-01'), forc_end=a
     end = as.Date(forc_end)
     all_days = seq(start, end,  by = '1 days')
 
-    if (reweight==TRUE){init_days = all_days[mday(all_days)==16]  #reweighting starts on the 15th
+    if (reweight==TRUE){init_days = all_days[mday(all_days)==16]  #reweighting ends on the 15th
     }else{              init_days = all_days[mday(all_days)==1]}
 
     ERA_NWP_vars = ERA_NWP[lead_time <= window*4,]
@@ -56,7 +56,8 @@ rolling_mod_NWP_interval = function(forc_start=as.Date('2007-01-01'), forc_end=a
                                 ERA_NWP_vars = ERA_NWP_vars, q = q, init_days= init_days, window = window, reweight = reweight, model = model,
                                 incl_climatology = incl_climatology, formula = formula,coef_to_print=coef_to_print,
                                 interval_k = interval_k,
-                                mc.cores = cores)
+                                mc.cores = cores,
+                                mc.preschedule = TRUE)
 
     #4) Store and return
     Results = rbindlist(detailed_results,use.names=FALSE)
@@ -76,12 +77,9 @@ Rolling_nwp_interval = function(i, ERA_NWP_vars, q, init_days, window, reweight,
     print(paste('Forecast made on:', init_day))
     ERA_NWP_time = ERA_NWP_vars[date <= target_days[length(target_days)],]
     ERA_NWP_final= na.omit(ERA_NWP_time)
-
     l_times = lapply(seq(1, length(target_days)*4, by = interval_k), function(i) {
         seq(i, length.out = interval_k, by = 1) })
-
     detailed_results = list()
-
     for (lead in 1:(length(l_times))){
         ## 3b) Split train-test
         train = ERA_NWP_final[date<init_day & lead_time %in% l_times[[lead]], .SD, keyby = .(date,hour)]
@@ -92,25 +90,19 @@ Rolling_nwp_interval = function(i, ERA_NWP_vars, q, init_days, window, reweight,
         }
         results = test
         if(dim(test)[1]!=0){
-
-            tryCatch({
-
                 ## 3c) Run model
                 if (model == 'qreg'){
-
                     qreg = rq(formula, data = train, tau = c(q))
-                    train_l = pinball_loss(q, predict(qreg), train$PC1)
+                    #train_l = pinball_loss(q, predict(qreg), train$PC1)
                     test_l = pinball_loss(q, predict(qreg, newdata = test), test$PC1)
                     results[,'pred' := predict(qreg, newdata = test)]
                 }
-
                 ## 3d) Register loss
                 results[,'test_loss' := test_l]
                 if (lead == 1){
                     print(formula)
                     print(paste0('Ave pinball loss for first batch on ', init_day, ' is = ', round(mean(test_l),digits = 2)))
                 }
-
                 ## 3e) Register Beta coefficients
                 if(length(coef_to_print) >0 & model == 'qreg'){
                     betas = data.table(t(coef(qreg)))[,..coef_to_print]
@@ -118,7 +110,6 @@ Rolling_nwp_interval = function(i, ERA_NWP_vars, q, init_days, window, reweight,
                     betas = betas[rep(1,dim(test)[1]),] #unnecessary storage use, expand later
                     results = cbind(results, betas)
                 }
-
                 ## 3f) Include Climatology
                 if(incl_climatology == TRUE){
                     if (skill_interval>0){
@@ -139,17 +130,12 @@ Rolling_nwp_interval = function(i, ERA_NWP_vars, q, init_days, window, reweight,
                     results = merge(results,pred_clima, by = c("month_day", "hour"))
                 }
 
-            },
-            error = function(e) {
-                results = data.table()
-                print('Problem for this period (',init_day, ' for lead time ', l_times[[lead]],')#########################################')
-            })
 
         } else if (dim(test)[1]==0){
             results = data.table()
-            print('Lacking data for this period (',init_day, ' for lead time ', l_times[[lead]],')')
+            print(paste0('Lacking data for this period (',init_day, ' for lead time ', l_times[[lead]],')'))
         }
-        detailed_results[[lead]] = results
+        detailed_results[[lead]] = data.table(results)
     }
     out = data.table(rbindlist(detailed_results))
     return(out)

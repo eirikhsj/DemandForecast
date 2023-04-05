@@ -8,19 +8,20 @@ get_one_month_NWP_quantiles(
   files_i =
     "/mn/kadingir/datascience_000000/eirikhsj/sfe_nordic_temperature/sfe_nordic_temperature_1993_1.nc4",
   PC_ERA,
-  pc_comp,
+  pc_comp = 1,
   rew = FALSE,
+  rew_int = c(15, 2),
   dt = dt_check
 )
 }
 \arguments{
+\item{files_i}{Integer. File number of forecast month}
+
 \item{PC_ERA}{List. The PC_ERA used to get the NWP factor loadings.}
 
 \item{pc_comp}{Integer. The principle component of interest for}
 
 \item{rew}{Boolean. Whether or not to find reweighted quantiles.}
-
-\item{i}{Integer. File number of forecast month}
 }
 \value{
 Data.table with quantiles 0.1-0.9 and mean of NWP PC of choice.
@@ -29,7 +30,7 @@ Data.table with quantiles 0.1-0.9 and mean of NWP PC of choice.
 Finds the correct file of NWP forecast month, gets PCA of forecasts,
 and fetches quantiles (0.1-0.9) of 1 selected principle component.
 Used in cover-function get_all_NWP_quantiles.R
-Specifying reweight = TRUE will also provide reweighted quantiles.
+Specifying rew = TRUE will also provide reweighted quantiles.
 }
 \examples{
 files = list.files(path = "~/Desktop/Master2023/Data/NWP_monthly/", pattern = '*.nc4', full.names=TRUE)
