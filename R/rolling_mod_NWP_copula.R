@@ -110,7 +110,9 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
                 }
             } else if(model == "copula"){
                 #Create predictions based on training interval
+                print('copula')
                 mod_copula = suppressWarnings(rq(formula, data = train, tau = tau_vals))
+
                 pred_mat_train = predict(mod_copula, interval = 'none')
                 pred_mat_test = predict(mod_copula, test, interval = "none")
                 pred_mat_test = unname(pred_mat_test)
@@ -129,7 +131,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
 
                 #Simulate from multivariate normal with mu = 0 and sigma = sigma
                 z_sim = data.table(mvrnorm(n = N, mu = rep(0,dim(sigma)[1]), Sigma = sigma))
-
+                print(dim(z_sim))
                 #Find the quantile index
                 q2 = as.matrix(z_sim[, lapply(.SD, function(x)  round(pnorm(x),log(m, 10))*m)])
 
@@ -144,39 +146,12 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
 
                 #Utilize the copula quantile
                 copula_quant = quantile(W, probs = 0.9)
+                print(copula_quant)
 
                 test_loss = pinball_loss(0.9, copula_quant, test[,mean(PC1)])
                 print(test_loss)
                 results[,'copula_loss' := test_loss ]
             }
-
-            ## 3e) Register Beta coefficients
-            if(length(coef_to_print) >1 & model == 'qreg'){
-                betas = data.table(t(coef(qreg)))[,..coef_to_print]
-                colnames(betas) = paste0('coef_',coef_to_print)
-                betas = betas[rep(1,dim(test)[1]),] #unnecessary storage use, expand later
-                results = cbind(results, betas)
-            }
-            ## 3f) Include Climatology
-            if(incl_climatology == TRUE){
-                if (skill_interval>0){
-                    pc_int = paste0("PC_", skill_interval, "days_roll")
-                    climatology = train[, .(quant =quantile(get(pc_int),probs = q)), by = .(month_day = format(date, format ="%m-%d"), hour)]
-                } else if(skill_interval<=0){
-                    climatology = train[, .(quant =quantile(PC1,probs = q)), by = .(month_day = format(date, format ="%m-%d"), hour)]
-                }
-
-                if ("02-29" %in% format(test$date, format ="%m-%d") & !("02-29" %in%climatology$month_day)){ #Leap year issue
-                    print('Correcting leap year')
-                    leap = climatology[month_day=="02-28",]
-                    leap[,month_day:=  rep("02-29", 4)]
-                    climatology = rbind(climatology, leap)
-                }
-                pred_clima = climatology[month_day %in% format(test$date, format ="%m-%d"), .(month_day, hour,  clima_pred= quant)]
-                results[,month_day:=  format(date, format ="%m-%d")]
-                results = merge(results,pred_clima, by = c("month_day", "hour"))
-            }
-
 
         } else if (dim(test)[1]==0){
             results = data.table()
