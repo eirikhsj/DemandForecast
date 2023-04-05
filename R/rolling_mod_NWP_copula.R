@@ -97,7 +97,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
         if(dim(test)[1]!=0){
             ## 3c) Run model
             if (model == 'qreg'){
-                qreg = rq(formula, data = train, tau = c(q))
+                qreg = suppressWarnings(rq(formula, data = train, tau = c(q)))
                 #train_l = pinball_loss(q, predict(qreg), train$PC1)
                 test_l = pinball_loss(q, predict(qreg, newdata = test), test$PC1)
                 results[,'pred' := predict(qreg, newdata = test)]
@@ -110,7 +110,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
                 }
             } else if(model == "copula"){
                 #Create predictions based on training interval
-                mod_copula = rq(formula, data = train, tau = tau_vals)
+                mod_copula = suppressWarnings(rq(formula, data = train, tau = tau_vals))
                 pred_mat_train = predict(mod_copula, interval = 'none')
                 pred_mat_test = predict(mod_copula, test, interval = "none")
                 pred_mat_test = unname(pred_mat_test)
