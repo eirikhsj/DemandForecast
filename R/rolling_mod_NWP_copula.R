@@ -146,6 +146,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
                 copula_quant = quantile(W, probs = 0.9)
 
                 test_loss = pinball_loss(0.9, copula_quant, test[,mean(PC1)])
+                print(test_loss)
                 results[,'copula_loss' := test_loss ]
             }
 
