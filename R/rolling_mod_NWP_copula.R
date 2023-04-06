@@ -80,11 +80,12 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
     l_times = lapply(seq(1, length(target_days)*4, by = interval_k), function(i) {
         seq(i, length.out = interval_k, by = 1) })
     detailed_results = list()
-    m = 1000
+    m = 10
     N = 1000
     tau_vals = seq(0, 1, 1/m)
 
     for (lead in 1:(length(l_times))){
+        print(l_times[[lead]])
         ## 3b) Split train-test
         train = ERA_NWP_final[date<init_day & lead_time %in% l_times[[lead]], .SD, keyby = .(date,hour)]
         if (reweight ==TRUE){
@@ -105,17 +106,25 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
                 results[,'test_loss' := test_l]
 
             } else if(model == "copula"){
+                print("Start copula est")
                 #Create predictions based on training interval
                 mod_copula = suppressWarnings(rq(formula, data = train, tau = tau_vals))
+                print("QR complete")
 
                 pred_mat_train = predict(mod_copula, interval = 'none')
                 pred_mat_test = predict(mod_copula, test, interval = "none")
                 pred_mat_test = unname(pred_mat_test)
 
+                #Ensure I have full length vectors
+                vec_seq = 1:(floor(dim(pred_mat_train)[1]/interval_k)*interval_k)
+                pred_mat_train= pred_mat_train[vec_seq,]
+
                 #Check where the observed PC1 values land in the predictive cdf (i.e. find the quantile)
-                check_train = data.table(t(pred_mat_train > train[,PC1]))
+                check_train = data.table(t(pred_mat_train > train[1:(floor(dim(pred_mat_train)[1]/interval_k)*interval_k),PC1]))
                 q_train = t(check_train[, lapply(.SD, function(x) ifelse(is.na(match(TRUE, x)),(m-1),
                                                                          ifelse(match(TRUE, x)>2,match(TRUE, x)-2, 1)) )]/m)
+
+
                 q_mat = data.table(matrix(q_train, ncol = interval_k, byrow = TRUE))
 
                 #Normalize
@@ -123,6 +132,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
 
                 #Find correlation between the time points e.g. 1-4
                 sigma = cor(z_train)
+                print("Found correlation matrix")
 
                 #Simulate from multivariate normal with mu = 0 and sigma = sigma
                 z_sim = data.table(mvrnorm(n = N, mu = rep(0,dim(sigma)[1]), Sigma = sigma))
@@ -132,8 +142,15 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
 
                 # Get back U values from q-index
                 U = data.table()
-                for (b in 1:(interval_k)){
-                    U[, paste0("col", b)  := pred_mat_test[b,q2[,b]+1] ]
+                for (b in 1:(dim(pred_mat_test)[1])){
+                    print(b)
+                    ix = q2[,b]+1
+                    if (lead>5 & b >55){
+                        print(ix)
+                        print(pred_mat_test[b,])
+                    }
+
+                    U[, paste0("col", b)  := pred_mat_test[b,ix] ]
                 }
 
                 #Find the simulated means
