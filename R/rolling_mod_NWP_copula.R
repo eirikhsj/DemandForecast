@@ -80,7 +80,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
     l_times = lapply(seq(1, length(target_days)*4, by = interval_k), function(i) {
         seq(i, length.out = interval_k, by = 1) })
     detailed_results = list()
-    m = 10
+    m = 1000
     N = 1000
     tau_vals = seq(0, 1, 1/m)
 
