@@ -50,5 +50,5 @@ Model output with predictions, loss and model coefficients.
 Rolling model
 }
 \examples{
-mod = rolling_mod_NWP_copula(as.Date('2007-01-01'), as.Date('2022-05-01'), 0.9, ERA_NWP, model = 'copula', window = 60, reweight=FALSE,formula = 'PC1 ~ NWP1_90')
+copula_mod = rolling_mod_NWP_copula(as.Date('2007-01-01'), as.Date('2023-01-01'), 0.9, ERA_NWP, model = 'copula', window = 60, reweight=FALSE,formula = 'PC1 ~ NWP1_90')
 }

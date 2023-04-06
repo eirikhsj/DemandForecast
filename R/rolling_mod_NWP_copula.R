@@ -116,10 +116,10 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
                 pred_mat_test = unname(pred_mat_test)
 
                 #Check where the observed PC1 values land in the predictive cdf (i.e. find the quantile)
-                check_train =  data.table(t(pred_mat_train > train))
+                check_train = data.table(t(pred_mat_train > train[,PC1]))
                 q_train = t(check_train[, lapply(.SD, function(x) ifelse(is.na(match(TRUE, x)),(m-1),
                                                                          ifelse(match(TRUE, x)>2,match(TRUE, x)-2, 1)) )]/m)
-                q_mat = data.table(matrix(q_train, ncol = 4*interval_k, byrow = TRUE))
+                q_mat = data.table(matrix(q_train, ncol = interval_k, byrow = TRUE))
 
                 #Normalize
                 z_train = q_mat[, lapply(.SD, function(x)  qnorm(x))]
@@ -135,7 +135,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
 
                 # Get back U values from q-index
                 U = data.table()
-                for (b in 1:(4*interval_k)){
+                for (b in 1:(interval_k)){
                     U[, paste0("col", b)  := pred_mat_test[b,q2[,b]+1] ]
                 }
 
