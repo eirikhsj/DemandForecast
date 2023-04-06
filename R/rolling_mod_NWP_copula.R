@@ -143,13 +143,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
                 # Get back U values from q-index
                 U = data.table()
                 for (b in 1:(dim(pred_mat_test)[1])){
-                    print(b)
                     ix = q2[,b]+1
-                    if (lead>5 & b >55){
-                        print(ix)
-                        print(pred_mat_test[b,])
-                    }
-
                     U[, paste0("col", b)  := pred_mat_test[b,ix] ]
                 }
 
