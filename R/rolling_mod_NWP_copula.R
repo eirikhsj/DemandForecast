@@ -103,10 +103,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
 
                 ## 3d) Register loss
                 results[,'test_loss' := test_l]
-                if (lead == 1){
-                    print(formula)
-                    print(paste0('Ave pinball loss for first batch on ', init_day, ' is = ', round(mean(test_l),digits = 2)))
-                }
+
             } else if(model == "copula"){
                 #Create predictions based on training interval
                 mod_copula = suppressWarnings(rq(formula, data = train, tau = tau_vals))
@@ -151,7 +148,11 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
 
         } else if (dim(test)[1]==0){
             results = data.table()
-            print(paste0('Lacking data for this period (',init_day, ' for lead time ', l_times[[lead]],')'))
+            #print(paste0('Lacking data for this period (',init_day, ' for lead time ', l_times[[lead]],')'))
+        }
+        if (lead == 1){
+            print(formula)
+            print(paste0('Ave pinball loss for first batch on ', init_day, ' is = ', round(mean(test_l),digits = 2)))
         }
         detailed_results[[lead]] = data.table(results)
     }
