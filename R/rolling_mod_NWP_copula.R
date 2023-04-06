@@ -152,7 +152,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
         }
         if (lead == 1){
             print(formula)
-            print(paste0('Ave pinball loss for first batch on ', init_day, ' is = ', round(mean(test_l),digits = 2)))
+            print(paste0('Ave pinball loss for first batch on ', init_day, ' is = ', round(mean(test_loss),digits = 2)))
         }
         detailed_results[[lead]] = data.table(results)
     }
