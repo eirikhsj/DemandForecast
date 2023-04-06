@@ -24,7 +24,7 @@
 #' @name rolling_mod_NWP_copula
 
 #' @export
-rolling_mod_NWP_copula = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2023-01-01'), q=0.9, ERA_NWP, model='qreg', window = 125, reweight = FALSE,
+rolling_mod_NWP_copula = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2023-01-01'), q=0.9, ERA_NWP, model='qreg', window = 120, reweight = FALSE,
                                     incl_climatology =FALSE, formula = 'PC1 ~ 1', coef_to_print = "", interval_k = 4, skill_interval = 0, cores = 48){
 
     #1) Fix dates
@@ -35,7 +35,7 @@ rolling_mod_NWP_copula = function(forc_start=as.Date('2007-01-01'), forc_end=as.
     if (reweight==TRUE){init_days = all_days[mday(all_days)==16]  #reweighting ends on the 15th
     }else{              init_days = all_days[mday(all_days)==1]}
 
-    ERA_NWP_vars = ERA_NWP[lead_time <= window*4,]
+    ERA_NWP_vars = ERA_NWP[lead_time <= window*4,.(date, hour, week, month, season, year, init_date, lead_time, lead_time_seg,PC1, NWP1_90)]
 
     if (skill_interval>0){
         ERA_NWP_vars[, c(paste0("PC_", skill_interval, "days_roll"), paste0("NWP1_roll", skill_interval)):=
@@ -80,7 +80,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
     l_times = lapply(seq(1, length(target_days)*4, by = interval_k), function(i) {
         seq(i, length.out = interval_k, by = 1) })
     detailed_results = list()
-    m = 1000
+    m = 100
     N = 1000
     tau_vals = seq(0, 1, 1/m)
 
@@ -154,6 +154,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
                 copula_quant = quantile(W, probs = 0.9)
 
                 test_loss = pinball_loss(0.9, copula_quant, test[,mean(PC1)])
+                results[,"copula_pred":= copula_quant]
                 results[,'copula_loss' := test_loss ]
             }
 

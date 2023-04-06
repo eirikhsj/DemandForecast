@@ -10,7 +10,7 @@ rolling_mod_NWP_copula(
   q = 0.9,
   ERA_NWP,
   model = "qreg",
-  window = 125,
+  window = 120,
   reweight = FALSE,
   incl_climatology = FALSE,
   formula = "PC1 ~ 1",
