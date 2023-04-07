@@ -100,8 +100,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
             train = ERA_NWP_final[date<init_day & lead_time %in% l_times[[lead]], .SD, keyby = .(date,hour)]
         }
         results = test
-        print(dim(test))
-        print(dim(train))
+
         if(dim(test)[1]!=0){
             ## 3c) Run model
             if (model == 'qreg'){
@@ -143,15 +142,12 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
 
                 #Normalize
                 z_train = q_mat[, lapply(.SD, function(x)  qnorm(x))]
-                print(dim(z_train))
                 if(dim(z_train)[1]<dim(z_train)[2]){
-                    print("EXCEPTION")
-                    results[,'copula_loss' := NA ]
                     results[,"copula_pred":= NA]
+                    results[,'copula_loss' := NA ]
                 } else{
                     #Find correlation between the time points e.g. 1-4
                     sigma = cor(z_train)
-                    print(sigma)
 
                     #Simulate from multivariate normal with mu = 0 and sigma = sigma
                     z_sim = data.table(mvrnorm(n = N, mu = rep(0,dim(sigma)[1]), Sigma = sigma))
@@ -183,16 +179,11 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
             #print(paste0('Lacking data for this period (',init_day, ' for lead time ', l_times[[lead]],')'))
         }
         if (lead == 1){
-            #print(formula)
             print(paste0('Ave pinball loss for first batch on ', init_day, ' is = ', round(mean(test_loss),digits = 2)))
         }
         detailed_results[[lead]] = data.table(results)
     }
     out = data.table(rbindlist(detailed_results))
-    print(paste0(init_day, "____ data.table is: ", is.data.table(out)))
-    if(is.data.table(out)==FALSE){
-        print(out)
-    }
     return(out)
 }
 
