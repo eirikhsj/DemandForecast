@@ -95,7 +95,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
             test = ERA_NWP_final[init_date == init_day & lead_time %in% l_times[[lead]], .SD, keyby = .(date,hour)] #Use of several preds means target_days selects to many dates
         }
         if (incl_climatology== TRUE){
-            train = ERA_NWP_final[date<init_day & lead_time %in% l_times[[lead]], .SD, keyby = .(date,hour)]
+            train = ERA_NWP_final[date<init_day & lead_time %in% l_times[[lead]]& month_day %in% format(test$date, format ="%m-%d"), .SD, keyby = .(date,hour)]
         } else{
             train = ERA_NWP_final[date<init_day & lead_time %in% l_times[[lead]], .SD, keyby = .(date,hour)]
         }
@@ -151,7 +151,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
                 #Normalize
                 z_train = q_mat[, lapply(.SD, function(x)  qnorm(x))]
 
-                if(dim(z_train)[1]<dim(z_train)[2]){
+                if(dim(z_train)[1]<4){ # Exclude special case of leap year causing few obs in date-lead_time combination
                     results[,"copula_pred":= NA]
                     results[,'copula_loss':= NA ]
                 } else{
