@@ -143,17 +143,19 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
                 #Normalize
                 z_train = q_mat[, lapply(.SD, function(x)  qnorm(x))]
 
-                if(dim(z_train)[1]<4){ # Exclude special case of leap year causing few obs in date-lead_time combination
+                #Find correlation between the time points e.g. 1-4
+                sig = cor(z_train)
+                #if(dim(z_train)[1]<4){ # Exclude special case of leap year causing few obs in date-lead_time combination
+                if (any(is.na(sig))==TRUE){
                     copula_quant = NA
                     test_loss =NA
                     results[,"copula_pred":= test_loss]
                     results[,'copula_loss':=copula_quant ]
+                    print("Could not estimate correlation matrix")
                 } else{
-                    #Find correlation between the time points e.g. 1-4
-                    sigma = cor(z_train)
 
                     #Simulate from multivariate normal with mu = 0 and sigma = sigma
-                    z_sim = data.table(mvrnorm(n = N, mu = rep(0,dim(sigma)[1]), Sigma = sigma))
+                    z_sim = data.table(mvrnorm(n = N, mu = rep(0,dim(sigma)[1]), Sigma = sig))
 
                     #Find the quantile index
                     q2 = as.matrix(z_sim[, lapply(.SD, function(x)  round(pnorm(x),log(m, 10))*m)])
