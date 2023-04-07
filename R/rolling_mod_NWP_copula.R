@@ -142,6 +142,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
 
                 #Normalize
                 z_train = q_mat[, lapply(.SD, function(x)  qnorm(x))]
+
                 if(dim(z_train)[1]<dim(z_train)[2]){
                     results[,"copula_pred":= NA]
                     results[,'copula_loss' := NA ]
@@ -171,7 +172,6 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
                     results[,"copula_pred":= copula_quant]
                     results[,'copula_loss' := test_loss ]
                 }
-
             }
 
         } else if (dim(test)[1]==0){
