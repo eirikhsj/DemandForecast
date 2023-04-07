@@ -86,7 +86,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
     tau_vals = seq(0, 1, 1/m)
 
     for (lead in 1:(length(l_times))){
-        print(paste0("Training on lead-time length: ", length(l_times[[lead]]) ))
+        #print(paste0("Training on lead-time length: ", length(l_times[[lead]]) ))
         ## 3b) Split train-test
 
         if (reweight ==TRUE){
@@ -112,7 +112,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
                 results[,'test_loss' := test_l]
 
             } else if(model == "copula"){
-                print("Start copula est")
+                #print("Start copula est")
                 #Create predictions based on training interval
                 if (incl_climatology== TRUE){
                     climatology = train[, .(quant =quantile(PC1,probs = tau_vals)), by = .(month_day, hour)]
@@ -128,7 +128,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
                     pred_mat_test = predict(mod_copula, test, interval = "none")
                     pred_mat_test = unname(pred_mat_test)
                 }
-                print("QR complete")
+                #print("QR complete")
 
                 #Ensure full length vectors
                 vec_seq = 1:(floor(dim(pred_mat_train)[1]/interval_k)*interval_k)
@@ -146,7 +146,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
 
                 #Find correlation between the time points e.g. 1-4
                 sigma = cor(z_train)
-                print("Found correlation matrix")
+                #print("Found correlation matrix")
 
                 #Simulate from multivariate normal with mu = 0 and sigma = sigma
                 z_sim = data.table(mvrnorm(n = N, mu = rep(0,dim(sigma)[1]), Sigma = sigma))
@@ -177,14 +177,16 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
             #print(paste0('Lacking data for this period (',init_day, ' for lead time ', l_times[[lead]],')'))
         }
         if (lead == 1){
-            print(formula)
-            print(paste0('Ave pinball loss for first batch on ', init_day, ' is = ', round(mean(test_loss),digits = 2)))
+            #print(formula)
+            #print(paste0('Ave pinball loss for first batch on ', init_day, ' is = ', round(mean(test_loss),digits = 2)))
         }
         detailed_results[[lead]] = data.table(results)
     }
     out = data.table(rbindlist(detailed_results))
     if(is.data.table(out)== FALSE){
         print(paste0(init_day, "######################################################################################################################################################################"))
+    } else{
+        print(dim(out))
     }
     return(out)
 }
