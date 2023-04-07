@@ -77,6 +77,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
     print(paste('Forecast made on:', init_day))
     ERA_NWP_time = ERA_NWP_vars[date <= target_days[length(target_days)],]
     ERA_NWP_final= na.omit(ERA_NWP_time)
+    ERA_NWP_final[, month_day := format(date, format ="%m-%d")]
     l_times = lapply(seq(1, length(target_days)*4, by = interval_k), function(i) {
         seq(i, length.out = interval_k, by = 1) })
     detailed_results = list()
@@ -85,13 +86,18 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
     tau_vals = seq(0, 1, 1/m)
 
     for (lead in 1:(length(l_times))){
-        print(l_times[[lead]])
+        print(paste0("Training on lead-time length: ", length(l_times[[lead]]) ))
         ## 3b) Split train-test
-        train = ERA_NWP_final[date<init_day & lead_time %in% l_times[[lead]], .SD, keyby = .(date,hour)]
+
         if (reweight ==TRUE){
             test = ERA_NWP_final[date %in% target_days & lead_time %in% l_times[[lead]], .SD, keyby = .(date,hour)] #Here we only use 1 predictor, cant use init_day but no confusion in target_days
         } else{
             test = ERA_NWP_final[init_date == init_day & lead_time %in% l_times[[lead]], .SD, keyby = .(date,hour)] #Use of several preds means target_days selects to many dates
+        }
+        if (incl_climatology== TRUE){
+            train = ERA_NWP_final[date<init_day & lead_time %in% l_times[[lead]] & month_day %in% format(test$date, format ="%m-%d"), .SD, keyby = .(date,hour)]
+        } else{
+            train = ERA_NWP_final[date<init_day & lead_time %in% l_times[[lead]], .SD, keyby = .(date,hour)]
         }
         results = test
         if(dim(test)[1]!=0){
@@ -108,14 +114,23 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
             } else if(model == "copula"){
                 print("Start copula est")
                 #Create predictions based on training interval
-                mod_copula = suppressWarnings(rq(formula, data = train, tau = tau_vals))
+                if (incl_climatology== TRUE){
+                    climatology = train[, .(quant =quantile(PC1,probs = tau_vals)), by = .(month_day, hour)]
+                    climatology[, sq:= rep(seq(1:length(tau_vals)), dim(climatology)[1]/length(tau_vals))]
+                    clima_pred_month_day = dcast(climatology, month_day + hour ~ sq, value.var = "quant")
+                    clima_pred_train = merge(clima_pred_month_day,train, by = c("month_day", "hour"))
+                    pred_mat_train = as.matrix(clima_pred_train[,3:(length(tau_vals)+2)])
+                    clima_pred_test = merge(clima_pred_month_day,test, by = c("month_day", "hour"))
+                    pred_mat_test = as.matrix(clima_pred_test[,3:(length(tau_vals)+2)])
+                } else{
+                    mod_copula = suppressWarnings(rq(formula, data = train, tau = tau_vals))
+                    pred_mat_train = predict(mod_copula, interval = 'none')
+                    pred_mat_test = predict(mod_copula, test, interval = "none")
+                    pred_mat_test = unname(pred_mat_test)
+                }
                 print("QR complete")
 
-                pred_mat_train = predict(mod_copula, interval = 'none')
-                pred_mat_test = predict(mod_copula, test, interval = "none")
-                pred_mat_test = unname(pred_mat_test)
-
-                #Ensure I have full length vectors
+                #Ensure full length vectors
                 vec_seq = 1:(floor(dim(pred_mat_train)[1]/interval_k)*interval_k)
                 pred_mat_train= pred_mat_train[vec_seq,]
 
@@ -123,7 +138,6 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
                 check_train = data.table(t(pred_mat_train > train[1:(floor(dim(pred_mat_train)[1]/interval_k)*interval_k),PC1]))
                 q_train = t(check_train[, lapply(.SD, function(x) ifelse(is.na(match(TRUE, x)),(m-1),
                                                                          ifelse(match(TRUE, x)>2,match(TRUE, x)-2, 1)) )]/m)
-
 
                 q_mat = data.table(matrix(q_train, ncol = interval_k, byrow = TRUE))
 

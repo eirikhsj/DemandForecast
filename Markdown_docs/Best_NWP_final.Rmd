@@ -1697,8 +1697,7 @@ copula_mod_564 = rolling_mod_NWP_copula(as.Date('2007-01-01'), as.Date('2023-01-
 copula_mod_125 = rolling_mod_NWP_copula(as.Date('2007-01-01'), as.Date('2023-01-01'), 0.9, ERA_NWP, model = 'copula', window = 125, reweight=FALSE,formula = 'PC1 ~ NWP1_90', interval_k = 125)
 ```
 
-
-
+scp eirikhsj@abacus-as.uio.no:~/copula_mod_1_1000.Rda eirikhsj@abacus-as.uio.no:~/copula_mod_2_1000.Rda  eirikhsj@abacus-as.uio.no:~/copula_mod_4_1000.Rda  eirikhsj@abacus-as.uio.no:~/copula_mod_8_1000.Rda  eirikhsj@abacus-as.uio.no:~/copula_mod_15_1000.Rda  eirikhsj@abacus-as.uio.no:~/copula_mod_30_1000.Rda eirikhsj@abacus-as.uio.no:~/copula_mod_60_1000.Rda  /Users/Eirik/Desktop/Master2023/Output_data/Copula_model_output
 # Code for saving and relocating files
 
 save(Mod_9_60_comb_int_a_0, file = 'Mod_9_60_comb_int_a_0.Rda')
