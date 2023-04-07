@@ -144,7 +144,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
                 z_train = q_mat[, lapply(.SD, function(x)  qnorm(x))]
 
                 #Find correlation between the time points e.g. 1-4
-                sig = cor(z_train)
+                sig = suppressWarnings(cor(z_train))
                 #if(dim(z_train)[1]<4){ # Exclude special case of leap year causing few obs in date-lead_time combination
                 if (any(is.na(sig))==TRUE){
                     copula_quant = NA
