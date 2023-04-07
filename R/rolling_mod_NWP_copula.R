@@ -144,8 +144,10 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
                 z_train = q_mat[, lapply(.SD, function(x)  qnorm(x))]
 
                 if(dim(z_train)[1]<4){ # Exclude special case of leap year causing few obs in date-lead_time combination
-                    results[,"copula_pred":= NA]
-                    results[,'copula_loss':= NA ]
+                    copula_quant = NA
+                    test_loss =NA
+                    results[,"copula_pred":= test_loss]
+                    results[,'copula_loss':=copula_quant ]
                 } else{
                     #Find correlation between the time points e.g. 1-4
                     sigma = cor(z_train)
@@ -178,7 +180,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
             results = data.table()
             #print(paste0('Lacking data for this period (',init_day, ' for lead time ', l_times[[lead]],')'))
         }
-        if (lead == 1){
+        if (lead == 1 & is.na(test_loss)==FALSE){
             print(paste0('Ave pinball loss for first batch on ', init_day, ' is = ', round(mean(test_loss),digits = 2)))
         }
         detailed_results[[lead]] = data.table(results)
