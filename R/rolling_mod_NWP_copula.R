@@ -145,33 +145,38 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
 
                 #Normalize
                 z_train = q_mat[, lapply(.SD, function(x)  qnorm(x))]
-                print(dim(z_train))
-                #Find correlation between the time points e.g. 1-4
-                sigma = cor(z_train)
-                print(sigma)
+                if(dim(z_train)[1]<dim(z_train)[1]){
+                    results[,'copula_loss' := NA ]
+                    results[,"copula_pred":= NA]
+                } else{
+                    #Find correlation between the time points e.g. 1-4
+                    sigma = cor(z_train)
+                    print(sigma)
 
-                #Simulate from multivariate normal with mu = 0 and sigma = sigma
-                z_sim = data.table(mvrnorm(n = N, mu = rep(0,dim(sigma)[1]), Sigma = sigma))
+                    #Simulate from multivariate normal with mu = 0 and sigma = sigma
+                    z_sim = data.table(mvrnorm(n = N, mu = rep(0,dim(sigma)[1]), Sigma = sigma))
 
-                #Find the quantile index
-                q2 = as.matrix(z_sim[, lapply(.SD, function(x)  round(pnorm(x),log(m, 10))*m)])
+                    #Find the quantile index
+                    q2 = as.matrix(z_sim[, lapply(.SD, function(x)  round(pnorm(x),log(m, 10))*m)])
 
-                # Get back U values from q-index
-                U = data.table()
-                for (b in 1:(dim(pred_mat_test)[1])){
-                    ix = q2[,b]+1
-                    U[, paste0("col", b)  := pred_mat_test[b,ix] ]
+                    # Get back U values from q-index
+                    U = data.table()
+                    for (b in 1:(dim(pred_mat_test)[1])){
+                        ix = q2[,b]+1
+                        U[, paste0("col", b)  := pred_mat_test[b,ix] ]
+                    }
+                    print("Found U")
+                    #Find the simulated means
+                    W = rowMeans(U)
+
+                    #Utilize the copula quantile
+                    copula_quant = quantile(W, probs = 0.9)
+
+                    test_loss = pinball_loss(0.9, copula_quant, test[,mean(PC1)])
+                    results[,"copula_pred":= copula_quant]
+                    results[,'copula_loss' := test_loss ]
                 }
-                print("Found U")
-                #Find the simulated means
-                W = rowMeans(U)
 
-                #Utilize the copula quantile
-                copula_quant = quantile(W, probs = 0.9)
-
-                test_loss = pinball_loss(0.9, copula_quant, test[,mean(PC1)])
-                results[,"copula_pred":= copula_quant]
-                results[,'copula_loss' := test_loss ]
             }
 
         } else if (dim(test)[1]==0){
