@@ -183,6 +183,9 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
         detailed_results[[lead]] = data.table(results)
     }
     out = data.table(rbindlist(detailed_results))
+    if(is.data.table(out)== FALSE){
+        print(paste0(init_day, "######################################################################################################################################################################"))
+    }
     return(out)
 }
 
