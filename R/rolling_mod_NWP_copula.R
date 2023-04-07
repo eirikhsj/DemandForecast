@@ -114,7 +114,6 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
                 results[,'test_loss' := test_l]
 
             } else if(model == "copula"){
-                #print("Start copula est")
                 #Create predictions based on training interval
                 if (incl_climatology== TRUE){
                     climatology = train[, .(quant =quantile(PC1,probs = tau_vals)), by = .(month_day, hour)]
@@ -130,7 +129,6 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
                     pred_mat_test = predict(mod_copula, test, interval = "none")
                     pred_mat_test = unname(pred_mat_test)
                 }
-                print("QR complete")
 
                 #Ensure full length vectors
                 vec_seq = 1:(floor(dim(pred_mat_train)[1]/interval_k)*interval_k)
@@ -145,7 +143,9 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
 
                 #Normalize
                 z_train = q_mat[, lapply(.SD, function(x)  qnorm(x))]
+                print(dim(z_train))
                 if(dim(z_train)[1]<dim(z_train)[1]){
+                    print("EXCEPTION")
                     results[,'copula_loss' := NA ]
                     results[,"copula_pred":= NA]
                 } else{
@@ -165,7 +165,6 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
                         ix = q2[,b]+1
                         U[, paste0("col", b)  := pred_mat_test[b,ix] ]
                     }
-                    print("Found U")
                     #Find the simulated means
                     W = rowMeans(U)
 
