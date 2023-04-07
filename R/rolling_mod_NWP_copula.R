@@ -115,14 +115,6 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
             } else if(model == "copula"){
                 #Create predictions based on training interval
                 if (incl_climatology== TRUE){
-
-                    if ("02-29" %in% format(test$date, format ="%m-%d") & !("02-29" %in%climatology$month_day)){ #Leap year issue
-                        print('Correcting leap year')
-                        leap = climatology[month_day=="02-28",]
-                        leap[,month_day:=  rep("02-29", 4)]
-                        climatology = rbind(climatology, leap)
-                    }
-
                     climatology = train[, .(quant =quantile(PC1,probs = tau_vals)), by = .(month_day, hour)]
                     climatology[, sq:= rep(seq(1:length(tau_vals)), dim(climatology)[1]/length(tau_vals))]
                     clima_pred_month_day = dcast(climatology, month_day + hour ~ sq, value.var = "quant")
