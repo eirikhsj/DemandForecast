@@ -145,10 +145,10 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
 
                 #Normalize
                 z_train = q_mat[, lapply(.SD, function(x)  qnorm(x))]
-
+                print(dim(z_train))
                 #Find correlation between the time points e.g. 1-4
                 sigma = cor(z_train)
-                print("Found correlation matrix")
+                print(sigma)
 
                 #Simulate from multivariate normal with mu = 0 and sigma = sigma
                 z_sim = data.table(mvrnorm(n = N, mu = rep(0,dim(sigma)[1]), Sigma = sigma))
