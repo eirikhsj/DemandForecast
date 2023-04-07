@@ -144,7 +144,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
                 #Normalize
                 z_train = q_mat[, lapply(.SD, function(x)  qnorm(x))]
                 print(dim(z_train))
-                if(dim(z_train)[1]<dim(z_train)[1]){
+                if(dim(z_train)[1]<dim(z_train)[2]){
                     print("EXCEPTION")
                     results[,'copula_loss' := NA ]
                     results[,"copula_pred":= NA]
