@@ -25,7 +25,7 @@
 
 #' @export
 rolling_mod_NWP_copula = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2023-01-01'), q=0.9, ERA_NWP, model='qreg', window = 120, reweight = FALSE,
-                                    incl_climatology =FALSE, formula = 'PC1 ~ 1', coef_to_print = "", interval_k = 4, skill_interval = 0, cores = 48){
+                                    incl_climatology =FALSE, formula = 'PC1 ~ 1', coef_to_print = "", interval_k = 4, skill_interval = 0, cores = 48, grid_m = 100){
 
     #1) Fix dates
     start =as.Date(forc_start)
@@ -54,7 +54,7 @@ rolling_mod_NWP_copula = function(forc_start=as.Date('2007-01-01'), forc_end=as.
     detailed_results = mclapply(seq_along(init_days),
                                 "Rolling_nwp_copula",
                                 ERA_NWP_vars = ERA_NWP_vars, q = q, init_days= init_days, window = window, reweight = reweight, model = 'copula',
-                                incl_climatology = incl_climatology, formula = formula,coef_to_print=coef_to_print,
+                                incl_climatology = incl_climatology, formula = formula,coef_to_print=coef_to_print, grid_m = grid_m,
                                 interval_k = interval_k,
                                 mc.cores = cores,
                                 mc.preschedule = TRUE)
@@ -70,7 +70,7 @@ rolling_mod_NWP_copula = function(forc_start=as.Date('2007-01-01'), forc_end=as.
 
 #' @export
 Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, model,
-                                incl_climatology, formula, interval_k, coef_to_print){
+                                incl_climatology, formula, interval_k, coef_to_print, grid_m){
     ## 3a) Time keeping
     init_day = init_days[i]
     target_days = seq(init_day, length.out = window,  by = '1 days')
@@ -81,7 +81,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
     l_times = lapply(seq(1, length(target_days)*4, by = interval_k), function(i) {
         seq(i, length.out = interval_k, by = 1) })
     detailed_results = list()
-    m = 1000
+    m = grid_m
     N = 1000
     tau_vals = seq(0, 1, 1/m)
 
@@ -145,7 +145,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
 
                 #Find correlation between the time points e.g. 1-4
                 sig = suppressWarnings(cor(z_train))
-                #if(dim(z_train)[1]<4){ # Exclude special case of leap year causing few obs in date-lead_time combination
+
                 if (any(is.na(sig))==TRUE){
                     copula_quant = NA
                     test_loss =NA
