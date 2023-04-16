@@ -48,9 +48,11 @@ save(copula_mod_120, file = "copula_mod_125.Rda")
 
 ```{r}
 for (i in c(1,2,4,8,15,30,60,120)){
-    mod_name = paste0("copula_mod_", i) 
-    mod = get(mod_name)
-    print(mod$Results[lead_time <241,mean(pinball_loss(0.5, clima_pred, PC1))])
+    mod_name1 = paste0("copula_mod_", i,"_1000") 
+    mod_name2 = paste0("copula_clima_", i,"_1000") 
+    mod1 = get(mod_name1)
+    mod2 = get(mod_name2)
+    print(1 - mod1$Results[lead_time <241,mean(copula_loss,na.rm = TRUE)]/mod2$Results[lead_time <241,mean(copula_loss,na.rm = TRUE)])
 }
 ```
 
@@ -103,14 +105,15 @@ save(copula_clima_60_1000, file = "copula_clima_60_1000.Rda")
 copula_clima_120_1000 = rolling_mod_NWP_copula(as.Date('2007-01-01'), as.Date('2023-01-01'), 0.9, ERA_NWP, model = 'copula', window = 120, reweight=FALSE,formula = 'PC1 ~ NWP1_90', interval_k = 120*4, incl_climatology = TRUE, cores = 48)
 save(copula_clima_120_1000, file = "copula_clima_125_1000.Rda")
 
+### 100
 
-copula_clima_1_100 = rolling_mod_NWP_copula(as.Date('2007-01-01'), as.Date('2023-01-01'), 0.9, ERA_NWP, model = 'copula', window = 120, reweight=FALSE,formula = 'PC1 ~ NWP1_90', interval_k = 1*4, incl_climatology = TRUE)
+copula_clima_1_100 = rolling_mod_NWP_copula(as.Date('2007-01-01'), as.Date('2023-01-01'), 0.9, ERA_NWP, model = 'copula', window = 120, reweight=FALSE,formula = 'PC1 ~ NWP1_90', interval_k = 1*4, incl_climatology = TRUE, grid_m = 100)
 save(copula_clima_1_100, file = "copula_clima_1_100.Rda")
 copula_clima_2_100 = rolling_mod_NWP_copula(as.Date('2007-01-01'), as.Date('2023-01-01'), 0.9, ERA_NWP, model = 'copula', window = 120, reweight=FALSE,formula = 'PC1 ~ NWP1_90', interval_k = 2*4, incl_climatology = TRUE)
 save(copula_clima_2_100, file = "copula_clima_2_100.Rda")
-
 copula_clima_4_100 = rolling_mod_NWP_copula(as.Date('2007-01-01'), as.Date('2023-01-01'), 0.9, ERA_NWP, model = 'copula', window = 120, reweight=FALSE,formula = 'PC1 ~ NWP1_90', interval_k = 4*4, incl_climatology = TRUE)
 save(copula_clima_4_100, file = "copula_clima_4_100.Rda")
+
 copula_clima_8_100 = rolling_mod_NWP_copula(as.Date('2007-01-01'), as.Date('2023-01-01'), 0.9, ERA_NWP, model = 'copula', window = 120, reweight=FALSE,formula = 'PC1 ~ NWP1_90', interval_k = 8*4, incl_climatology = TRUE)
 save(copula_clima_8_100, file = "copula_clima_8_100.Rda")
 
@@ -123,39 +126,40 @@ save(copula_clima_30_100, file = "copula_clima_30_100.Rda")
 copula_clima_60_100 = rolling_mod_NWP_copula(as.Date('2007-01-01'), as.Date('2023-01-01'), 0.9, ERA_NWP, model = 'copula', window = 120, reweight=FALSE,formula = 'PC1 ~ NWP1_90', interval_k = 60*4, incl_climatology = TRUE)
 save(copula_clima_60_100, file = "copula_clima_60_100.Rda")
 copula_clima_120_100 = rolling_mod_NWP_copula(as.Date('2007-01-01'), as.Date('2023-01-01'), 0.9, ERA_NWP, model = 'copula', window = 120, reweight=FALSE,formula = 'PC1 ~ NWP1_90', interval_k = 120*4, incl_climatology = TRUE, cores = 48)
-save(copula_clima_120_100, file = "copula_clima_125_100.Rda")
+save(copula_clima_120_100, file = "copula_clima_120_100.Rda")
 ```
 
 
 
 ```{r}
-plot(copula_mod_2_1000$Results[,mean(copula_loss), by = lead_time], type = 'l', ylim = c(0,12))
-lines(copula_mod_4_1000$Results[,mean(copula_loss), by = lead_time])
-lines(copula_mod_8_1000$Results[,mean(copula_loss), by = lead_time])
-lines(copula_mod_15_1000$Results[,mean(copula_loss), by = lead_time])
-lines(copula_mod_30_1000$Results[,mean(copula_loss), by = lead_time])
-lines(copula_mod_60_1000$Results[,mean(copula_loss), by = lead_time])
+plot(copula_mod_2_1000$Results[date<as.Date("2023-01-01"),mean(copula_loss), by = lead_time], type = 'l', ylim = c(0,12))
+lines(copula_mod_4_1000$Results[date<as.Date("2023-01-01"),mean(copula_loss), by = lead_time])
+lines(copula_mod_8_1000$Results[date<as.Date("2023-01-01"),mean(copula_loss), by = lead_time])
+lines(copula_mod_15_1000$Results[date<as.Date("2023-01-01"),mean(copula_loss), by = lead_time])
+lines(copula_mod_30_1000$Results[date<as.Date("2023-01-01"),mean(copula_loss), by = lead_time])
+lines(copula_mod_60_1000$Results[date<as.Date("2023-01-01"),mean(copula_loss), by = lead_time])
 
-plot(copula_clima_2_1000$Results[,mean(copula_loss), by = lead_time], type = 'l', ylim = c(0,12))
-lines(copula_clima_4_1000$Results[,mean(copula_loss), by = lead_time])
-lines(copula_clima_8_1000$Results[,mean(copula_loss), by = lead_time])
-lines(copula_clima_15_1000$Results[,mean(copula_loss), by = lead_time])
-lines(copula_clima_30_1000$Results[,mean(copula_loss, na.rm	=TRUE), by = lead_time])
-lines(copula_clima_60_1000$Results[,mean(copula_loss, na.rm	=TRUE), by = lead_time])
+plot(copula_clima_2_1000$Results[date<as.Date("2023-01-01"),mean(copula_loss), by = lead_time], type = 'l', ylim = c(0,12))
+lines(copula_clima_4_1000$Results[date<as.Date("2023-01-01"),mean(copula_loss), by = lead_time])
+lines(copula_clima_8_1000$Results[date<as.Date("2023-01-01"),mean(copula_loss), by = lead_time])
+lines(copula_clima_15_1000$Results[date<as.Date("2023-01-01"),mean(copula_loss), by = lead_time])
+lines(copula_clima_30_1000$Results[date<as.Date("2023-01-01"),mean(copula_loss, na.rm	=TRUE), by = lead_time])
+lines(copula_clima_60_1000$Results[date<as.Date("2023-01-01"),mean(copula_loss, na.rm	=TRUE), by = lead_time])
 
-plot(copula_mod_2$Results[,mean(copula_loss), by = lead_time], type = 'l', ylim = c(0,12))
-lines(copula_mod_4$Results[,mean(copula_loss), by = lead_time])
-lines(copula_mod_8$Results[,mean(copula_loss), by = lead_time])
-lines(copula_mod_15$Results[,mean(copula_loss), by = lead_time])
-lines(copula_mod_30$Results[,mean(copula_loss), by = lead_time])
-lines(copula_mod_60$Results[,mean(copula_loss), by = lead_time])
+plot(copula_mod_2$Results[date<as.Date("2023-01-01"),mean(copula_loss), by = lead_time], type = 'l', ylim = c(0,12))
+lines(copula_mod_4$Results[date<as.Date("2023-01-01"),mean(copula_loss), by = lead_time])
+lines(copula_mod_8$Results[date<as.Date("2023-01-01"),mean(copula_loss), by = lead_time])
+lines(copula_mod_15$Results[date<as.Date("2023-01-01"),mean(copula_loss), by = lead_time])
+lines(copula_mod_30$Results[date<as.Date("2023-01-01"),mean(copula_loss), by = lead_time])
+lines(copula_mod_60$Results[date<as.Date("2023-01-01"),mean(copula_loss), by = lead_time])
 
-plot(1 - (copula_mod_2_1000$Results[,mean(copula_loss), by = lead_time][,V1]/ copula_clima_2_1000$Results[,mean(copula_loss), by = lead_time][,V1]), type = 'l', ylim = c(-0.20,0.8))
-lines(1 - (copula_mod_4_1000$Results[,mean(copula_loss), by = lead_time][,V1]/ copula_clima_4_1000$Results[,mean(copula_loss), by = lead_time][,V1]))
-lines(1 - (copula_mod_8_1000$Results[,mean(copula_loss), by = lead_time][,V1]/ copula_clima_8_1000$Results[,mean(copula_loss), by = lead_time][,V1]))
-lines(1 - (copula_mod_15_1000$Results[,mean(copula_loss), by = lead_time][,V1]/ copula_clima_15_1000$Results[,mean(copula_loss), by = lead_time][,V1]))
-lines(1 - (copula_mod_30_1000$Results[,mean(copula_loss, na.rm	=TRUE), by = lead_time][,V1]/ copula_clima_30_1000$Results[,mean(copula_loss, na.rm	=TRUE), by = lead_time][,V1]))
-lines(1 - (copula_mod_60_1000$Results[,mean(copula_loss, na.rm	=TRUE), by = lead_time][,V1]/ copula_clima_60_1000$Results[,mean(copula_loss, na.rm	=TRUE), by = lead_time][,V1]))
+plot(1 - (copula_mod_2_1000$Results[date<as.Date("2023-01-01"),mean(copula_loss), by = lead_time][,V1]/ copula_clima_2_1000$Results[,mean(copula_loss), by = lead_time][,V1]), type = 'l', ylim = c(-0.20,0.8))
+lines(1 - (copula_mod_4_1000$Results[date<as.Date("2023-01-01"),mean(copula_loss), by = lead_time][,V1]/ copula_clima_4_1000$Results[,mean(copula_loss), by = lead_time][,V1]))
+lines(1 - (copula_mod_8_1000$Results[date<as.Date("2023-01-01"),mean(copula_loss), by = lead_time][,V1]/ copula_clima_8_1000$Results[,mean(copula_loss), by = lead_time][,V1]))
+lines(1 - (copula_mod_15_1000$Results[date<as.Date("2023-01-01"),mean(copula_loss), by = lead_time][,V1]/ copula_clima_15_1000$Results[,mean(copula_loss), by = lead_time][,V1]))
+lines(1 - (copula_mod_30_1000$Results[date<as.Date("2023-01-01"),mean(copula_loss, na.rm	=TRUE), by = lead_time][,V1]/ copula_clima_30_1000$Results[,mean(copula_loss, na.rm	=TRUE), by = lead_time][,V1]))
+lines(1 - (copula_mod_60_1000$Results[date<as.Date("2023-01-01"),mean(copula_loss, na.rm	=TRUE), by = lead_time][,V1]/ copula_clima_60_1000$Results[,mean(copula_loss, na.rm	=TRUE), by = lead_time][,V1]))
+abline(h = 0)
 ```
 
 
@@ -168,6 +172,7 @@ plot_topleft <- ggplot() +
     geom_line(data = copula_mod_30_1000$Results[,mean_copula_loss := mean(copula_loss), by = lead_time], aes(x = lead_time, y = mean_copula_loss, col = '30 Days'))+
     geom_line(data = copula_mod_60_1000$Results[,mean_copula_loss := mean(copula_loss), by = lead_time], aes(x = lead_time, y = mean_copula_loss, col = '60 Days'))+
     ylim(0, 11.5)+
+    
       theme(legend.position = c(0.90, 0.20), legend.key.size = unit(0.3, "cm")) +  
     scale_x_continuous(breaks=seq(0, 120, by = 10)*4,labels=seq(0, 120, by = 10))+
     labs(color = "Aggregation \n Interval :", x = "Lead Time (Days)", y = "Pinball loss",title = "Pinball Loss for Copula Estimation Method", subtitle = "")+
@@ -210,11 +215,27 @@ plot_bottom <- ggplot() +
     geom_line(data = data.table(lead_time = seq(1, 480),skill_score = 1 - (copula_mod_30_1000$Results[,mean(copula_loss,na.rm =TRUE), by = lead_time][,V1]/ copula_clima_30_1000$Results[,mean(copula_loss, na.rm =TRUE), by = lead_time][,V1])), aes(x = lead_time, y = skill_score, col = '30 Days'))+
     geom_line(data = data.table(lead_time = seq(1, 480),skill_score = 1 - (copula_mod_60_1000$Results[,mean(copula_loss,na.rm =TRUE), by = lead_time][,V1]/ copula_clima_60_1000$Results[,mean(copula_loss, na.rm =TRUE), by = lead_time][,V1])), aes(x = lead_time, y = skill_score, col = '60 Days'))+
     ylim(-0.2, 0.8)+
+    geom_hline(yintercept= 0)+
       theme(legend.position = c(0.90, 0.70), legend.key.size = unit(0.3, "cm")) +  
     scale_x_continuous(breaks=seq(0, 120, by = 10)*4,labels=seq(0, 120, by = 10))+
     labs(color = "Aggregation \n Interval :", x = "Lead Time (Days)", y = "Skill Score",title = "Skill Score for Copula Estimation Method", subtitle = "")+
     scale_color_manual(values = c('2 Days' = "#F94144", '4 Days' = '#F9C74F', '8 Days' ="#F15BB5", '15 Days' ="#90BE6D", '30 Days' ="#43AA8B", '60 Days' ="#577590"))
 plot_bottom
+
+plot_bottom2 <- ggplot() +
+    geom_line(data = data.table(lead_time = seq(1, 480),skill_score = 1 - (copula_mod_2$Results[,mean(copula_loss,na.rm =TRUE), by = lead_time][,V1]/ copula_clima_2_100$Results[,mean(copula_loss, na.rm =TRUE), by = lead_time][,V1])), aes(x = lead_time, y = skill_score, col = '2 Days'),alpha = 1)+
+    geom_line(data = data.table(lead_time = seq(1, 480),skill_score = 1 - (copula_mod_4$Results[,mean(copula_loss,na.rm =TRUE), by = lead_time][,V1]/ copula_clima_4_100$Results[,mean(copula_loss, na.rm =TRUE), by = lead_time][,V1])), aes(x = lead_time, y = skill_score, col = '4 Days'))+
+    geom_line(data = data.table(lead_time = seq(1, 480),skill_score = 1 - (copula_mod_8$Results[,mean(copula_loss,na.rm =TRUE), by = lead_time][,V1]/ copula_clima_8_100$Results[,mean(copula_loss,na.rm =TRUE), by = lead_time][,V1])), aes(x = lead_time, y = skill_score, col = '8 Days'))+
+    geom_line(data = data.table(lead_time = seq(1, 480),skill_score = 1 - (copula_mod_15$Results[,mean(copula_loss,na.rm =TRUE), by = lead_time][,V1]/ copula_clima_15_100$Results[,mean(copula_loss,na.rm =TRUE), by = lead_time][,V1])), aes(x = lead_time, y = skill_score, col = '15 Days'))+
+    geom_line(data = data.table(lead_time = seq(1, 480),skill_score = 1 - (copula_mod_30$Results[,mean(copula_loss,na.rm =TRUE), by = lead_time][,V1]/ copula_clima_30_100$Results[,mean(copula_loss, na.rm =TRUE), by = lead_time][,V1])), aes(x = lead_time, y = skill_score, col = '30 Days'))+
+    geom_line(data = data.table(lead_time = seq(1, 480),skill_score = 1 - (copula_mod_60$Results[,mean(copula_loss,na.rm =TRUE), by = lead_time][,V1]/ copula_clima_60_100$Results[,mean(copula_loss, na.rm =TRUE), by = lead_time][,V1])), aes(x = lead_time, y = skill_score, col = '60 Days'))+
+    ylim(-0.2, 0.8)+
+    geom_hline(yintercept= 0)+
+      theme(legend.position = c(0.90, 0.70), legend.key.size = unit(0.3, "cm")) +  
+    scale_x_continuous(breaks=seq(0, 120, by = 10)*4,labels=seq(0, 120, by = 10))+
+    labs(color = "Aggregation \n Interval :", x = "Lead Time (Days)", y = "Skill Score",title = "Skill Score for Copula Estimation Method", subtitle = "")+
+    scale_color_manual(values = c('2 Days' = "#F94144", '4 Days' = '#F9C74F', '8 Days' ="#F15BB5", '15 Days' ="#90BE6D", '30 Days' ="#43AA8B", '60 Days' ="#577590"))
+plot_bottom2
 ```
 
 ```{r}
@@ -705,5 +726,5 @@ dev.off()
 
 
 
-scp eirikhsj@abacus-as.uio.no:~/copula_clima_1_1000.Rda eirikhsj@abacus-as.uio.no:~/copula_clima_2_1000.Rda  eirikhsj@abacus-as.uio.no:~/copula_clima_4_1000.Rda  eirikhsj@abacus-as.uio.no:~/copula_clima_8_1000.Rda  eirikhsj@abacus-as.uio.no:~/copula_clima_15_1000.Rda  eirikhsj@abacus-as.uio.no:~/copula_clima_30_1000.Rda eirikhsj@abacus-as.uio.no:~/copula_clima_60_1000.Rda  /Users/Eirik/Desktop/Master2023/Output_data/Copula_model_output
+scp eirikhsj@abacus-as.uio.no:~/copula_clima_1_100.Rda eirikhsj@abacus-as.uio.no:~/copula_clima_2_100.Rda  eirikhsj@abacus-as.uio.no:~/copula_clima_4_100.Rda  eirikhsj@abacus-as.uio.no:~/copula_clima_8_100.Rda  eirikhsj@abacus-as.uio.no:~/copula_clima_15_100.Rda  eirikhsj@abacus-as.uio.no:~/copula_clima_30_100.Rda eirikhsj@abacus-as.uio.no:~/copula_clima_60_100.Rda eirikhsj@abacus-as.uio.no:~/copula_clima_120_100.Rda /Users/Eirik/Desktop/Master2023/Output_data/Copula_model_output
 

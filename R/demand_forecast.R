@@ -10,7 +10,7 @@
 #' @param p_comps Integer. Number of pc-comps in model.
 #' @param other_mods List of other models to run or default is NULL.
 #' @param comb Boolean. FALSE allows specific combination of PCs to be run without running all combinations.
-#' @param custom Boolean.Specifies a custom pc bases model.
+#' @param custom Boolean.Specifies a custom pc based model.
 #' @param incl_climatology Boolean.Includes climatology model.
 #' @param no_pc Boolean.Includes basic (no pc) model.
 #'
@@ -27,21 +27,21 @@
 #'
 demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 30, pred_lag= 15, train_y=5,
                            reg_form, p_comps, other_mods= NULL, comb = TRUE, custom = FALSE,
-                           incl_climatology = FALSE, no_pc = TRUE, cores = 4, num_thread = 1){
-    arg1 = X_mat
-    arg2 = date_demand
-    arg3 = pred_win
-    arg4 = pred_lag
-    arg5 = train_y
-    arg6 = reg_form
-    arg7 = p_comps
-    arg8 = other_mods
-    arg9 = comb
-    arg10 = custom
-    arg11 = incl_climatology
-    arg12 = no_pc
-    arg13 = cores
-    arg14 = num_thread
+                           incl_climatology = FALSE, no_pc = TRUE, cores = 4){
+    # arg1 = X_mat
+    # arg2 = date_demand
+    # arg3 = pred_win
+    # arg4 = pred_lag
+    # arg5 = train_y
+    # arg6 = reg_form
+    # arg7 = p_comps
+    # arg8 = other_mods
+    # arg9 = comb
+    # arg10 = custom
+    # arg11 = incl_climatology
+    # arg12 = no_pc
+    # arg13 = cores
+    # arg14 = num_thread
 
 
     last_poss_pred = range(date_demand$date)[2] - pred_win - pred_lag
@@ -54,15 +54,15 @@ demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 
 
 
     ## **** Run parallel cores ****
-    blas_set_num_threads(arg14)
-    omp_set_num_threads(arg14) #Set number of threads
+    blas_set_num_threads(1)
+    omp_set_num_threads(1) #Set number of threads
 
     detailed_results = mclapply(seq_along(init_days_all),
                       "Rolling",
-                      X_mat = arg1, date_demand = arg2,init_days= init_days_all, pred_win = arg3, pred_lag= arg4, train_y=arg5,
-                      reg_form= arg6, p_comps= arg7, other_mods= arg8, comb = arg9, custom = arg10,
-                      incl_climatology = arg11, no_pc = arg12,
-                      mc.cores = arg13)
+                      X_mat = X_mat, date_demand = date_demand,init_days= init_days_all, pred_win = pred_win, pred_lag= pred_lag, train_y=train_y,
+                      reg_form= reg_form, p_comps= p_comps, other_mods= other_mods, comb = comb, custom = custom,
+                      incl_climatology = incl_climatology, no_pc = no_pc,
+                      mc.cores = cores)
 
     ## **** Return results ****
     Results = rbindlist(detailed_results)
@@ -75,7 +75,6 @@ demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 
 #' @export
 Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
                    reg_form, p_comps, other_mods, comb, custom,incl_climatology, no_pc,num_thread){
-
     ## ***** Step 1: Form the training and test datasets ****
     init_day = init_days[i]
     target_days = seq(init_day+ pred_lag, length.out = pred_win,  by = '1 days')
@@ -116,11 +115,12 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
                 print(sprintf("%s + %s)", reg_form, PC))
                 mods[[j]] = mgcv::gam(as.formula(sprintf("%s + %s)", reg_form, PC)), data = dt_train)
             }
-        } else{
+        } else{ #Custom order of PC components
             print(sprintf("%s + %s)", reg_form, custom))
             mods[[2]] = mgcv::gam(as.formula(sprintf("%s + %s", reg_form, custom)), data = dt_train)
             }
     }
+
 
     ## **** Step 3: Check fit ****
     results = dt_test
@@ -151,6 +151,25 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
         results[,'clima_pred' := clima_pred]
         print(paste0("Climatology: ", sqrt(sum((dt_test$volume - clima_pred)^2)/n)))
     }
+
+    ## **** Step 5: Other Models ****
+    if (length(other_mods)!=0){ #Call other models
+        nr = length(mods)
+        for (k in 1:length(other_mods)){                                #OTHER MODELS
+            mods[[nr+k]] = other_mods[[k]](dt_train, X_mat[I_train,], m) #tbats needs m, lasso needs X_mat
+
+            if(mods[[nr+k]]$call[1] == "glmnet()"){
+                print("glmnet-lasso")
+                pred_names = rownames(coef(mods[[nr+k]]))[2:length(rownames(coef(mods[[nr+k]])))]
+                test_dat = data.table(dt_test, X_mat[I_test,])
+                test = as.matrix(test_dat[,..pred_names])
+                pred_demand_test = data.table(predict(mods[[nr+k]], newx = test))
+                pred_demand_test[, c("volume", "date", "hour") := dt_test[, c("volume", "date", "hour")]]
+                results = merge(results, pred_demand_test, by = c("volume","date" ,"hour"))
+            }
+        }
+    }
+
     if (is.data.table(results)==TRUE){
         print("")
     } else{
@@ -165,4 +184,18 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
     return(results)
 }
 
+lasso_just_temp = function(dt_train, X_mat, m){
+    #ls = sort(round(exp((1:1000)/2000)^14 -1, 2), decreasing = TRUE)
+    ls = sort(round(exp((1:1000)/1000)^3 +1, 2), decreasing = TRUE)
+    #ls = sort(seq(1,8,length.out = 1000), decreasing = TRUE)
+    dat = data.table(dt_train[,.(volume)], X_mat)
+    Y_inp = as.matrix(dat[,volume])
+    X_inp = as.matrix(dat[, .SD, .SDcols = -'volume'])
+    l1 = glmnet(x = X_inp, y =Y_inp, alpha = 1, lambda = ls)
 
+    return(l1)
+}
+
+
+res = pred_demand_test[, lapply(.SD, function(x) sqrt(mean((volume - x)^2)))]
+pred_demand_test = pred_demand_test[,1]
