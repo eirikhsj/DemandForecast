@@ -13,7 +13,7 @@ rolling_mod_NWP_interval(
   window = 125,
   reweight = FALSE,
   incl_climatology = FALSE,
-  formula = "PC1 ~ 1",
+  formula = "PC1 ~ NWP1_90",
   coef_to_print = c(),
   interval_k = 4,
   skill_interval = 0,

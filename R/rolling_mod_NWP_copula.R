@@ -155,10 +155,11 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
                 } else{
 
                     #Simulate from multivariate normal with mu = 0 and sigma = sigma
+                    set.seed(100)
                     z_sim = data.table(mvrnorm(n = N, mu = rep(0,dim(sig)[1]), Sigma = sig))
 
                     #Find the quantile index
-                    q2 = as.matrix(z_sim[, lapply(.SD, function(x)  round(pnorm(x),log(m, 10))*m)])
+                    q2 = as.matrix(z_sim[, lapply(.SD, function(x) round(pnorm(x),log(m, 10))*m)])
 
                     # Get back U values from q-index
                     U = data.table()
@@ -171,10 +172,9 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
 
                     #Utilize the copula quantile
                     copula_quant = quantile(W, probs = 0.9)
-
                     test_loss = pinball_loss(0.9, copula_quant, test[,mean(PC1)])
                     results[,"copula_pred":= copula_quant]
-                    results[,'copula_loss' := test_loss ]
+                    results[,'copula_loss':= test_loss ]
                 }
             }
 

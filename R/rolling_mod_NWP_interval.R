@@ -25,7 +25,7 @@
 
 #' @export
 rolling_mod_NWP_interval = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2023-01-01'), q=0.9, ERA_NWP, model='qreg', window = 125, reweight = FALSE,
-                                        incl_climatology =FALSE, formula = 'PC1 ~ 1', coef_to_print = c(), interval_k = 4, skill_interval = 0, cores = 4){
+                                        incl_climatology =FALSE, formula = 'PC1 ~ NWP1_90', coef_to_print = c(), interval_k = 4, skill_interval = 0, cores = 4){
 
     #1) Fix dates
     start =as.Date(forc_start)
@@ -133,7 +133,7 @@ Rolling_nwp_interval = function(i, ERA_NWP_vars, q, init_days, window, reweight,
 
         } else if (dim(test)[1]==0){
             results = data.table()
-            print(paste0('Lacking data for this period (',init_day, ' for lead time ', l_times[[lead]],')'))
+            print(paste0('Lacking data for this period (',init_day, ' for lead time iter', lead,')'))
         }
         detailed_results[[lead]] = data.table(results)
     }

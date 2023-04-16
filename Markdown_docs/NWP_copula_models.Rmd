@@ -143,8 +143,8 @@ plot(copula_clima_2_1000$Results[date<as.Date("2023-01-01"),mean(copula_loss), b
 lines(copula_clima_4_1000$Results[date<as.Date("2023-01-01"),mean(copula_loss), by = lead_time])
 lines(copula_clima_8_1000$Results[date<as.Date("2023-01-01"),mean(copula_loss), by = lead_time])
 lines(copula_clima_15_1000$Results[date<as.Date("2023-01-01"),mean(copula_loss), by = lead_time])
-lines(copula_clima_30_1000$Results[date<as.Date("2023-01-01"),mean(copula_loss, na.rm	=TRUE), by = lead_time])
-lines(copula_clima_60_1000$Results[date<as.Date("2023-01-01"),mean(copula_loss, na.rm	=TRUE), by = lead_time])
+lines(copula_clima_30_1000$Results[date<as.Date("2023-01-01"),mean(copula_loss, na.rm=TRUE), by = lead_time])
+lines(copula_clima_60_1000$Results[date<as.Date("2023-01-01"),mean(copula_loss, na.rm=TRUE), by = lead_time])
 
 plot(copula_mod_2$Results[date<as.Date("2023-01-01"),mean(copula_loss), by = lead_time], type = 'l', ylim = c(0,12))
 lines(copula_mod_4$Results[date<as.Date("2023-01-01"),mean(copula_loss), by = lead_time])
@@ -716,7 +716,7 @@ plot2 =  ggplot(
     theme(axis.title.y = element_blank(), axis.text.y = element_blank(),axis.ticks.length = unit(0, "mm")) +
     xlim(-150,150) 
     
-ggp_all <- (plot1 + plot2) +    # Create grid of plots with title
+ggp_all <- (plot1 + plot2)  # Create grid of plots with title
   plot_annotation(title = "Monthly Distributions of First and Second Factor Loading of ERA temperature") & 
   theme(plot.title = element_text(hjust = 0.5))
 
@@ -727,4 +727,40 @@ dev.off()
 
 
 scp eirikhsj@abacus-as.uio.no:~/copula_clima_1_100.Rda eirikhsj@abacus-as.uio.no:~/copula_clima_2_100.Rda  eirikhsj@abacus-as.uio.no:~/copula_clima_4_100.Rda  eirikhsj@abacus-as.uio.no:~/copula_clima_8_100.Rda  eirikhsj@abacus-as.uio.no:~/copula_clima_15_100.Rda  eirikhsj@abacus-as.uio.no:~/copula_clima_30_100.Rda eirikhsj@abacus-as.uio.no:~/copula_clima_60_100.Rda eirikhsj@abacus-as.uio.no:~/copula_clima_120_100.Rda /Users/Eirik/Desktop/Master2023/Output_data/Copula_model_output
+
+
+```{r}
+rho = -0.5
+sim = mvrnorm(1000, c(0,10), matrix(c(1,rho, rho, 1), ncol = 2))
+Q1_plot = ggplot() +
+    geom_line(data = data.table(q = quantile(rowSums(sim), seq(0, 1, 0.001)),sq = seq(0, 1, 0.001)), aes(x = q, y = sq, col = 'S^a'),alpha = 1)+
+    geom_line(data = data.table(q = quantile(sim[,1], seq(0, 1, 0.001))+quantile(sim[,2], seq(0, 1, 0.001)),sq = seq(0, 1, 0.001)), aes(x = q, y = sq, col = 'Y^a + Y^a'),alpha = 1)+
+    theme(legend.position = c(0.80, 0.40), legend.key.size = unit(0.3, "cm")) +    labs(color = "Rho = -0.5 :", x = "Simulated Value", y = "")
+
+rho = 0
+sim = mvrnorm(1000, c(0,10), matrix(c(1,rho, rho, 1), ncol = 2))
+Q2_plot = ggplot() +
+    geom_line(data = data.table(q = quantile(rowSums(sim), seq(0, 1, 0.001)),sq = seq(0, 1, 0.001)), aes(x = q, y = sq, col = 'S^a'),alpha = 1)+
+    geom_line(data = data.table(q = quantile(sim[,1], seq(0, 1, 0.001))+quantile(sim[,2], seq(0, 1, 0.001)),sq = seq(0, 1, 0.001)), aes(x = q, y = sq, col = 'Y^a + Y^a'),alpha = 1)+
+          theme(legend.position = c(0.80, 0.40), legend.key.size = unit(0.3, "cm")) 
+
+rho = 0.25; 
+sim = mvrnorm(1000, c(0,10), matrix(c(1,rho, rho, 1), ncol = 2));
+Q3_plot = ggplot() +
+    geom_line(data = data.table(q = quantile(rowSums(sim), seq(0, 1, 0.001)),sq = seq(0, 1, 0.001)), aes(x = q, y = sq, col = 'S^a'),alpha = 1)+
+    geom_line(data = data.table(q = quantile(sim[,1], seq(0, 1, 0.001))+quantile(sim[,2], seq(0, 1, 0.001)),sq = seq(0, 1, 0.001)), aes(x = q, y = sq, col = 'Y^a + Y^a'),alpha = 1)+
+          theme(legend.position = c(0.80, 0.40), legend.key.size = unit(0.3, "cm")) 
+rho = 0.95; 
+sim = mvrnorm(1000, c(0,10), matrix(c(1,rho, rho, 1), ncol = 2));
+Q4_plot = ggplot() +
+    geom_line(data = data.table(q = quantile(rowSums(sim), seq(0, 1, 0.001)),sq = seq(0, 1, 0.001)), aes(x = q, y = sq, col = 'S^a'),alpha = 1)+
+    geom_line(data = data.table(q = quantile(sim[,1], seq(0, 1, 0.001))+quantile(sim[,2], seq(0, 1, 0.001)),sq = seq(0, 1, 0.001)), aes(x = q, y = sq, col = 'Y^a + Y^a'),alpha = 1)+
+          theme(legend.position = c(0.80, 0.40), legend.key.size = unit(0.3, "cm")) 
+Qplotz = (Q1_plot + Q2_plot) / (Q3_plot+ Q4_plot) + 
+    plot_annotation(title = "Aggregated Quantile Estimation", subtitle = "Simulated values (n = 1000)") & 
+  theme(plot.title = element_text(hjust = 0.5))
+
+Qplotz
+
+```
 

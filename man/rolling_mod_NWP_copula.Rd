@@ -17,7 +17,8 @@ rolling_mod_NWP_copula(
   coef_to_print = "",
   interval_k = 4,
   skill_interval = 0,
-  cores = 48
+  cores = 48,
+  grid_m = 100
 )
 }
 \arguments{

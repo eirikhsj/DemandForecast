@@ -19,8 +19,7 @@ demand_forecast(
   custom = FALSE,
   incl_climatology = FALSE,
   no_pc = TRUE,
-  cores = 4,
-  num_thread = 1
+  cores = 4
 )
 }
 \arguments{
@@ -42,7 +41,7 @@ demand_forecast(
 
 \item{comb}{Boolean. FALSE allows specific combination of PCs to be run without running all combinations.}
 
-\item{custom}{Boolean.Specifies a custom pc bases model.}
+\item{custom}{Boolean.Specifies a custom pc based model.}
 
 \item{incl_climatology}{Boolean.Includes climatology model.}
 

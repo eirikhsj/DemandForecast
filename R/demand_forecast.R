@@ -197,5 +197,4 @@ lasso_just_temp = function(dt_train, X_mat, m){
 }
 
 
-res = pred_demand_test[, lapply(.SD, function(x) sqrt(mean((volume - x)^2)))]
-pred_demand_test = pred_demand_test[,1]
+
