@@ -170,8 +170,8 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
                 results = merge(results, pred_demand_test, by = c("volume","date" ,"hour"))
             } else if(mods[[nr+k]]$call[1] == "xgb.train()"){
                 print("xgb")
-                pred_names = rownames(coef(mods[[nr+k]]))[2:length(rownames(coef(mods[[nr+k]])))]
-                dt_test = date_demand[,.(volume, hour, month, year, season, week, w_day)]
+                #pred_names = rownames(coef(mods[[nr+k]]))[2:length(rownames(coef(mods[[nr+k]])))]
+                dt_test = date_demand[,.( hour, month, year, season, week, w_day)]
                 dt_test$hour = factor(dt_test$hour)
                 dt_test$w_day = factor(dt_test$w_day)
                 dt_test$week = factor(dt_test$week)
@@ -182,8 +182,9 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
 
                 test = data.table(dt_mod_test, X_mat[I_test,])
                 #test = as.matrix(data.table(dt_test[,-c(1,3,4,7,8)], X_mat[I_test,]))
-                pred_demand_test = predict(mods[[nr+k]], as.matrix(test))
-                pred_demand_test[, c("volume", "date", "hour") := date_demand[I_test, c("volume", "date", "hour")]]
+
+                pred_demand_test = date_demand[I_test, c("volume", "date", "hour")]
+                pred_demand_test[, pred_2 := predict(mods[[nr+k]], as.matrix(test))]
                 results = merge(results, pred_demand_test, by = c("volume","date" ,"hour"))
 
 
@@ -246,7 +247,7 @@ lasso_temp_and_time = function(dt_train, X_mat, m){
     return(l1)
 }
 
-
+#' @export
 xgb23 = function(dt_train, X_mat, m){
     #print(dt_train[1,])
     dt_train = dt_train[,.(volume, hour, month, year, season, week, w_day)]
