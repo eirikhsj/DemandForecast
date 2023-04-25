@@ -168,7 +168,7 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
                     pred_demand_test[, c("volume", "date", "hour") := dt_test[, c("volume", "date", "hour")]]
                 }
                 results = merge(results, pred_demand_test, by = c("volume","date" ,"hour"))
-            } else if(mods[[nr+k]]$call[1] == "xgb.train()"){
+            } else if(other_mods[k] == "xgb23"){
                 print("xgb")
                 #pred_names = rownames(coef(mods[[nr+k]]))[2:length(rownames(coef(mods[[nr+k]])))]
                 dt_test = date_demand[,.( hour, month, year, season, week, w_day)]
@@ -249,7 +249,6 @@ lasso_temp_and_time = function(dt_train, X_mat, m){
 
 #' @export
 xgb23 = function(dt_train, X_mat, m){
-    #print(dt_train[1,])
     dt_train = dt_train[,.(volume, hour, month, year, season, week, w_day)]
     dt_train$hour = factor(dt_train$hour)
     dt_train$w_day = factor(dt_train$w_day)
@@ -268,9 +267,11 @@ xgb23 = function(dt_train, X_mat, m){
                       label = Y_inp,
                       max.depth = 2,
                       eta = 1,
-                      nthread = 2,
+                      nthread = 1,
+                      verbose = 0,
                       nrounds = 23,
                       objective = "reg:squarederror")
+    print("Done")
     return(mod_xgb)
 }
 
