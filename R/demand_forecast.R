@@ -168,6 +168,29 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
                     pred_demand_test[, c("volume", "date", "hour") := dt_test[, c("volume", "date", "hour")]]
                 }
                 results = merge(results, pred_demand_test, by = c("volume","date" ,"hour"))
+            } else if(mods[[nr+k]]$call[1] == "xgb.train()"){
+                print("xgb")
+                pred_names = rownames(coef(mods[[nr+k]]))[2:length(rownames(coef(mods[[nr+k]])))]
+                dt_test = date_demand[,.(volume, hour, month, year, season, week, w_day)]
+                dt_test$hour = factor(dt_test$hour)
+                dt_test$w_day = factor(dt_test$w_day)
+                dt_test$week = factor(dt_test$week)
+                dt_test$month = factor(dt_test$month)
+                dt_test$season = factor(dt_test$season)
+                dt_test = dt_test[I_test,]
+                dt_mod_test = model.matrix(~ . - 1, data = dt_test)
+
+                test = data.table(dt_mod_test, X_mat[I_test,])
+                #test = as.matrix(data.table(dt_test[,-c(1,3,4,7,8)], X_mat[I_test,]))
+                pred_demand_test = predict(mods[[nr+k]], as.matrix(test))
+                pred_demand_test[, c("volume", "date", "hour") := date_demand[I_test, c("volume", "date", "hour")]]
+                results = merge(results, pred_demand_test, by = c("volume","date" ,"hour"))
+
+
+                #importance_matrix = xgb.importance(model = mods[[mod]])
+                #xgb_features[k,] = importance_matrix[1:10,1][[1]]
+                #print(importance_matrix[1:10,1][[1]])
+                #xgb_gain[k,] = importance_matrix[1:10,2][[1]]
             }
         }
     }
@@ -203,7 +226,8 @@ lasso_just_temp = function(dt_train, X_mat, m){
 #' @export
 lasso_temp_and_time = function(dt_train, X_mat, m){
     #ls = sort(round(exp((1:1000)/2000)^14 -1, 2), decreasing = TRUE)
-    ls = sort(round(seq(0,20, length.out = 1000), 2), decreasing = TRUE)
+    #ls = sort(round(seq(0,20, length.out = 1000), 2), decreasing = TRUE)
+    ls = sort(round(seq(7.5,8.5, length.out = 1000), 2), decreasing = TRUE)
     #ls = sort(seq(0,8,length.out = 1000), decreasing = TRUE)
     dt_train = dt_train[,.(volume, hour, month, year, season, week, w_day)]
     dt_train$hour = factor(dt_train$hour)
@@ -222,6 +246,32 @@ lasso_temp_and_time = function(dt_train, X_mat, m){
     return(l1)
 }
 
+
+xgb23 = function(dt_train, X_mat, m){
+    #print(dt_train[1,])
+    dt_train = dt_train[,.(volume, hour, month, year, season, week, w_day)]
+    dt_train$hour = factor(dt_train$hour)
+    dt_train$w_day = factor(dt_train$w_day)
+    dt_train$week = factor(dt_train$week)
+    dt_train$month = factor(dt_train$month)
+    dt_train$season = factor(dt_train$season)
+    dt_mod_train = model.matrix(~ . - 1, data = dt_train)
+    xgb_dat = data.table(dt_mod_train, X_mat)
+    #xgb_train = xgb.DMatrix(data = xgb_dat[,-c(2)], label = xgb_dat[,2])
+    #xgb_test = xgb.DMatrix(data = dt_test[,-c(2)], label = dt_test[,2])
+
+    Y_inp = as.matrix(xgb_dat[,volume])
+    X_inp = as.matrix(xgb_dat[, .SD, .SDcols = -'volume'])
+
+    mod_xgb = xgboost(data = X_inp,
+                      label = Y_inp,
+                      max.depth = 2,
+                      eta = 1,
+                      nthread = 2,
+                      nrounds = 23,
+                      objective = "reg:squarederror")
+    return(mod_xgb)
+}
 
 # res = pred_demand_test[, lapply(.SD, function(x) sqrt(mean((volume - x)^2)))]
 # pred_demand_test = pred_demand_test[,1]
