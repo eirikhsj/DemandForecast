@@ -1173,3 +1173,86 @@ What quality of the PCA are we leveraging
 
 Comparing with 10 training years 
 
+# permutation test
+```{r}
+# group1 = Factor10_inter3$Results[(volume - pred_3)^2]
+# group2 = Climatology$Results[,(clima_pred - volume)^2]
+# group1 = Factor10_inter3$Results[sample(1:60000, 100),(volume - pred_3)^2]
+# group2 = Climatology$Results[sample(1:60000, 100),(clima_pred - volume)^2]
+group1 = Custom_comb6$Results[,(volume - pred_2)^2]
+group2 = Custom_comb1$Results[,(volume - pred_2)^2]
+
+# group1 = Factor10_inter3$Result[,(volume - pred_1)^2]
+# group2 = Custom_comb1$Results[,(volume - pred_1)^2]
+# group1 = Factor10_inter3$Result[,(volume - pred_2)^2]
+# group2 = mean_w_m$Results[,(volume - pred_2)^2]
+
+# Define test statistic 
+test_stat = function(x, y) {
+  return(1 - mean(x)/mean(y))
+}
+
+# Observed test statistic
+observed = test_stat(group1, group2)
+
+# Create null distribution by permuting data
+n_permutations = 1000
+n_obs = length(group1)
+H0 = replicate(n_permutations, {
+  combined = sample(c(group1, group2))
+  test_stat(combined[1:n_obs], combined[(n_obs + 1):(n_obs*2)])
+})
+
+# Calculate p-value
+p_value = sum(H0 >= observed) / n_permutations
+
+# Print results
+cat("Observed test statistic:", observed, "\n")
+cat("P-value:", p_value, "\n")
+
+
+
+```
+
+### Month based
+```{r}
+group1 = Factor10_inter3$Result[,mean((volume - pred_3)^2), by = init_date][,V1]
+group2 = Climatology$Results[,mean((clima_pred - volume)^2) , by = init_date][,V1]
+
+
+group1 = Factor10_inter3$Result[,mean((volume - pred_2)^2), by = init_date][,V1]
+group2 = mean_w_m$Results[,mean((volume - pred_2)^2) , by = init_date][,V1]
+# group1 = Factor10_inter3$Result[sample(1:60000, 100),(volume - pred_3)^2]
+# group2 = Climatology$Results[sample(1:60000, 100),(clima_pred - volume)^2]
+# group1 = Custom_comb6$Result[,mean((volume - pred_2)^2), by = init_date][,V1]
+# group2 = Custom_comb1$Results[,mean((volume - pred_2)^2), by = init_date][,V1]
+
+# group1 = Factor10_inter3$Result[,(volume - pred_1)^2]
+# group2 = Custom_comb1$Results[,(volume - pred_1)^2]
+
+# Define test statistic 
+test_stat = function(x, y) {
+  return(1 - mean(x)/mean(y))
+}
+
+#  Observed test statistic
+observed = test_stat(group1, group2)
+
+# Create null distribution by permuting data
+n_permutations = 10000
+n_obs = length(group1)
+H0 = replicate(n_permutations, {
+  combined = sample(c(group1, group2))
+  test_stat(combined[1:n_obs], combined[(n_obs + 1):(n_obs*2)])
+})
+
+# Calculate p-value
+p_value = sum(H0 >= observed) / n_permutations
+
+# Print results
+cat("Observed test statistic:", observed, "\n")
+cat("P-value:", p_value, "\n")
+
+
+```
+

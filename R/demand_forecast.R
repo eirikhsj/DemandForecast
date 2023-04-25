@@ -28,21 +28,6 @@
 demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 30, pred_lag= 15, train_y=5,
                            reg_form, p_comps, other_mods= NULL, comb = TRUE, custom = FALSE,
                            incl_climatology = FALSE, no_pc = TRUE, cores = 4){
-    # arg1 = X_mat
-    # arg2 = date_demand
-    # arg3 = pred_win
-    # arg4 = pred_lag
-    # arg5 = train_y
-    # arg6 = reg_form
-    # arg7 = p_comps
-    # arg8 = other_mods
-    # arg9 = comb
-    # arg10 = custom
-    # arg11 = incl_climatology
-    # arg12 = no_pc
-    # arg13 = cores
-    # arg14 = num_thread
-
 
     last_poss_pred = range(date_demand$date)[2] - pred_win - pred_lag
 
@@ -51,7 +36,6 @@ demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 
     end = as.Date(forc_end)
     all_days = seq(start, end,  by = '1 days')
     init_days_all = all_days[mday(all_days)==1]
-
 
     ## **** Run parallel cores ****
     blas_set_num_threads(1)
@@ -153,16 +137,30 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
     }
 
     ## **** Step 5: Other Models ****
-    if (length(other_mods)!=0){ #Call other models
+    if (is.null(other_mods) == FALSE){ #Call other models
         nr = length(mods)
         for (k in 1:length(other_mods)){                                #OTHER MODELS
-            mods[[nr+k]] = other_mods[[k]](dt_train, X_mat[I_train,], m) #tbats needs m, lasso needs X_mat
+            mods[[nr+k]] = get(other_mods[[k]])(dt_train, X_mat[I_train,], m) #tbats needs m, lasso needs X_mat
 
             if(mods[[nr+k]]$call[1] == "glmnet()"){
                 print("glmnet-lasso")
                 pred_names = rownames(coef(mods[[nr+k]]))[2:length(rownames(coef(mods[[nr+k]])))]
                 test_dat = data.table(dt_test, X_mat[I_test,])
-                test = as.matrix(test_dat[,..pred_names])
+
+                if (other_mods[k] == "lasso_temp_and_time"){
+                    pred_names = rownames(coef(mods[[nr+k]]))[2:length(rownames(coef(mods[[nr+k]])))]
+                    dat_test = data.table(dt_test[,.(volume, hour, month, year, season, week, w_day)], X_mat)
+                    dat_test$hour_f = factor(dat_test$hour)
+                    dat_test$categorical_var = factor(dat_test$week)
+                    dat_test$month = factor(dat_test$month)
+                    dat_test$categorical_var = factor(dat_test$hour)
+                    dat_test$categorical_var = factor(dat_test$hour)
+                    test = as.matrix(dat_test[, ..pred_names])
+                } else{
+                    pred_names = rownames(coef(mods[[nr+k]]))[2:length(rownames(coef(mods[[nr+k]])))]
+                    test_dat = data.table(dt_test, X_mat[I_test,])
+                    test = as.matrix(test_dat[,..pred_names])
+                }
                 pred_demand_test = data.table(predict(mods[[nr+k]], newx = test))
                 pred_demand_test[, c("volume", "date", "hour") := dt_test[, c("volume", "date", "hour")]]
                 results = merge(results, pred_demand_test, by = c("volume","date" ,"hour"))
@@ -170,9 +168,7 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
         }
     }
 
-    if (is.data.table(results)==TRUE){
-        print("")
-    } else{
+    if (is.data.table(results)==FALSE){
         print(str(results))
         print('Trying to convert')
         results = as.data.table(results)
@@ -184,17 +180,43 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
     return(results)
 }
 
+#' @export
 lasso_just_temp = function(dt_train, X_mat, m){
     #ls = sort(round(exp((1:1000)/2000)^14 -1, 2), decreasing = TRUE)
-    ls = sort(round(exp((1:1000)/1000)^3 +1, 2), decreasing = TRUE)
-    #ls = sort(seq(1,8,length.out = 1000), decreasing = TRUE)
+    #ls = sort(round(exp((1:1000)/1000)^3 +1, 2), decreasing = TRUE)
+    ls = sort(seq(3,5,length.out = 1000), decreasing = TRUE)
+    #ls = sort(round(seq(0,20, length.out = 1000), 2), decreasing = TRUE)
+
     dat = data.table(dt_train[,.(volume)], X_mat)
     Y_inp = as.matrix(dat[,volume])
     X_inp = as.matrix(dat[, .SD, .SDcols = -'volume'])
+    set.seed(100)
+    l1 = glmnet(x = X_inp, y =Y_inp, alpha = 1, lambda = ls)
+
+    return(l1)
+}
+
+#' @export
+lasso_temp_and_time = function(dt_train, X_mat, m){
+    #ls = sort(round(exp((1:1000)/2000)^14 -1, 2), decreasing = TRUE)
+    ls = sort(round(seq(0,20, length.out = 1000), 2), decreasing = TRUE)
+    #ls = sort(seq(0,8,length.out = 1000), decreasing = TRUE)
+    dat_train = data.table(dt_train[,.(volume, hour, month, year, season, week, w_day)], X_mat)
+    dat_train$hour_f = factor(dat_train$hour)
+    dat_train$categorical_var = factor(dat_train$week)
+    dat_train$month = factor(dat_train$month)
+    dat_train$categorical_var = factor(dat_train$hour)
+    dat_train$categorical_var = factor(dat_train$hour)
+
+    Y_inp = as.matrix(dat_train[,volume])
+    X_inp = as.matrix(dat_train[, .SD, .SDcols = -'volume'])
+
+    set.seed(100)
     l1 = glmnet(x = X_inp, y =Y_inp, alpha = 1, lambda = ls)
 
     return(l1)
 }
 
 
-
+# res = pred_demand_test[, lapply(.SD, function(x) sqrt(mean((volume - x)^2)))]
+# pred_demand_test = pred_demand_test[,1]
