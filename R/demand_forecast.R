@@ -145,24 +145,28 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
             if(mods[[nr+k]]$call[1] == "glmnet()"){
                 print("glmnet-lasso")
                 pred_names = rownames(coef(mods[[nr+k]]))[2:length(rownames(coef(mods[[nr+k]])))]
-                test_dat = data.table(dt_test, X_mat[I_test,])
 
                 if (other_mods[k] == "lasso_temp_and_time"){
-                    pred_names = rownames(coef(mods[[nr+k]]))[2:length(rownames(coef(mods[[nr+k]])))]
-                    dat_test = data.table(dt_test[,.(volume, hour, month, year, season, week, w_day)], X_mat)
-                    dat_test$hour_f = factor(dat_test$hour)
-                    dat_test$categorical_var = factor(dat_test$week)
-                    dat_test$month = factor(dat_test$month)
-                    dat_test$categorical_var = factor(dat_test$hour)
-                    dat_test$categorical_var = factor(dat_test$hour)
+                    dt_test = date_demand[,.(volume, hour, month, year, season, week, w_day)]
+                    dt_test$hour = factor(dt_test$hour)
+                    dt_test$w_day = factor(dt_test$w_day)
+                    dt_test$week = factor(dt_test$week)
+                    dt_test$month = factor(dt_test$month)
+                    dt_test$season = factor(dt_test$season)
+                    dt_test = dt_test[I_test,]
+                    dt_mod_test = model.matrix(~ . - 1, data = dt_test)
+
+                    dat_test = data.table(dt_mod_test, X_mat[I_test,])
                     test = as.matrix(dat_test[, ..pred_names])
+                    print(dim(test))
+                    pred_demand_test = data.table(predict(mods[[nr+k]], newx = test))
+                    pred_demand_test[, c("volume", "date", "hour") := date_demand[I_test, c("volume", "date", "hour")]]
                 } else{
-                    pred_names = rownames(coef(mods[[nr+k]]))[2:length(rownames(coef(mods[[nr+k]])))]
                     test_dat = data.table(dt_test, X_mat[I_test,])
                     test = as.matrix(test_dat[,..pred_names])
+                    pred_demand_test = data.table(predict(mods[[nr+k]], newx = test))
+                    pred_demand_test[, c("volume", "date", "hour") := dt_test[, c("volume", "date", "hour")]]
                 }
-                pred_demand_test = data.table(predict(mods[[nr+k]], newx = test))
-                pred_demand_test[, c("volume", "date", "hour") := dt_test[, c("volume", "date", "hour")]]
                 results = merge(results, pred_demand_test, by = c("volume","date" ,"hour"))
             }
         }
@@ -201,16 +205,17 @@ lasso_temp_and_time = function(dt_train, X_mat, m){
     #ls = sort(round(exp((1:1000)/2000)^14 -1, 2), decreasing = TRUE)
     ls = sort(round(seq(0,20, length.out = 1000), 2), decreasing = TRUE)
     #ls = sort(seq(0,8,length.out = 1000), decreasing = TRUE)
-    dat_train = data.table(dt_train[,.(volume, hour, month, year, season, week, w_day)], X_mat)
-    dat_train$hour_f = factor(dat_train$hour)
-    dat_train$categorical_var = factor(dat_train$week)
-    dat_train$month = factor(dat_train$month)
-    dat_train$categorical_var = factor(dat_train$hour)
-    dat_train$categorical_var = factor(dat_train$hour)
+    dt_train = dt_train[,.(volume, hour, month, year, season, week, w_day)]
+    dt_train$hour = factor(dt_train$hour)
+    dt_train$w_day = factor(dt_train$w_day)
+    dt_train$week = factor(dt_train$week)
+    dt_train$month = factor(dt_train$month)
+    dt_train$season = factor(dt_train$season)
+    dt_mod_train = model.matrix(~ . - 1, data = dt_train)
+    dat_train = data.table(dt_mod_train, X_mat)
 
     Y_inp = as.matrix(dat_train[,volume])
     X_inp = as.matrix(dat_train[, .SD, .SDcols = -'volume'])
-
     set.seed(100)
     l1 = glmnet(x = X_inp, y =Y_inp, alpha = 1, lambda = ls)
 
