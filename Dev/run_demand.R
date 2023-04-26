@@ -102,3 +102,22 @@ save(mean_m_m, file = 'mean_m_m.Rda')
 #     assign(paste0("Custom_comb",i, "_int_m_m"), mod)
 #     save(list = c(paste0("Custom_comb",i, "_int_m_m")), file = paste0("Custom_comb",i, "_int_m_m",'.Rda'))
 # }
+
+
+XGB_mod105 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01',
+                             pred_win = 30, pred_lag = 15, train_y = 5, p_comps = 0,  no_pc = TRUE, other_mods = "xgb105",
+                             custom = FALSE,
+                             cores = 48, reg_form = "volume~1")
+
+XGB_mod110 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01',
+                             pred_win = 30, pred_lag = 15, train_y = 5, p_comps = 0,  no_pc = TRUE, other_mods = "xgb110",
+                             custom = FALSE,
+                             cores = 48, reg_form = "volume~1")
+XGB_mod120 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01',
+                             pred_win = 30, pred_lag = 15, train_y = 5, p_comps = 0,  no_pc = TRUE, other_mods = "xgb120",
+                             custom = FALSE,
+                             cores = 48, reg_form = "volume~1")
+XGB_mod125 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01',
+                             pred_win = 30, pred_lag = 15, train_y = 5, p_comps = 0,  no_pc = TRUE, other_mods = "xgb125",
+                             custom = FALSE,
+                             cores = 48, reg_form = "volume~1")

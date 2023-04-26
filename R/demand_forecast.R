@@ -228,7 +228,7 @@ lasso_just_temp = function(dt_train, X_mat, m){
 lasso_temp_and_time = function(dt_train, X_mat, m){
     #ls = sort(round(exp((1:1000)/2000)^14 -1, 2), decreasing = TRUE)
     #ls = sort(round(seq(0,20, length.out = 1000), 2), decreasing = TRUE)
-    ls = sort(round(seq(7.5,8.5, length.out = 1000), 2), decreasing = TRUE)
+    ls = sort(round(seq(3,5, length.out = 1000), 2), decreasing = TRUE)
     #ls = sort(seq(0,8,length.out = 1000), decreasing = TRUE)
     dt_train = dt_train[,.(volume, hour, month, year, season, week, w_day)]
     dt_train$hour = factor(dt_train$hour)
@@ -250,8 +250,8 @@ lasso_temp_and_time = function(dt_train, X_mat, m){
 #' @export
 lasso_temp_and_time2 = function(dt_train, X_mat, m){
     #ls = sort(round(exp((1:1000)/2000)^14 -1, 2), decreasing = TRUE)
-    ls = sort(round(seq(0,20, length.out = 1000), 2), decreasing = TRUE)
-    #ls = sort(round(seq(7.5,8.5, length.out = 1000), 2), decreasing = TRUE)
+    #ls = sort(round(seq(0,20, length.out = 1000), 2), decreasing = TRUE)
+    ls = sort(round(seq(7,8, length.out = 1000), 2), decreasing = TRUE)
     #ls = sort(seq(0,8,length.out = 1000), decreasing = TRUE)
     dt_train = dt_train[,.(volume, hour, month, year, season, week, w_day)]
     dt_train$hour = factor(dt_train$hour)
