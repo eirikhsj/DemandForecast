@@ -154,7 +154,7 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
                     dt_test$month = factor(dt_test$month)
                     dt_test$season = factor(dt_test$season)
                     dt_test = dt_test[I_test,]
-                    dt_mod_test = model.matrix(~ hour:week + w_day*month + week + month + season + year, data = dt_test)
+                    dt_mod_test = model.matrix(volume~ hour*week + w_day*month + week + month + season + year, data = dt_test)
 
                     dat_test = data.table(dt_mod_test, X_mat[I_test,])
                     test = as.matrix(dat_test[, ..pred_names])
@@ -171,7 +171,7 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
             } else if(mods[[nr+k]]$call[1] == "xgb.train()"){
                 print("xgb - results")
                 #pred_names = rownames(coef(mods[[nr+k]]))[2:length(rownames(coef(mods[[nr+k]])))]
-                dt_test = date_demand[,.( hour, month, year, season, week, w_day)]
+                dt_test = date_demand[,.(hour, month, year, season, week, w_day)]
                 dt_test$hour = factor(dt_test$hour)
                 dt_test$w_day = factor(dt_test$w_day)
                 dt_test$week = factor(dt_test$week)
@@ -259,7 +259,7 @@ lasso_temp_and_time2 = function(dt_train, X_mat, m){
     dt_train$week = factor(dt_train$week)
     dt_train$month = factor(dt_train$month)
     dt_train$season = factor(dt_train$season)
-    dt_mod_train = model.matrix(~ hour:week + w_day*month + week + month + season + year, data = dt_train)
+    dt_mod_train = model.matrix(volume~ hour*week + w_day*month + week + month + season + year , data = dt_train)
     dat_train = data.table(dt_mod_train, X_mat)
 
     Y_inp = as.matrix(dat_train[,volume])
