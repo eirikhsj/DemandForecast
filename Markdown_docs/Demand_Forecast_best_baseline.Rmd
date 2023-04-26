@@ -58,11 +58,6 @@ d) Should I try all combinations here and see which is best or is the more infor
 #module load  R/4.2.0-foss-2021b
 #install.packages('DemandForecast', repos = NULL,type = "source")
 library(DemandForecast)
-# library(data.table)
-# library(ncdf4)
-# library(parallel)
-# library(mgcv)
-
 
 if(file.exists("~/Desktop/Master2023/Data/")){
     prep = prep_demand_temp_data(include_na_volume = FALSE, 
