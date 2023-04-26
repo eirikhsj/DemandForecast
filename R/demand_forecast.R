@@ -275,32 +275,5 @@ xgb23 = function(dt_train, X_mat, m){
     return(mod_xgb)
 }
 
-# xgb23 = function(dt_train, X_mat, m){
-#     dt_train = dt_train[,.(volume, hour, month, year, season, week, w_day)]
-#     dt_train$hour = factor(dt_train$hour)
-#     dt_train$w_day = factor(dt_train$w_day)
-#     dt_train$week = factor(dt_train$week)
-#     dt_train$month = factor(dt_train$month)
-#     dt_train$season = factor(dt_train$season)
-#     dt_mod_train = model.matrix(~ . - 1, data = dt_train)
-#     xgb_dat = data.table(dt_mod_train, X_mat)
-#     #xgb_train = xgb.DMatrix(data = xgb_dat[,-c(2)], label = xgb_dat[,2])
-#     #xgb_test = xgb.DMatrix(data = dt_test[,-c(2)], label = dt_test[,2])
-#
-#     Y_inp = as.matrix(xgb_dat[,volume])
-#     X_inp = as.matrix(xgb_dat[, .SD, .SDcols = -'volume'])
-#
-#     mod_xgb = xgboost(data = X_inp,
-#                       label = Y_inp,
-#                       max.depth = 2,
-#                       eta = 1,
-#                       nthread = 1,
-#                       verbose = 0,
-#                       nrounds = 23,
-#                       objective = "reg:squarederror")
-#     print("Done")
-#     return(mod_xgb)
-# }
-
 # res = pred_demand_test[, lapply(.SD, function(x) sqrt(mean((volume - x)^2)))]
 # pred_demand_test = pred_demand_test[,1]
