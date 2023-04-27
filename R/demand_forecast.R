@@ -178,7 +178,7 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
                 dt_test$month = factor(dt_test$month)
                 dt_test$season = factor(dt_test$season)
                 dt_test = dt_test[I_test,]
-                dt_mod_test = model.matrix(~ . - 1, data = dt_test)
+                dt_mod_test = scale(model.matrix(~ . - 1, data = dt_test))
 
                 test = data.table(dt_mod_test, X_mat[I_test,])
                 #test = as.matrix(data.table(dt_test[,-c(1,3,4,7,8)], X_mat[I_test,]))
@@ -250,8 +250,8 @@ lasso_temp_and_time = function(dt_train, X_mat, m){
 #' @export
 lasso_temp_and_time2 = function(dt_train, X_mat, m){
     #ls = sort(round(exp((1:1000)/2000)^14 -1, 2), decreasing = TRUE)
-    #ls = sort(round(seq(0,20, length.out = 1000), 2), decreasing = TRUE)
-    ls = sort(round(seq(7,8, length.out = 1000), 4), decreasing = TRUE)
+    ls = sort(round(seq(0,20, length.out = 1000), 2), decreasing = TRUE)
+    #ls = sort(round(seq(7,8, length.out = 1000), 4), decreasing = TRUE)
     #ls = sort(seq(0,8,length.out = 1000), decreasing = TRUE)
     dt_train = dt_train[,.(volume, hour, month, year, season, week, w_day)]
     dt_train$hour = factor(dt_train$hour)
