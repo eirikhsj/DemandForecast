@@ -19,6 +19,7 @@ demand_forecast(
   custom = FALSE,
   incl_climatology = FALSE,
   no_pc = TRUE,
+  gam_lasso = FALSE,
   cores = 4
 )
 }

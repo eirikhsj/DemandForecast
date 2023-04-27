@@ -27,7 +27,7 @@
 #'
 demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 30, pred_lag= 15, train_y=5,
                            reg_form, p_comps, other_mods= NULL, comb = TRUE, custom = FALSE,
-                           incl_climatology = FALSE, no_pc = TRUE, cores = 4){
+                           incl_climatology = FALSE, no_pc = TRUE, gam_lasso = FALSE, cores = 4){
 
     last_poss_pred = range(date_demand$date)[2] - pred_win - pred_lag
 
@@ -45,7 +45,7 @@ demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 
                       "Rolling",
                       X_mat = X_mat, date_demand = date_demand,init_days= init_days_all, pred_win = pred_win, pred_lag= pred_lag, train_y=train_y,
                       reg_form= reg_form, p_comps= p_comps, other_mods= other_mods, comb = comb, custom = custom,
-                      incl_climatology = incl_climatology, no_pc = no_pc,
+                      incl_climatology = incl_climatology, no_pc = no_pc,gam_lasso =gam_lasso,
                       mc.cores = cores)
 
     ## **** Return results ****
@@ -58,7 +58,7 @@ demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 
 
 #' @export
 Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
-                   reg_form, p_comps, other_mods, comb, custom,incl_climatology, no_pc,num_thread){
+                   reg_form, p_comps, other_mods, comb, custom,incl_climatology, no_pc,num_thread,gam_lasso){
     ## ***** Step 1: Form the training and test datasets ****
     init_day = init_days[i]
     target_days = seq(init_day+ pred_lag, length.out = pred_win,  by = '1 days')
@@ -97,7 +97,7 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
                 P = paste0("s(PC", 1:(j-1))
                 PC = paste(P, collapse=') + ')
                 print(sprintf("%s + %s)", reg_form, PC))
-                mods[[j]] = mgcv::gam(as.formula(sprintf("%s + %s)", reg_form, PC)), data = dt_train)
+                mods[[j]] = mgcv::gam(as.formula(sprintf("%s + %s)", reg_form, PC)), select = gam_lasso, data = dt_train)
             }
         } else{ #Custom order of PC components
             print(sprintf("%s + %s)", reg_form, custom))
@@ -228,7 +228,7 @@ lasso_just_temp = function(dt_train, X_mat, m){
 lasso_temp_and_time = function(dt_train, X_mat, m){
     #ls = sort(round(exp((1:1000)/2000)^14 -1, 2), decreasing = TRUE)
     #ls = sort(round(seq(0,20, length.out = 1000), 2), decreasing = TRUE)
-    ls = sort(round(seq(3,5, length.out = 1000), 2), decreasing = TRUE)
+    ls = sort(round(seq(3,5, length.out = 1000), 4), decreasing = TRUE)
     #ls = sort(seq(0,8,length.out = 1000), decreasing = TRUE)
     dt_train = dt_train[,.(volume, hour, month, year, season, week, w_day)]
     dt_train$hour = factor(dt_train$hour)
@@ -251,7 +251,7 @@ lasso_temp_and_time = function(dt_train, X_mat, m){
 lasso_temp_and_time2 = function(dt_train, X_mat, m){
     #ls = sort(round(exp((1:1000)/2000)^14 -1, 2), decreasing = TRUE)
     #ls = sort(round(seq(0,20, length.out = 1000), 2), decreasing = TRUE)
-    ls = sort(round(seq(7,8, length.out = 1000), 2), decreasing = TRUE)
+    ls = sort(round(seq(7,8, length.out = 1000), 4), decreasing = TRUE)
     #ls = sort(seq(0,8,length.out = 1000), decreasing = TRUE)
     dt_train = dt_train[,.(volume, hour, month, year, season, week, w_day)]
     dt_train$hour = factor(dt_train$hour)
@@ -278,7 +278,34 @@ xgb23 = function(dt_train, X_mat, m){
     dt_train$week = factor(dt_train$week)
     dt_train$month = factor(dt_train$month)
     dt_train$season = factor(dt_train$season)
-    dt_mod_train = model.matrix(~ . - 1, data = dt_train)
+    dt_mod_train = scale(model.matrix(~ . - 1, data = dt_train))
+    xgb_dat = data.table(dt_mod_train, X_mat)
+    #xgb_train = xgb.DMatrix(data = xgb_dat[,-c(2)], label = xgb_dat[,2])
+    #xgb_test = xgb.DMatrix(data = dt_test[,-c(2)], label = dt_test[,2])
+
+    Y_inp = as.matrix(xgb_dat[,volume])
+    X_inp = as.matrix(xgb_dat[, .SD, .SDcols = -'volume'])
+
+    mod_xgb = xgboost(data = X_inp,
+                      label = Y_inp,
+                      max.depth = 2,
+                      eta = 1,
+                      nthread = 1,
+                      verbose = 0,
+                      nrounds = 23,
+                      objective = "reg:squarederror")
+    print("Done")
+    return(mod_xgb)
+}
+
+xgb23 = function(dt_train, X_mat, m){
+    dt_train = dt_train[,.(volume, hour, month, year, season, week, w_day)]
+    dt_train$hour = factor(dt_train$hour)
+    dt_train$w_day = factor(dt_train$w_day)
+    dt_train$week = factor(dt_train$week)
+    dt_train$month = factor(dt_train$month)
+    dt_train$season = factor(dt_train$season)
+    dt_mod_train = scale(model.matrix(~ . - 1, data = dt_train))
     xgb_dat = data.table(dt_mod_train, X_mat)
     #xgb_train = xgb.DMatrix(data = xgb_dat[,-c(2)], label = xgb_dat[,2])
     #xgb_test = xgb.DMatrix(data = dt_test[,-c(2)], label = dt_test[,2])

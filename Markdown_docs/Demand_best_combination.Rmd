@@ -1071,6 +1071,10 @@ axis(1, at = c(1, 10, 19, 27, 36, 45, 53), labels = c(format(Factor10_inter3$Res
 legend('bottomleft', lty = c(1,2), cex = 0.7, col = c('black','orange'), title = 'Skill relative to:', legend = c("Climatology", "Time Interaction"),bg = "white")
 lines(1 - (Factor10_inter3$Results[year(date)==yr,  mean((volume - pred_3)^2), keyby = week(date)][,V1]/
                Inter4$Result[year(date)==yr, mean((volume - pred_1)^2), keyby = week(date)][,V1]), col = 'orange', lty = 2)
+lines(1 - (Factor10_inter3$Results[year(date)==yr,  mean((volume - pred_2)^2), keyby = week(date)][,V1]/
+               Inter4$Result[year(date)==yr, mean((volume - pred_1)^2), keyby = week(date)][,V1]), col = 'red', lty = 2)
+lines(1 - Factor10_inter3$Results[year(date)==yr,  mean((volume - pred_2)^2), keyby = week(date)][,V1]/
+              Climatology$Results[year(date)==yr, mean((volume - clima_pred)^2), keyby = week(date)][,V1], col = 'brown')
 mtext(paste0('Month (',yr,')'), side = 1, line = 3, cex = 0.8, padj = -1.4)
 mtext('Skill Score', side = 2, line = 3, cex = 0.8, padj = 1.4)
 mtext('Week 10', side = 3, line = 4, cex = 0.8, padj = 10.4, adj = 0.25)
@@ -1138,12 +1142,6 @@ lines(date_demand[year(date)==2022,.(date, climatology)], col = 'red')
 
 date_demand[, mean_vol:= mean(volume), by = date]
 
-
-
-
-
-
-
 plot(date_demand[year(date)==yr &  wday(date)  %in% c(1) &hour %in%12,volume, keyby = date], col = 'black', ylim = c(30000, 65000), pch = 16, cex= 0.6, type = 'l')
 
 #Reason for including weekday-term 
@@ -1166,12 +1164,9 @@ for (i in 2:7){
 
 ```
 
-#
-By lead time
 
 What quality of the PCA are we leveraging
 
-Comparing with 10 training years 
 
 # permutation test
 ```{r}
