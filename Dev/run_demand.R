@@ -103,6 +103,49 @@ save(mean_m_m, file = 'mean_m_m.Rda')
 #     save(list = c(paste0("Custom_comb",i, "_int_m_m")), file = paste0("Custom_comb",i, "_int_m_m",'.Rda'))
 # }
 
+mod_list = c(50, 60, 70, 80, 90,95,97,100, 102, 105, 107,110, 120, 130, 140, 150)
+
+for (nr_rounds in mod_list){
+    xgb_func = function(dt_train, X_mat, m){
+        dt_train = dt_train[,.(volume, hour, month, year, season, week, w_day)]
+        dt_train$hour = factor(dt_train$hour)
+        dt_train$w_day = factor(dt_train$w_day)
+        dt_train$week = factor(dt_train$week)
+        dt_train$month = factor(dt_train$month)
+        dt_train$season = factor(dt_train$season)
+        dt_mod_train = scale(model.matrix(~ . - 1, data = dt_train))
+        xgb_dat = data.table(dt_mod_train, X_mat)
+        #xgb_train = xgb.DMatrix(data = xgb_dat[,-c(2)], label = xgb_dat[,2])
+        #xgb_test = xgb.DMatrix(data = dt_test[,-c(2)], label = dt_test[,2])
+
+        Y_inp = as.matrix(xgb_dat[,volume])
+        X_inp = as.matrix(xgb_dat[, .SD, .SDcols = -'volume'])
+
+        mod_xgb = xgboost(data = X_inp,
+                          label = Y_inp,
+                          max.depth = 2,
+                          eta = 1,
+                          nthread = 1,
+                          verbose = 0,
+                          nrounds = nr_rounds,
+                          objective = "reg:squarederror")
+        print("Done")
+        return(mod_xgb)
+    }
+    func_name = paste0('xgb',nr_rounds)
+    assign(func_name, xgb_func)
+    # print(func_name)
+    # print(get(func_name))
+    mod = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01',
+                          pred_win = 30, pred_lag = 15, train_y = 5, p_comps = 0,  no_pc = TRUE, other_mods = paste0('xgb',nr_rounds),
+                          custom = FALSE,
+                          cores = 48, reg_form = "volume~1")
+    mod_name = paste0('XGB_mod',nr_rounds)
+    assign(mod_name, mod)
+    print('##############################################################################################################')
+    print(get(mod_name)$Results[,sqrt(mean((volume-pred_2)^2))])
+}
+
 
 XGB_mod105 = demand_forecast(X_mat, date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01',
                              pred_win = 30, pred_lag = 15, train_y = 5, p_comps = 0,  no_pc = TRUE, other_mods = "xgb105",
