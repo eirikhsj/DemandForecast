@@ -982,6 +982,32 @@ abline(h = coef(lin_mod)[1])
 #Mrg[lead_time==361, sum(RMSE_train_3*N_train_1)/ sum(N_train_1)]d
 ```
 
+```{r}
+
+ggplot(data = setnames(data.table(x, 
+                                  y1 = as.numeric(as.list(y1)), 
+                                  y2,
+                                  Int1 = as.numeric(as.list(Factor10_inter1$Results[, lapply(.SD, function(x) sqrt(mean((volume - x)^2, na.rm=TRUE))), .SDcols = test_pc])), 
+                                Int2 = as.numeric(as.list(Factor10_inter2$Results[, lapply(.SD, function(x) sqrt(mean((volume - x)^2, na.rm=TRUE))), .SDcols = test_pc])), 
+       Int4= as.numeric(as.list(Factor10_inter4$Results[, lapply(.SD, function(x) sqrt(mean((volume - x)^2, na.rm=TRUE))), .SDcols = test_pc]))),
+                       old="V2", new="y1", skip_absent=TRUE),aes(x))+
+    geom_line(aes(y = y1, color = "line1", shape = "line1"), linetype = "solid") +
+    geom_point(aes(y = y1,color = "line1", shape = "line1"))+
+    geom_line(aes(y = y2,color = "line2", shape = "line1")) +
+    geom_point(aes(y = y2,color = "line2", shape = "line1"))+
+    geom_line(aes(y = Int1,color = "line3", shape = "line1")) +
+    geom_point(aes(y = Int1,color = "line3", shape = "line1"))+
+geom_line(aes(y = Int2,color = "line4", shape = "line1")) +
+    geom_point(aes(y = Int2,color = "line4", shape = "line1"))+
+geom_line(aes(y = Int4,color = "line5", shape = "line1")) +
+    geom_point(aes(y = Int4,color = "line5", shape = "line1"))+
+    scale_color_manual(values = c("line1" = "red", "line2" = "black", "line3" = "grey", "line4" = "grey","line5" = "grey")) +
+    scale_shape_manual(values = c("line1" = 16, "line2" = 16, "line3" = 16, "line4" = 16))+
+    
+    theme(legend.position = c(0.90, 0.20), legend.key.size = unit(0.3, "cm"))+
+    labs(color = "Aggregation \n Interval :", x = "Number of Factor Loadings in Model", y = "RMSE",title = "Training and Test Errors", subtitle = "2016-01:2023-01", shape = "Group", linetype = "Group")
+
+```
 
 
 
@@ -1170,43 +1196,52 @@ What quality of the PCA are we leveraging
 
 # permutation test
 ```{r}
-# group1 = Factor10_inter3$Results[(volume - pred_3)^2]
-# group2 = Climatology$Results[,(clima_pred - volume)^2]
+ 
 # group1 = Factor10_inter3$Results[sample(1:60000, 100),(volume - pred_3)^2]
 # group2 = Climatology$Results[sample(1:60000, 100),(clima_pred - volume)^2]
-group1 = Custom_comb6$Results[,(volume - pred_2)^2]
-group2 = Custom_comb1$Results[,(volume - pred_2)^2]
+#group1 = Custom_comb6$Results[,(volume - pred_2)^2]
+#group2 = Custom_comb1$Results[,(volume - pred_2)^2]
 
 # group1 = Factor10_inter3$Result[,(volume - pred_1)^2]
 # group2 = Custom_comb1$Results[,(volume - pred_1)^2]
 # group1 = Factor10_inter3$Result[,(volume - pred_2)^2]
 # group2 = mean_w_m$Results[,(volume - pred_2)^2]
 
-# Define test statistic 
-test_stat = function(x, y) {
-  return(1 - mean(x)/mean(y))
+perm_test = function(group1, group2, N){
+    # Define test statistic 
+    test_stat = function(x, y) {
+      return(1 - mean(x)/mean(y))
+    }
+    
+    # Observed test statistic
+    observed = test_stat(group1, group2)
+    
+    # Create null distribution by permuting data
+    n_permutations = N
+    n_obs = length(group1)
+    H0 = replicate(n_permutations, {
+      combined = sample(c(group1, group2))
+      test_stat(combined[1:n_obs], combined[(n_obs + 1):(n_obs*2)])
+    })
+    
+    # Calculate p-value
+    p_value = sum(H0 >= observed) / n_permutations
+    
+    # Print results
+    cat("Observed test statistic:", observed, "\n")
+    cat("P-value:", p_value, "\n")
 }
 
-# Observed test statistic
-observed = test_stat(group1, group2)
-
-# Create null distribution by permuting data
-n_permutations = 1000
-n_obs = length(group1)
-H0 = replicate(n_permutations, {
-  combined = sample(c(group1, group2))
-  test_stat(combined[1:n_obs], combined[(n_obs + 1):(n_obs*2)])
-})
-
-# Calculate p-value
-p_value = sum(H0 >= observed) / n_permutations
-
-# Print results
-cat("Observed test statistic:", observed, "\n")
-cat("P-value:", p_value, "\n")
-
-
-
+group1 = Factor10_inter3$Results[,(volume - pred_3)^2]
+group2 = Climatology$Results[,(clima_pred - volume)^2]
+perm_test(group1,group2, 10000)
+#Observed test statistic: 0.5873277 
+#P-value: 0 
+group1 = Factor10_inter3$Results[,(volume - pred_3)^2]
+group2 = Factor10_inter3$Results[,(volume - pred_2)^2]
+perm_test(group1,group2, 10000)
+#Observed test statistic: 0.07941795 
+#P-value: 0 
 ```
 
 ### Month based
@@ -1247,6 +1282,20 @@ p_value = sum(H0 >= observed) / n_permutations
 # Print results
 cat("Observed test statistic:", observed, "\n")
 cat("P-value:", p_value, "\n")
+
+
+```
+
+XGB results
+```{r}
+# temp model 
+xgb_plot_temp = data.table(x = c(seq(1,9,1),seq(11,19,1),seq(10,150,10)), y =c(5379.419,5364.76,5318.158, 5230.371, 5223.17,5184.36, 5187.322, 5184.764, 5178.919,           5178.565,  5202.314, 5191.432,5198.115, 5208.381, 5211.138, 5229.498,  5217.52, 5215.932,  5223.368,   5218.326, 5255.646, 5286.704,5321.16,5340.85,5352.132,5374.445,5408.779, 5453.534,5475.457,5493.994,5520.439, 5543.879, 5563.307))
+
+#Factor model 
+xgplot = data.table(x = c(seq(50,150,10), seq(110,130,2), seq(111,129,2)), y = c(2758.416, 2731.099,2726.698, 2714.088, 2709.586, 2702.680,  2702.089, 2694.412, 2699.621,2716.644,2720.517, 2702.089, 2701.79, 2698.499, 2698.558,  2694.426, 2694.412, 2699.946, 2695.869,2698.616,2699.452,2699.621,     2705.609, 2700.882, 2693.071, 2696.202, 2698.113, 2697.815 ,2700.821,2697.841, 2698.301,2699.779))
+
+#Interaction model 
+xgb_plot_inter= data.table(x = c(seq(50,210,10)), y =c(4378.800, 4296.207,4197.691,4119.729,4055.193, 3979.32, 3913.073,3865.859, 3799.318,3763.141,3723.93,3688.609,3666.719, 3636.711,  3619.922,3615.032, 3590.712)) 
 
 
 ```
