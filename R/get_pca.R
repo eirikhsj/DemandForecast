@@ -36,7 +36,9 @@ get_pca = function(X_mat, I_train, I_test, p_comps, NWP=NA,  U = NA, mu = NA){
         ##---- Perform the SVD ---
         Sigma = t(X_center) %*% X_center
         l_svd = svd(Sigma)
+        # l_svd = svd(X_center)
         U = l_svd$u[, 1:p_comps]
+        print(U[1:20])
         ##--- Get the factor loadings for training dataset---
         Fact_train = X_center %*% U
         colnames(Fact_train) = paste0("PC", 1:dim(data.frame(U))[2])

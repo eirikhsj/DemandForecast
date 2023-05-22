@@ -140,7 +140,7 @@ wquantile.generic <- function(x, probs, cdf.gen, weights = NA) {
     x = x[indexes]
     weights = weights[indexes]
 
-    weights = weights / sum(weights)
+    weights = weights / sum(weights) #Ensure normal (ours are already)
     cdf.probs = cumsum(c(0, weights))
 
     sapply(probs, function(p) {

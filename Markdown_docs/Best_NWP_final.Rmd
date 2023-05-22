@@ -162,11 +162,12 @@ dev.off()
 
 pdf("/Users/Eirik/Desktop/Master2023/ExportedPlots/ACF_Clima.pdf", height = 7, width = 9, pointsize = 12)
 
-ggacf_plot = ggAcf(Clima[160:500, mean(pinball_loss(0.9, get(paste0("clima_pred",90)), PC1)), keyby = lead_time][,V1], lag.max = 250)+
-labs(title = "Autocorrelation Function for Climatology model (q = 0.9)",
+ggacf_plot = ggAcf(Clima[1:500, mean(pinball_loss(0.9, get(paste0("clima_pred",90)), PC1)), keyby = lead_time][,V1], lag.max = 250)+
+labs(title = "ACF of Pinball Loss for Climatology model (0.9-quantile)",
+     subtitle = "Taken over n = 95732 test observations (2007-01: 2023:01)",
        x = "Lags (6-hour intervals)",
-       y = "ACF") 
-  #theme_bw() +
+       y = "ACF") +
+  theme_bw() 
         #scale_x_continuous(breaks=seq(0, 60, by = 10)*4,labels=c(0,5,10,15, 20,25,30))+
 
   # theme(plot.title = element_text(hjust = 0.5),
@@ -260,7 +261,9 @@ ggplot() +
     #geom_line(data = plot_dat[hour == 6],  color = 'red',aes(x = x, y = NWP_PC1_q80))+
     geom_line(data = plot_dat[hour == 6],  color = 'red',aes(x = x, y = NWP_PC1_q90))+
     geom_line(data = plot_dat2[hour == 6],  color = 'black',aes(x = x, y = PC1))+
-      labs(title = "Predictive Distributions for NWP and Climatology (Winter 13/14)", x = "Date", y = "Factor Loading Value") +
+      labs(title = "Predictive Distributions for NWP and Climatology (Winter 13/14)", 
+           subtitle = "", 
+           x = "Date (2013/14)", y = "Factor Loading Value") +
     scale_x_date(date_labels = "%b-%d", breaks= c(as.Date('2013-11-01'), as.Date('2013-11-15'), as.Date('2013-12-01'), as.Date('2013-12-15'), as.Date('2014-01-01'), as.Date('2014-01-15'), as.Date('2014-02-01'), as.Date('2014-02-15'),as.Date('2014-03-01'),as.Date('2014-03-15')))+
     scale_color_manual(values = c("Line 1" = "red", "Line 2" = "blue"),
                      labels = c("Line 1", "Line 2")) +
@@ -294,7 +297,9 @@ ggplot() +
     #geom_line(data = plot_dat[hour == 6],  color = 'red',aes(x = x, y = NWP_PC1_q80))+
     geom_line(data = plot_dat[hour == 6],  color = 'red',aes(x = x, y = NWP_PC1_q90))+
     geom_line(data = plot_dat2[hour == 6],  color = 'black',aes(x = x, y = PC1))+
-      labs(title = "Predictive Distributions for NWP and Climatology (Winter 13/14)", x = "Date", y = "Factor Loading Value") +
+      labs(title = "Predictive Distributions for NWP and Climatology (Winter 13/14)", 
+           subtitle = "", 
+           x = "Date (2013/14)", y = "Factor Loading Value") +
     scale_x_date(date_labels = "%b-%d", breaks= c(as.Date('2013-11-01'), as.Date('2013-11-15'), as.Date('2013-12-01'), as.Date('2013-12-15'), as.Date('2014-01-01'), as.Date('2014-01-15'), as.Date('2014-02-01'), as.Date('2014-02-15'),as.Date('2014-03-01'),as.Date('2014-03-15')))+
     scale_color_manual(values = c("Line 1" = "red", "Line 2" = "blue"),
                      labels = c("Line 1", "Line 2")) +
@@ -746,6 +751,7 @@ Interval_Mod_9_125_NWP1_4day = rolling_mod_NWP_interval('2007-01-01', '2023-01-3
 Interval_Mod_9_125_NWP1_8day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1+ NWP1_90', interval_k = 8*4)
 Interval_Mod_9_125_NWP1_16day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP,  model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1+ NWP1_90', interval_k = 16*4)
 Interval_Mod_9_125_NWP1_32day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP,  model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1+ NWP1_90', interval_k = 32*4)
+Interval_Mod_9_125_NWP1_64day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP,  model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1+ NWP1_90', interval_k = 64*4, coef_to_print = c("NWP1_90"))
 Interval_Mod_9_125_NWP1_125day = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP,  model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ -1+ NWP1_90', interval_k = 125*4)
 
 save(Interval_Mod_9_125_NWP1_1day, file = "Interval_Mod_9_125_NWP1_1day.Rda")
@@ -784,26 +790,63 @@ Interval_Mod_5_125_NWP1_125day = rolling_mod_NWP_interval('2007-01-01', '2023-01
 
 ```{r}
 #Interval_Mod_9_64_1_2$Results[, mean_coef_1 := mean(coef_NWP1_90), by = lead_time]
-pdf("/Users/Eirik/Desktop/Master2023/ExportedPlots/BetaNWP1_2.pdf", height = 7, width = 7, pointsize = 12)
+pdf("/Users/Eirik/Desktop/Master2023/ExportedPlots/BetaNWP1_2.pdf", height = 7, width = 7, pointsize = 24)
 
 plot_beta2 <- ggplot() +
-    geom_line(data = Interval_Mod_9_16_1_2$Results[lead_time<380,  mean(coef_NWP1_90), by = lead_time], aes(x = lead_time, y = V1, col = 'NWP1 - 16 Days'),alpha = 1)+
-    geom_line(data = Interval_Mod_9_32_1_2$Results[lead_time<380,  mean(coef_NWP1_90), by = lead_time], aes(x = lead_time, y = V1, col = 'NWP1 - 32 Days'),alpha = 1)+
-    geom_line(data = Interval_Mod_9_64_1_2$Results[lead_time<380, mean(coef_NWP1_90), by = lead_time], aes(x = lead_time, y = V1, col = 'NWP1 - 64 Days'),alpha = 1)+
-    geom_line(data = Interval_Mod_9_125_1_2$Results[lead_time<380,  mean(coef_NWP1_90), by = lead_time], aes(x = lead_time, y = V1, col = 'NWP1 - 125 Days'),alpha = 1)+
-    geom_line(data = Interval_Mod_9_16_1_2$Results[lead_time<380, mean(coef_NWP2_90), by = lead_time], aes(x = lead_time, y = V1, col = 'NWP2 - 16 Days'),alpha = 1,linetype=2)+
-    geom_line(data = Interval_Mod_9_32_1_2$Results[lead_time<380,  mean(coef_NWP2_90), by = lead_time], aes(x = lead_time, y = V1, col = 'NWP2 - 32 Days'),alpha = 1,linetype=3)+
-    geom_line(data = Interval_Mod_9_64_1_2$Results[lead_time<380, mean(coef_NWP2_90), by = lead_time], aes(x = lead_time, y = V1, col = 'NWP2 - 64 Days'),alpha = 1,linetype=2)+
-    geom_line(data = Interval_Mod_9_125_1_2$Results[lead_time<380,  mean(coef_NWP2_90), by = lead_time], aes(x = lead_time, y = V1, col = 'NWP2 - 125 Days'),alpha = 1,linetype=2)+
+    geom_line(data = Interval_Mod_9_2_1_2$Results[lead_time<369,  mean(coef_NWP1_90), by = lead_time], aes(x = lead_time, y = V1, col = '2 Days'),alpha = 1)+
+        geom_line(data = Interval_Mod_9_4_1_2$Results[lead_time<369,  mean(coef_NWP1_90), by = lead_time], aes(x = lead_time, y = V1, col = '4 Days'),alpha = 1)+
+    geom_line(data = Interval_Mod_9_8_1_2$Results[lead_time<369,  mean(coef_NWP1_90), by = lead_time], aes(x = lead_time, y = V1, col = '8 Days'),alpha = 1)+
+    geom_line(data = Interval_Mod_9_16_1_2$Results[lead_time<369,  mean(coef_NWP1_90), by = lead_time], aes(x = lead_time, y = V1, col = '16 Days'),alpha = 1)+
+    geom_line(data = Interval_Mod_9_32_1_2$Results[lead_time<369,  mean(coef_NWP1_90), by = lead_time], aes(x = lead_time, y = V1, col = '32 Days'),alpha = 1)+
+    # geom_line(data = Interval_Mod_9_64_1_2$Results[lead_time<369, mean(coef_NWP1_90), by = lead_time], aes(x = lead_time, y = V1, col = '64 Days'),alpha = 1)+
+    geom_line(data = Interval_Mod_9_125_1_2$Results[lead_time<369,  mean(coef_NWP1_90), by = lead_time], aes(x = lead_time, y = V1, col = '97 Days'),alpha = 1)+
+    geom_hline(yintercept = 1, size = 0.3, linetype = 2)+
+    geom_hline(yintercept = 0, size = 0.3)+
 
-    ylim(-0.1,1.1)+
-      theme(legend.position = c(0.90, 0.50), legend.key.size = unit(0.15, "cm")) +  
+      theme(legend.position = c(0.15, 0.20), legend.key.size = unit(0.53, "cm"),
+            legend.box.background = element_rect(color = "black", size = 0.75),
+            legend.key = element_rect(fill = "transparent"),
+            #axis.line = element_line(colour = "black", size = 0.5)
+            panel.border = element_rect(colour = "black", fill = NA, size = 1),
+            panel.background = element_rect(fill = "white", color = "black"),
+        plot.margin = unit(c(1, 1, 1, 1), "cm")
+          )  +  
     scale_x_continuous(breaks=seq(0, 95, by = 10)*4,labels=seq(0, 95, by = 10))+
-    scale_y_continuous(breaks=seq(0, 1, by = 0.2),labels=seq(0, 1, by = 0.2))+
-    labs(color = "Model Coefficients :", x = "Lead Time (Days)", y = "Coefficient Value",title = expression(beta *  " -coefficient for NWP1 + NWP2 -models over different training intervals"), subtitle = "")+
-    scale_color_manual(values = c('NWP1 - 16 Days' = "#90BE6D", 'NWP1 - 32 Days' = "#F94144", 'NWP1 - 64 Days' = 'blue', 'NWP1 - 125 Days' ="#F15BB5",'NWP2 - 16 Days' = "#90BE6D", 'NWP2 - 32 Days' = "#F94144", 'NWP2 - 64 Days' = 'blue', 'NWP2 - 125 Days' ="#F15BB5"))
+    scale_y_continuous(limits = c(-0.55, 1.55), breaks = seq(-0.4, 1.4, 0.2))+
+    labs(color = "Training Interval:", x = "Lead Time (Days)", y = "Coefficient Value",title = expression(beta[1] *  "-coefficients for NWP1 in Model (7.8)"))+
+    # scale_color_manual(values = c('4 Days' = "#40E0D0",'8 Days' = "#FDC086", '16 Days' = "#FFFF99", '32 Days' = '#386CB0', '64 Days' = '#F0027F','97 Days' ="orange"))
+scale_color_manual(values = c('2 Days' = "#40E0D0", '4 Days' = "#800080",'8 Days' = "orange", '16 Days' = "#00FF00", '32 Days' = '#0000FF', '97 Days' ="#FF0000"))
 plot_beta2
 dev.off()
+
+pdf("/Users/Eirik/Desktop/Master2023/ExportedPlots/BetaNWP1_2_2.pdf", height = 7, width = 7, pointsize = 24)
+
+plot_beta22 = ggplot() +
+    geom_hline(yintercept = 0, linetype = 1, size = 0.3)+
+    geom_hline(yintercept = 1, linetype = 2, size = 0.3)+
+        geom_line(data = Interval_Mod_9_2_1_2$Results[lead_time<369,  mean(coef_NWP2_90, na.rm = TRUE), by = lead_time], aes(x = lead_time, y = V1, col = '2 Days'),alpha = 1)+
+    geom_line(data = Interval_Mod_9_4_1_2$Results[lead_time<369,  mean(coef_NWP2_90,na.rm = TRUE), by = lead_time], aes(x = lead_time, y = V1, col = '4 Days'),alpha = 1)+
+    geom_line(data = Interval_Mod_9_8_1_2$Results[lead_time<369,  mean(coef_NWP2_90), by = lead_time], aes(x = lead_time, y = V1, col = '8 Days'),alpha = 1,linetype=1)+
+    geom_line(data = Interval_Mod_9_16_1_2$Results[lead_time<369, mean(coef_NWP2_90), by = lead_time], aes(x = lead_time, y = V1, col = '16 Days'),alpha = 1,linetype=1)+
+    geom_line(data = Interval_Mod_9_32_1_2$Results[lead_time<369,  mean(coef_NWP2_90), by = lead_time], aes(x = lead_time, y = V1, col = '32 Days'),alpha = 1,linetype=1)+
+    # geom_line(data = Interval_Mod_9_64_1_2$Results[lead_time<369, mean(coef_NWP2_90), by = lead_time], aes(x = lead_time, y = V1, col = '64 Days'),alpha = 1,linetype=1)+
+    geom_line(data = Interval_Mod_9_125_1_2$Results[lead_time<369,  mean(coef_NWP2_90), by = lead_time], aes(x = lead_time, y = V1, col = '97 Days'),alpha = 1,linetype=1)+
+      theme(legend.position = c(0.15, 0.82), legend.key.size = unit(0.53, "cm"),
+            legend.box.background = element_rect(color = "black", size = 0.75),
+            legend.key = element_rect(fill = "transparent"),
+            #axis.line = element_line(colour = "black", size = 0.5),
+            panel.border = element_rect(colour = "black", fill = NA, size = 1),
+            panel.background = element_rect(fill = "white", color = "black"),
+        plot.margin = unit(c(1, 1, 1, 1), "cm")
+          )  +  
+    scale_x_continuous(breaks=seq(0, 95, by = 10)*4,labels=seq(0, 95, by = 10))+
+    scale_y_continuous(limits = c(-0.5, 1.5), breaks = seq(-0.4, 1.4, 0.2))+
+    labs(color = "Training Interval:", x = "Lead Time (Days)", y = "Coefficient Value",title = expression(beta[2] *  "-coefficients for NWP2 in Model (7.8)"))+
+    # scale_color_manual(values = c('4 Days' = "#40E0D0",'8 Days' = "#FDC086", '16 Days' = "#FFFF99", '32 Days' = '#386CB0', '64 Days' = '#F0027F','97 Days' ="orange"))
+scale_color_manual(values = c('2 Days' = "#40E0D0", '4 Days' = "#800080",'8 Days' = "orange", '16 Days' = "#00FF00", '32 Days' = '#0000FF', '97 Days' ="#FF0000"))
+plot_beta22
+dev.off()
+
 ```
 
 
@@ -822,6 +865,102 @@ lines(Interval_Mod_9_125_NWP1_125day$Results[, mean(coef_NWP1_90), by = lead_tim
 abline(h = 1)
 legend("topleft", lty = 1, title = "Training Interval:", cex = 0.7, pch = 16, col = c(5,8, 2, 3, 4,6, 'red'), legend = c("1 day", "2 days", "4 days","8 days", "16 days", "32 days", "125 days"))
 #dev.off()
+
+#gg-versioon
+pdf("/Users/Eirik/Desktop/Master2023/ExportedPlots/BetaNWPcomp1.pdf", height = 7, width = 7, pointsize = 24)
+plot_beta1 = ggplot() +
+    geom_hline(yintercept = 1, linetype = 2, size = 0.3)+
+    geom_line(data = Interval_Mod_9_125_NWP1_2day$Results[, mean(coef_NWP1_90), by = lead_time], aes(x = lead_time, y = V1, col = '2 Days'),alpha = 1,linetype=1)+
+    geom_line(data = Interval_Mod_9_125_NWP1_4day$Results[, mean(coef_NWP1_90), by = lead_time], aes(x = lead_time, y = V1, col = '4 Days'),alpha = 1,linetype=1)+
+    geom_line(data = Interval_Mod_9_125_NWP1_8day$Results[, mean(coef_NWP1_90), by = lead_time], aes(x = lead_time, y = V1, col = '8 Days'),alpha = 1,linetype=1)+
+    geom_line(data = Interval_Mod_9_125_NWP1_16day$Results[, mean(coef_NWP1_90), by = lead_time], aes(x = lead_time, y = V1, col = '16 Days'),alpha = 1,linetype=1)+
+    geom_line(data = Interval_Mod_9_125_NWP1_32day$Results[, mean(coef_NWP1_90), by = lead_time], aes(x = lead_time, y = V1, col = '32 Days'),alpha = 1,linetype=1)+
+    # geom_line(data = Interval_Mod_9_125_NWP1_64day$Results[, mean(coef_NWP1_90), by = lead_time], aes(x = lead_time, y = V1, col = '64 Days'),alpha = 1,linetype=1)+
+    geom_line(data = Interval_Mod_9_125_NWP1_125day$Results[, mean(coef_NWP1_90), by = lead_time], aes(x = lead_time, y = V1, col = '125 Days'),alpha = 1,linetype=1)+
+      theme(legend.position = c(0.15, 0.20), legend.key.size = unit(0.53, "cm"),
+            legend.key = element_rect(fill = "transparent"),
+            legend.box.background = element_rect(color = "black", size = 0.75),
+            panel.border = element_rect(colour = "black", fill = NA, size = 1),
+            panel.background = element_rect(fill = "white", color = "black"),
+        plot.margin = unit(c(1, 1, 1, 1), "cm")
+          )  +  
+    scale_x_continuous(breaks=seq(0, 120, by = 10)*4,labels=seq(0, 120, by = 10))+
+    scale_y_continuous(limits = c(0.944, 1.056), breaks = seq(-0.2, 1.2, 0.025))+
+    labs(color = "Training Interval:", x = "Lead Time (Days)", y = "Coefficient Value",title = expression(beta[1] * "-Coefficients for NWP1 in Model (7.4) at 0.9-quantile"))+
+scale_color_manual(values = c('2 Days' = "#40E0D0", '4 Days' = "#800080",'8 Days' = "orange", '16 Days' = "#00FF00", '32 Days' = '#0000FF', '125 Days' ="#FF0000"))
+plot_beta1
+dev.off()
+
+
+pdf("/Users/Eirik/Desktop/Master2023/ExportedPlots/BetaNWPcomp1_05.pdf", height = 7, width = 7, pointsize = 24)
+plot_beta_05 = ggplot() +
+    geom_hline(yintercept = 1, linetype = 2, size = 0.3)+
+    geom_line(data = Interval_Mod_5_125_NWP1_2day$Results[, mean(coef_NWP1_50), by = lead_time], aes(x = lead_time, y = V1, col = '2 Days'),alpha = 1,linetype=1)+
+    geom_line(data = Interval_Mod_5_125_NWP1_4day$Results[, mean(coef_NWP1_50), by = lead_time], aes(x = lead_time, y = V1, col = '4 Days'),alpha = 1,linetype=1)+
+    geom_line(data = Interval_Mod_5_125_NWP1_8day$Results[, mean(coef_NWP1_50), by = lead_time], aes(x = lead_time, y = V1, col = '8 Days'),alpha = 1,linetype=1)+
+    geom_line(data = Interval_Mod_5_125_NWP1_16day$Results[, mean(coef_NWP1_50), by = lead_time], aes(x = lead_time, y = V1, col = '16 Days'),alpha = 1,linetype=1)+
+    geom_line(data = Interval_Mod_5_125_NWP1_32day$Results[, mean(coef_NWP1_50), by = lead_time], aes(x = lead_time, y = V1, col = '32 Days'),alpha = 1,linetype=1)+
+    # geom_line(data = Interval_Mod_5_125_NWP1_64day$Results[, mean(coef_NWP1_50), by = lead_time], aes(x = lead_time, y = V1, col = 'NWP2 - 64 Days'),alpha = 1,linetype=1)+
+    geom_line(data = Interval_Mod_5_125_NWP1_125day$Results[, mean(coef_NWP1_50), by = lead_time], aes(x = lead_time, y = V1, col = '125 Days'),alpha = 1,linetype=1)+
+      theme(legend.position = c(0.15, 0.80), legend.key.size = unit(0.53, "cm"),
+            legend.key = element_rect(fill = "transparent"),
+            legend.box.background = element_rect(color = "black", size = 0.75),
+            panel.border = element_rect(colour = "black", fill = NA, size = 1),
+            panel.background = element_rect(fill = "white", color = "black"),
+        plot.margin = unit(c(1, 1, 1, 1), "cm")
+          )  +  
+    scale_x_continuous(breaks=seq(0, 120, by = 10)*4,labels=seq(0, 120, by = 10))+
+    scale_y_continuous(limits = c(0.944, 1.056), breaks = seq(-0.2, 1.2, 0.025))+
+    labs(color = "Training Interval:", x = "Lead Time (Days)", y = "Coefficient Value",title = expression(beta[1] * "-Coefficients for NWP1 in Model (7.4) at 0.5-quantile"))+
+scale_color_manual(values = c('2 Days' = "#40E0D0", '4 Days' = "#377EB8",'8 Days' = "orange", '16 Days' = "#00FF00", '32 Days' = '#0000FF', '125 Days' ="#FF0000"))
+plot_beta_05
+dev.off()
+# 
+# pdf("/Users/Eirik/Desktop/Master2023/ExportedPlots/BetaNWPint_2.pdf", height = 7, width = 7, pointsize = 12)
+# plot_beta22 = ggplot() +
+#     geom_hline(yintercept = 0, linetype = 1, size = 0.3)+
+#     geom_hline(yintercept = 1, linetype = 1, size = 0.3)+
+#     geom_line(data = Interval_Mod_9_8_hs_1_2$Results[lead_time<380,  mean(coef_NWP2_90), by = lead_time], aes(x = lead_time, y = V1, col = '8 Days'),alpha = 1,linetype=1)+
+#     geom_line(data = Interval_Mod_9_16_hs_1_2$Results[lead_time<380, mean(coef_NWP2_90), by = lead_time], aes(x = lead_time, y = V1, col = '16 Days'),alpha = 1,linetype=1)+
+#     geom_line(data = Interval_Mod_9_32_hs_1_2$Results[lead_time<380,  mean(coef_NWP2_90), by = lead_time], aes(x = lead_time, y = V1, col = '32 Days'),alpha = 1,linetype=1)+
+#     geom_line(data = Interval_Mod_9_64_hs_1_2$Results[lead_time<380, mean(coef_NWP2_90), by = lead_time], aes(x = lead_time, y = V1, col = '64 Days'),alpha = 1,linetype=1)+
+#     geom_line(data = Interval_Mod_9_125_hs_1_2$Results[lead_time<380,  mean(coef_NWP2_90), by = lead_time], aes(x = lead_time, y = V1, col = '97 Days'),alpha = 1,linetype=1)+
+#       theme(legend.position = c(0.20, 0.65), legend.key.size = unit(0.4, "cm"),  
+#             #axis.line = element_line(colour = "black", size = 0.5)
+#             panel.border = element_rect(colour = "black", fill = NA, size = 1),
+#             panel.background = element_rect(fill = "white", color = "black"),
+#         plot.margin = unit(c(1, 1, 1, 1), "cm")
+#           )  +  
+#     scale_x_continuous(breaks=seq(0, 95, by = 10)*4,labels=seq(0, 95, by = 10))+
+#     scale_y_continuous(limits = c(-0.2, 1.2), breaks = seq(-0.2, 1.2, 0.2))+
+#     labs(color = "Training Interval:", x = "Lead Time (Days)", y = "Coefficient Value",title = expression( beta[2] *  "-coefficients for NWP2 in Model (7.8)"))+
+#     scale_color_manual(values = c('8 Days' = "red", '16 Days' = "purple", '32 Days' = 'blue', '64 Days' = 'pink','97 Days' ="orange"))
+# plot_beta22
+# dev.off()
+# 
+# pdf("/Users/Eirik/Desktop/Master2023/ExportedPlots/BetaNWPint_2.pdf", height = 7, width = 7, pointsize = 12)
+# plot_beta_int2 = ggplot() +
+#     geom_hline(yintercept = 0, linetype = 1, size = 0.3)+
+#     geom_hline(yintercept = 1, linetype = 1, size = 0.3)+
+#     geom_line(data = Interval_Mod_9_8_hs_1_2$Results[lead_time<380,  mean(coef_NWP1_90), by = lead_time], aes(x = lead_time, y = V1, col = '8 Days'),alpha = 1,linetype=1)+
+#     geom_line(data = Interval_Mod_9_16_hs_1_2$Results[lead_time<380, mean(coef_NWP1_90), by = lead_time], aes(x = lead_time, y = V1, col = '16 Days'),alpha = 1,linetype=1)+
+#     geom_line(data = Interval_Mod_9_32_hs_1_2$Results[lead_time<380,  mean(coef_NWP1_90), by = lead_time], aes(x = lead_time, y = V1, col = '32 Days'),alpha = 1,linetype=1)+
+#     geom_line(data = Interval_Mod_9_64_hs_1_2$Results[lead_time<380, mean(coef_NWP1_90), by = lead_time], aes(x = lead_time, y = V1, col = '64 Days'),alpha = 1,linetype=1)+
+#     geom_line(data = Interval_Mod_9_125_hs_1_2$Results[lead_time<380,  mean(coef_NWP1_90), by = lead_time], aes(x = lead_time, y = V1, col = '97 Days'),alpha = 1,linetype=1)+
+#       theme(legend.position = c(0.20, 0.65), legend.key.size = unit(0.4, "cm"),  
+#             #axis.line = element_line(colour = "black", size = 0.5)
+#             panel.border = element_rect(colour = "black", fill = NA, size = 1),
+#             panel.background = element_rect(fill = "white", color = "black"),
+#         plot.margin = unit(c(1, 1, 1, 1), "cm")
+#           )  +  
+#     scale_x_continuous(breaks=seq(0, 95, by = 10)*4,labels=seq(0, 95, by = 10))+
+#     scale_y_continuous(limits = c(-0.2, 1.2), breaks = seq(-0.2, 1.2, 0.2))+
+#     labs(color = "Training Interval:", x = "Lead Time (Days)", y = "Coefficient Value",title = expression( beta[1] *  "-coefficients for NWP1 in Model (7.11)"))+
+#     scale_color_manual(values = c('8 Days' = "red", '16 Days' = "purple", '32 Days' = 'blue', '64 Days' = 'pink','97 Days' ="orange"))
+# plot_beta_int2
+# dev.off()
+
+
 ```
 
 ```{r}
@@ -856,8 +995,8 @@ for (i in c(1,2,4,8,16,32,125)){
 
 ## Plot 0.5 quantile to check for overdisp
 ```{r}
-plot(Interval_Mod_5_125_NWP1_1day$Results[, mean(coef_NWP1_50), by = lead_time], type = 'l', ylab = expression("NWP " * beta *  " -coefficient"), main = expression(beta *  " -coefficient for NWP-models over different training periods"), xlab = "Lead time", col = 5)
-lines(Interval_Mod_5_125_NWP1_2day$Results[, mean(coef_NWP1_50), by = lead_time], col = 8)
+plot(Interval_Mod_5_125_NWP1_2day$Results[, mean(coef_NWP1_50), by = lead_time], type = 'l', ylab = expression("NWP " * beta *  " -coefficient"), main = expression(beta *  " -coefficient for NWP-models over different training periods"), xlab = "Lead time", col = 5)
+#lines(Interval_Mod_5_125_NWP1_2day$Results[, mean(coef_NWP1_50), by = lead_time], col = 8)
 lines(Interval_Mod_5_125_NWP1_4day$Results[, mean(coef_NWP1_50), by = lead_time], col = 2)
 lines(Interval_Mod_5_125_NWP1_8day$Results[, mean(coef_NWP1_50), by = lead_time], col = 3)
 lines(Interval_Mod_5_125_NWP1_16day$Results[, mean(coef_NWP1_50), by = lead_time], col = 4)
@@ -1096,6 +1235,8 @@ Interval_Mod_9_125_NWP2_125day = rolling_mod_NWP_interval('2007-01-01', '2023-01
 
 # NWP1 + NWP2 + Intercept
 ```{r}
+Interval_Mod_9_4_1_2 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 45, formula  = 'PC1 ~ 1 + NWP1_90 + NWP2_90', interval_k = 4*4, coef_to_print = c("NWP1_90", "NWP2_90"))
+Interval_Mod_9_8_1_2 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 45, formula  = 'PC1 ~ 1 + NWP1_90 + NWP2_90', interval_k = 8*4, coef_to_print = c("NWP1_90", "NWP2_90"))
 Interval_Mod_9_16_1_2 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 3, formula  = 'PC1 ~ 1 + NWP1_90 + NWP2_90', interval_k = 16*4, coef_to_print = c("NWP1_90", "NWP2_90"))
 Interval_Mod_9_32_1_2 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 3, formula  = 'PC1 ~ 1 + NWP1_90 + NWP2_90', interval_k = 32*4, coef_to_print = c("NWP1_90", "NWP2_90"))
 Interval_Mod_9_64_1_2 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 3, formula  = 'PC1 ~ 1 + NWP1_90 + NWP2_90', interval_k = 64*4, coef_to_print = c("NWP1_90", "NWP2_90"))
@@ -1204,7 +1345,6 @@ Interval_Mod_9_125_hw_1_2_spl2 = rolling_mod_NWP_interval('2007-01-01', '2023-01
     Interval_Mod_9_125_hm_1_2_spl = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(month) + cos(2*pi * week/52) + sin(2*pi * week/52) + year+ bs(NWP1_90, df = 3) + NWP2_90 ', interval_k = 125*4)
     
     Interval_Mod_9_125_hm_1_2_spl2 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(month) + cos(2*pi * week/52) + sin(2*pi * week/52) + year+ bs(NWP1_90, df = 3) + bs(NWP2_90, df = 3) ', interval_k = 125*4)
-
 ################## hour:season
 Interval_Mod_9_125_hs_0 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(season) + cos(2*pi * week/52) + sin(2*pi * week/52) + 
                                     cos(2*pi * month/12) + sin(2*pi * month/12)  + year', interval_k = 125*4)
@@ -1213,8 +1353,8 @@ Interval_Mod_9_125_hs_1 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0
 
 # Interval_Mod_9_125_hs_1_spl = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 as.factor(hour)*as.factor(season) + cos(2*pi * week/52) + sin(2*pi * week/52) +
 #                                     cos(2*pi * month/12) + sin(2*pi * month/12)  + year + bs(NWP1_90, df = 3)', interval_k = 125*4)
-Interval_Mod_9_125_hs_1_2 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(season) + cos(2*pi * week/52) + sin(2*pi * week/52) + 
-                                    cos(2*pi * month/12) + sin(2*pi * month/12)  + year+ NWP1_90 + NWP2_90 ', interval_k = 125*4)
+Interval_Mod_9_125_hs_1_2 = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 45, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(season) + cos(2*pi * week/52) + sin(2*pi * week/52) + 
+                                    cos(2*pi * month/12) + sin(2*pi * month/12)  + year+ NWP1_90 + NWP2_90 ', interval_k = 125*4, coef_to_print = c("NWP1_90", "NWP2_90"))
 
 Interval_Mod_9_125_hs_1_2_spl = rolling_mod_NWP_interval('2007-01-01', '2023-01-31', 0.9, ERA_NWP, model = 'qreg', window = 125, cores = 48, formula  = 'PC1 ~ 1 + as.factor(hour)*as.factor(season) + cos(2*pi * week/52) + sin(2*pi * week/52) + 
                                     cos(2*pi * month/12) + sin(2*pi * month/12) + year+ bs(NWP1_90, df = 3) + NWP2_90 ', interval_k = 125*4)

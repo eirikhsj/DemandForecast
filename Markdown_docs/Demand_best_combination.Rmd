@@ -840,7 +840,9 @@ Errorplot_factor_loading = function(data, plot_title = "Train and Test Error (20
     train_pc = paste0('RMSE_train_', 1:total_var)
     test_plot = data[, lapply(.SD, function(x) sqrt(mean((volume - x)^2, na.rm=TRUE))), .SDcols = test_pc]
     #train_plot = data[, lapply(.SD, function(x) mean(x)), .SDcols = train_pc]
-    Mrg = merge(Year1$Results[,.(date, hour, lead_time,N_train_1)], data, by = c("date", "hour", "lead_time"))
+    Mrg = merge(Year1$Results[,.(date, hour, lead_time,N_train_1)], 
+                data, 
+                by = c("date", "hour", "lead_time"))
 
     train_plot = rep(NA, total_var)
     for (i in 1:total_var){
@@ -987,8 +989,8 @@ abline(h = coef(lin_mod)[1])
 ggplot(data = setnames(data.table(x, 
                                   y1 = as.numeric(as.list(y1)), 
                                   y2,
-                                  Int1 = as.numeric(as.list(Factor10_inter1$Results[, lapply(.SD, function(x) sqrt(mean((volume - x)^2, na.rm=TRUE))), .SDcols = test_pc])), 
-                                Int2 = as.numeric(as.list(Factor10_inter2$Results[, lapply(.SD, function(x) sqrt(mean((volume - x)^2, na.rm=TRUE))), .SDcols = test_pc])), 
+                                  , 
+                                , 
        Int4= as.numeric(as.list(Factor10_inter4$Results[, lapply(.SD, function(x) sqrt(mean((volume - x)^2, na.rm=TRUE))), .SDcols = test_pc]))),
                        old="V2", new="y1", skip_absent=TRUE),aes(x))+
     geom_line(aes(y = y1, color = "line1", shape = "line1"), linetype = "solid") +
@@ -1006,7 +1008,39 @@ geom_line(aes(y = Int4,color = "line5", shape = "line1")) +
     
     theme(legend.position = c(0.90, 0.20), legend.key.size = unit(0.3, "cm"))+
     labs(color = "Aggregation \n Interval :", x = "Number of Factor Loadings in Model", y = "RMSE",title = "Training and Test Errors", subtitle = "2016-01:2023-01", shape = "Group", linetype = "Group")
+Int1 = as.numeric(as.list(Factor10_inter1$Results[, lapply(.SD, function(x) sqrt(mean((volume - x)^2, na.rm=TRUE))), .SDcols = test_pc]))
+Int2 = as.numeric(as.list(Factor10_inter2$Results[, lapply(.SD, function(x) sqrt(mean((volume - x)^2, na.rm=TRUE))), .SDcols = test_pc]))
+Int3= as.numeric(as.list(Factor10_inter3$Results[, lapply(.SD, function(x) sqrt(mean((volume - x)^2, na.rm=TRUE))), .SDcols = test_pc]))
+Int4= as.numeric(as.list(Factor10_inter4$Results[, lapply(.SD, function(x) sqrt(mean((volume - x)^2, na.rm=TRUE))), .SDcols = test_pc]))
 
+Mrg = merge(Year1$Results[,.(date, hour, lead_time,N_train_1)], 
+                Factor10_inter3$Results, 
+                by = c("date", "hour", "lead_time"))
+
+    train_plot = rep(NA, total_var)
+    for (i in 1:total_var){
+        vars = c("N_train_1", "lead_time", train_pc[i])
+        Mrg_omit = na.omit(Mrg[,..vars])
+        train_plot[i] = Mrg_omit[lead_time==361,sum(get(train_pc[i])*N_train_1, na.rm = FALSE)/ sum(N_train_1)]
+    }
+
+df <- data.frame(
+    x = rep(1:11, 5)-1,
+    y = c(Int2,Int2,Int3,Int4,train_plot*1.1),
+    group = rep(1:5, each = 11)
+)
+
+ggplot(df, aes(x = x, y = y, color = factor(group))) +
+    geom_line() +
+    geom_point() +
+    labs(color = "Group") +
+    scale_color_manual(values = c("grey", "grey", "red", "grey", "black"),labels = c("A", "A", "Test Error (Best)", "A", "Training Error (Best)")) +
+    theme_classic()+
+    scale_x_discrete(labels = c(0:10))+
+    scale_y_continuous(name = "Test Error (RMSE)",
+                sec.axis = sec_axis(~./1.1, name="Training Error (RMSE)"))+
+    theme(legend.position = c(0.80, 0.80), legend.key.size = unit(0.4, "cm"))+
+    labs(color = "Model:", x = "Number of Factor Loadings in Model", title = "Training and Test Errors", subtitle = "2016-01:2023-01")
 ```
 
 
@@ -1288,6 +1322,110 @@ cat("P-value:", p_value, "\n")
 
 XGB results
 ```{r}
+#alpha = 0
+#factor 
+#eta = 0.5
+# nrounds = seq(10,150,10)
+xgplot_factor = data.table(x = c(seq(10,150,10)), y =c(
+    2871.526,2728.313,2671.439,2645.374,2630.847,2622.644,2618.291,2616.214,2615.470,2615.536,2616.114,2617.001,2618.066,2619.233,2620.455
+)) 
+xgplot_factor_alpha_90 = data.table(x = c(0.5, 1, 3, 4,5,6, 8, 10, 15), y =c(
+    2612.785,2610.705, 2607.154, 2607.743, 2608.678, 2609.875, 2612.061,2613.463,2619.467
+)) 
+xgplot_factor_alpha_3 = data.table(x = c(seq(70,150, 5)), y =c(
+    2612.496, 2610.68, 2609.268, 2608.128, 2607.154, 2606.451, 2605.974, 2605.544, 2605.301,2605.199, 2605.169, 2605.261, 2605.451, 2605.72, 2605.953,2606.222,2606.506
+)) 
+xgplot_factor_alpha_3_120 = data.table(x = c(2, 2.5, 2.75,3, 3.25,3.5, 4, 4.5, 5), y =c(2606.958, 2605.843,2605.454,2605.169,2605.115, 2604.972, 2604.951, 2605.032,2605.345
+)) 
+# best at M = 120, alpha = 4: 2604.951
+
+#alpha = 0
+#temp
+#eta = 0.5
+# nrounds = seq(10,90,10)
+xgplot_temp = data.table(x = c(seq(90,220,10)), y =c(
+    4799.854, 4794.721, 4790.382, 4786.851, 4784.128, 4782.17, 4780.891,4780.172,4779.880, 4779.892, 4780.108,4780.453, 4780.876,4781.348
+)) 
+xgplot_temp_alpha_170 = data.table(x = c(0.5, 1, 3, 4,5,6, 8, 10, 15), y =c(
+   4777.452, 4775.492, 4771.709, 4771.388, 4771.667, 4773.074, 4774.469, 4782.092, 4797.901
+)) 
+xgplot_temp_alpha_4 = data.table(x = c(seq(150,240,10), seq(300, 800, 100)), y =c(
+   4772.381, 4771.860, 4771.388, 4771.087, 4770.901,4770.694,4770.528,4770.508, 4770.540,4770.540,
+   4769.048, 4766.209, 4764.450, 4762.570, 4761.506, 4761.262
+)) 
+
+xgplot_temp_alpha_4.25 = data.table(x = c(seq(150,550,10), 600, 650, 700, 750,800, 810, 820,830,840,900, 1000), y =c(
+   4772.376, 4771.802, 4771.310, 4771.029, 4770.808, 4770.654, 4770.561, 4770.484, 4770.466, 4770.334, 4770.097, 4769.829,4769.567, 4769.286,4769.136, 4768.843,4768.524, 4768.232, 4768.170, 4767.76, 4767.485, 4767.199, 4766.918, 4766.662, 4766.434,4766.245, 4766.051,4765.876, 4765.681, 4765.487, 4765.338, 4765.155, 4764.936, 4764.718,4764.544, 4764.328,4764.122,4763.959,4763.779,4763.610, 4763.407, 4762.411,4761.891, 4761.563, 4761.362,4761.204, 
+   4761.184,
+   4761.174,
+   4761.192,
+   4761.237,4761.596,4762.295
+)) 
+
+xgplot_temp_alpha_5 = data.table(x = c(seq(300, 800, 100), 850, 900), y =c(4768.714, 4766.399, 4764.511,4762.607,
+    4761.636, 4761.316, 4761.421, 4761.726, 
+)) 
+
+
+xgplot_factor_alpha_4 = data.table(x = c(2, 2.5, 2.75,3, 3.25,3.5, 4,4.25, 4.5, 5), 
+                                  y =c(4773.261, 4772.181, 4771.319, 4770.808,4770.591,4770.508, 4770.484, 4770.461, 4770.484,4770.550, 4771.076
+)) 
+#Best at M = 220, alpha = 4, 4770.461
+
+
+
+
+
+
+########## Interaction 5-years 
+
+#Find M
+xgb_plot_inter_alpha0 = data.table(x = c(seq(10,120,10)), y =c(2813.145, 2673.747,2622.907, 2601.973,2589.755, 2581.725,2576.303,2572.637, 2570.267, 2568.548, 2569.051, 2569.821)) 
+
+#100 at 2568.548
+
+#Find alpha
+xgb_plot_inter_M_100 = data.table(x = c(seq(2,8,0.5)), y =c(2564.693, 2567.632, 2572.003,2577.510,2584.147, 2591.169,2598.278, 2605.406,2612.711, 2620.088,2628.169,2636.800,2645.783, 2655.269)) 
+#Best at alpha=2
+
+#Grid
+xgb_plot_inter_M_100_alpha_2 = data.table(x = c(seq(110,200,10)),  y=c(2562.308,2560.768,2559.841,2559.501,2559.449,2559.558,2559.768,2560.139, 2560.697, 2561.156)) 
+
+
+xgb_plot_inter_M_100_alpha_1.5 = data.table(x = c(seq(100,200,10)),  y=c(2563.259, 2561.177,2559.875, 2559.189, 2558.929, 2558.977, 2559.256, 2559.626, 2560.106, 2560.673, 2561.218))
+
+xgb_plot_inter_M_100_alpha_1.75 = data.table(x = c(seq(110,200,10)),  y=c(2561.513,2560.008, 2559.240,2558.963, 2558.922,2559.108,2559.424, 2559.895, 2560.403,2560.912)) 
+
+
+xgb_plot_inter_M_100_alpha_1.9 = data.table(x = c(seq(100,190,10)),  y=c(2564.320,2561.909,  2560.424,2559.562, 2559.185, 2559.133, 2559.319, 2559.626, 2560.021, 2560.431)) 
+
+
+xgb_plot_inter_M_100_alpha_2 = data.table(x = c(seq(110,200,10)),  y=c(2562.308,2560.768,2559.841,2559.501,2559.449,2559.558,2559.768,2560.139, 2560.697, 2561.156)) 
+
+
+xgb_plot_inter_M_100_alpha_2.1 = data.table(x = c(seq(100,190,10)),  y=c(2565.154, 2562.720, 2561.179,2560.294, 2559.971,2559.830, 2559.832 , 2560.024, 2560.406,  2560.838)) 
+
+
+xgb_plot_inter_M_100_alpha_2.25 = data.table(x = c(seq(110,200,10)),  y=c(2563.500,2561.980,2561.102,2560.668,2560.453,  2560.389,  2560.568,2560.907, 2561.282, 2561.735)) 
+
+xgb_plot_inter_M_100_alpha_3 = data.table(x = c(seq(100,240,20)),  y=c(2572.003, 2567.560, 2565.680, 2565.130,2565.143,2565.703,2566.626, 2567.409)) 
+
+#Now trying eta = 0.3 for slightly higher 
+
+xgb_plot_inter_M_100_alpha_2 = data.table(x = c(seq(200,1000,100)),  y=c(2563.141, 2561.665, 2561.098, 2560.460, 2560.188,2560.268, 2560.370, 2560.429, 2560.758 )) 
+
+plot(xgb_plot_inter_M_100_alpha_1.5, type = 'l', ylim = c(2557, 2568))
+lines(xgb_plot_inter_M_100_alpha_3$x, xgb_plot_inter_M_100_alpha_3$y, col = 2)
+lines(xgb_plot_inter_M_100_alpha_1.75$x, xgb_plot_inter_M_100_alpha_1.75$y, col = 3)
+lines(xgb_plot_inter_M_100_alpha_2.25$x, xgb_plot_inter_M_100_alpha_2.25$y, col = 4)
+lines(xgb_plot_inter_M_100_alpha_2$x, xgb_plot_inter_M_100_alpha_2$y, col = 5)
+lines(xgb_plot_inter_M_100_alpha_1.9$x, xgb_plot_inter_M_100_alpha_1.9$y, col = 6)
+```
+Riccardo:
+1) Try ridge penalty on GamFl2. 
+2) after finding a good lambda, expect the loss to drop over many m's. 
+
+```{r}
 # temp model 
 xgb_plot_temp = data.table(x = c(seq(1,9,1),seq(11,19,1),seq(10,150,10)), y =c(5379.419,5364.76,5318.158, 5230.371, 5223.17,5184.36, 5187.322, 5184.764, 5178.919,           5178.565,  5202.314, 5191.432,5198.115, 5208.381, 5211.138, 5229.498,  5217.52, 5215.932,  5223.368,   5218.326, 5255.646, 5286.704,5321.16,5340.85,5352.132,5374.445,5408.779, 5453.534,5475.457,5493.994,5520.439, 5543.879, 5563.307))
 
@@ -1297,6 +1435,27 @@ xgplot = data.table(x = c(seq(50,150,10), seq(110,130,2), seq(111,129,2)), y = c
 #Interaction model 
 xgb_plot_inter= data.table(x = c(seq(50,210,10)), y =c(4378.800, 4296.207,4197.691,4119.729,4055.193, 3979.32, 3913.073,3865.859, 3799.318,3763.141,3723.93,3688.609,3666.719, 3636.711,  3619.922,3615.032, 3590.712)) 
 
+#Alpha = 0 
+xgb_plot_inter= data.table(x = c(seq(20,90,10), seq(31,35,1), seq(25,29,1)), y =c(
+    2576.358,2563.916,2563.995,2564.594,2564.782,2564.854,2565.078,2565.529,2563.746,2563.651,2563.610,2563.617,2563.642, 2566.678,  2565.765,2565.061, 2564.551 ,2564.17
+)) 
+
+#m = 33
+xgb_plot_alpha_33= data.table(x = c(c(0.1, 0.5, 1, 5, 10, 50, 100), c(3:13)), y =c(
+    2562.905, 2560.266, 2557.275, 2545.222, 2545.89, 2829.408, 3445.039, 
+    2548.808,
+    2546.512,
+    2545.222,
+    2544.434,
+    2544.033,
+    2544.147,
+    2544.744,
+    2545.890,
+    2547.943,
+    2550.036,
+    2552.383
+))
+# alpha = 7
 
 ```
 

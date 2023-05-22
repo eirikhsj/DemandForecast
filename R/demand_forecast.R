@@ -105,7 +105,6 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
             }
     }
 
-
     ## **** Step 3: Check fit ****
     results = dt_test
     results[,'init_date' := rep(init_day, length(dt_test$date))]

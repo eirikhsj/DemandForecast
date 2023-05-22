@@ -102,3 +102,8 @@ ax = c(1,5,10,15,20,25)
 sq = exp(seq(log(0.000001), log(0.01), length.out = 25))
 axis(1, at = ax, labels = format(sq[ax], scientific = TRUE, digits = 3))
 dev.off()
+
+
+
+
+
