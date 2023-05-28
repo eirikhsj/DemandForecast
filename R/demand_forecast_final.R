@@ -94,7 +94,7 @@ Rolling_final = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, tra
         PC2_name = paste0("NWP_PC2_",name)
         setnames(dt_test, old = PC1_name, new = "PC1")
         setnames(dt_test, old = PC2_name, new = "PC2")
-        pred_demand_test = predict(mods[[1]], newdata = results)
+        pred_demand_test = predict(mod, newdata = dt_test)
         results[,paste0('pred_',name) := pred_demand_test]
         dt_test[, PC1:= NULL]
         dt_test[, PC2:= NULL]
