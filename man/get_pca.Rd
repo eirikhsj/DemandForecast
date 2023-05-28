@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_pca.R
 \name{get_pca}
 \alias{get_pca}
-\title{Multi-use function for getting pca-components.}
+\title{Multi-use function for getting principal-components.}
 \usage{
 get_pca(X_mat, I_train, I_test, p_comps, NWP = NA, U = NA, mu = NA)
 }
@@ -26,7 +26,7 @@ Training (dt_train) and test (dt_test) sets with pca components of ERA temperatu
 U-matrix (462x462), and mu-vector (1xnrow(X_mat)). NWP-matrix with pca of NWP temperature forecasts.
 }
 \description{
-Fetches the desired number of pca-components and returns these within a data.table together with time covariates.
+Fetches the desired number of PCs and returns these within a data.table together with time covariates.
 If given an NWP-matrix, the U and mu from the decomposition of ERA-temperature (X_mat) is used to compute and select factor loading of NWP forecasts.
 If U and mu are pre-supplied the computation of NWP-forecasts is greatly sped up.
 The function is used iteratively in demand_forecast.R

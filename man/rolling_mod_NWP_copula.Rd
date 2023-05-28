@@ -2,7 +2,7 @@
 % Please edit documentation in R/rolling_mod_NWP_copula.R
 \name{rolling_mod_NWP_copula}
 \alias{rolling_mod_NWP_copula}
-\title{Rolling model}
+\title{Rolling Copula Model}
 \usage{
 rolling_mod_NWP_copula(
   forc_start = as.Date("2007-01-01"),
@@ -38,7 +38,7 @@ rolling_mod_NWP_copula(
 
 \item{coef_to_print}{List of coefficients to include in output.}
 
-\item{interval_k}{Integer Number of days in traning interval}
+\item{interval_k}{Integer. Number of days in traning interval}
 
 \item{skill_interval}{}
 
@@ -48,7 +48,7 @@ rolling_mod_NWP_copula(
 Model output with predictions, loss and model coefficients.
 }
 \description{
-Rolling model
+Rolling Copula Model
 }
 \examples{
 copula_mod = rolling_mod_NWP_copula(as.Date('2007-01-01'), as.Date('2023-01-01'), 0.9, ERA_NWP, model = 'copula', window = 60, reweight=FALSE,formula = 'PC1 ~ NWP1_90')

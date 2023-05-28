@@ -1,6 +1,6 @@
 
 
-#' @title Rolling model
+#' @title Rolling Copula Model
 #'
 #' @param q Float. Quantile of interest.
 #' @param ERA_NWP Data.table. Data of ERA observations and quantiles of NWP forecasts.
@@ -11,7 +11,7 @@
 #' @param cores Integer. Number of cores to be used.
 #' @param formula String. Regression formula.
 #' @param coef_to_print List of coefficients to include in output.
-#' @param interval_k Integer Number of days in traning interval
+#' @param interval_k Integer. Number of days in traning interval
 #' @param skill_interval
 #'
 #'
@@ -133,7 +133,7 @@ Rolling_nwp_copula = function(i, ERA_NWP_vars, q, init_days, window, reweight, m
                 vec_seq = 1:(floor(dim(pred_mat_train)[1]/interval_k)*interval_k)
                 pred_mat_train= pred_mat_train[vec_seq,]
 
-                #Check where the observed PC1 values land in the predictive cdf (i.e. find the quantile)
+                #Check where the observed PC1 values land in the predictive cdf (i.e. find the probability)
                 check_train = data.table(t(pred_mat_train > train[1:(floor(dim(pred_mat_train)[1]/interval_k)*interval_k),PC1]))
                 q_train = t(check_train[, lapply(.SD, function(x) ifelse(is.na(match(TRUE, x)),(m-1),
                                                                          ifelse(match(TRUE, x)>2,match(TRUE, x)-2, 1)) )]/m)
