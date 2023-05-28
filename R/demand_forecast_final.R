@@ -102,7 +102,7 @@ Rolling_final = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, tra
         dt_test[, PC1:= NULL]
         dt_test[, PC2:= NULL]
     }
-    final_results = merge(results, dt_PC, by = c("hour, date"))
+    final_results = merge(results, dt_PC, by = c("hour", "date"))
 
     if (is.data.table(final_results)==FALSE){
         print(str(final_results))
