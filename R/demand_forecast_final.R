@@ -82,8 +82,9 @@ Rolling_final = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, tra
 
     ## **** Step 3: Check fit ****
     dt_test = merge(dt_test, NWP_pred, by = c("hour", "date"))
+    dt_PC = dt_test[,.(date, hour, PC1, PC2)]
     results = dt_test
-    results[,'lead_time':= ((as.integer(difftime(date, init_date, units = 'days')))*24)+ hour]
+    results[,'lead_time':= (((as.integer(difftime(date, init_date, units = 'days')))*24)+ hour)/6]
 
     pred_demand_PC1_actual = predict(mod, newdata = dt_test)
     results[,'pred_demand_PC1_actual' := pred_demand_PC1_actual]
@@ -101,16 +102,17 @@ Rolling_final = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, tra
         dt_test[, PC1:= NULL]
         dt_test[, PC2:= NULL]
     }
+    final_results = merge(results, dt_PC, by = c("hour, date"))
 
-    if (is.data.table(results)==FALSE){
-        print(str(results))
+    if (is.data.table(final_results)==FALSE){
+        print(str(final_results))
         print('Trying to convert')
-        results = as.data.table(results)
-        if(dim(results)[1] < 100){
+        final_results = as.data.table(final_results)
+        if(dim(final_results)[1] < 100){
             print('This is strange')
-            print(results)
+            print(final_results)
         }
     }
-    return(results)
+    return(final_results)
 }
 
