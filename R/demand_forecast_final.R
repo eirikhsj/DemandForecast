@@ -83,6 +83,8 @@ Rolling_final = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, tra
     ## **** Step 3: Check fit ****
     dt_test = merge(dt_test, NWP_pred, by = c("hour", "date"))
     results = dt_test
+    results[,'lead_time':= ((as.integer(difftime(date, init_date, units = 'days')))*24)+ hour]
+
     pred_demand_PC1_actual = predict(mod, newdata = dt_test)
     results[,'pred_demand_PC1_actual' := pred_demand_PC1_actual]
     dt_test[, PC1:= NULL]
