@@ -10,7 +10,7 @@ demand_forecast_final(
   NWP_pred,
   forc_start,
   forc_end,
-  pred_win = 45,
+  pred_win = 31,
   pred_lag = 0,
   train_y = 3,
   reg_form,

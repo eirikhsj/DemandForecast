@@ -17,7 +17,7 @@
 #'
 #' @examples  Mod1 = demand_forecast_final(forc_start ='2014-01-01',forc_end = '2021-03-01',pred_win = 30, train_y = 5, pred_lag = 15,reg_form = "volume ~ as.factor(hour) + as.factor(month) + year", p_comps = 3, other_mods= NULL,comb = TRUE)
 #' @export
-demand_forecast_final = function(X_mat, date_demand, NWP_pred, forc_start, forc_end, pred_win = 45, pred_lag= 0, train_y=3,
+demand_forecast_final = function(X_mat, date_demand, NWP_pred, forc_start, forc_end, pred_win = 31, pred_lag= 0, train_y=3,
                            reg_form, p_comps, other_mods= NULL, comb = TRUE, custom = FALSE,
                            incl_climatology = FALSE, no_pc = TRUE, cores = 44){
 
@@ -53,7 +53,8 @@ Rolling_final = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, tra
                    reg_form, p_comps, other_mods, comb, custom,incl_climatology, no_pc,num_thread,gam_lasso,NWP_pred = NWP_pred){
     ## ***** Step 1: Form the training and test datasets ****
     init_day = init_days[i]
-    target_days = seq(init_day+ pred_lag, length.out = pred_win,  by = '1 days')
+    days_in_m = days_in_month(init_day)
+    target_days = seq(init_day+ pred_lag, length.out = as.integer(days_in_m),  by = '1 days')
     print(paste('Forecast made on:', init_day))
 
     train_cutoff = seq(init_day,  length.out = 2, by = paste0('-',train_y, ' year'))[2]
