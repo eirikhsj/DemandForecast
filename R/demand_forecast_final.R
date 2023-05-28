@@ -75,24 +75,23 @@ Rolling_final = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, tra
     n = nrow(dt_test)
 
     ## ***** Step 2: Train models ****
-    mods = list()
 
     if (p_comps > 0){                              #PC GAM MODELS
-            mods[[1]] = mgcv::gam(as.formula(sprintf("%s + %s", reg_form, custom)), data = dt_train)
+            mod = mgcv::gam(as.formula(sprintf("%s + %s", reg_form, custom)), data = dt_train)
     }
 
     ## **** Step 3: Check fit ****
     dt_test = merge(dt_test, NWP_pred, by = c("hour", "date"))
     results = dt_test
-    pred_demand_PC1_actual = predict(mods[[1]], newdata = dt_test)
+    pred_demand_PC1_actual = predict(mod, newdata = dt_test)
     results[,'pred_demand_PC1_actual' := pred_demand_PC1_actual]
     dt_test[, PC1:= NULL]
     dt_test[, PC2:= NULL]
     pred_names1 = c("mean","q10","q20","q30","q40",
                     "q50","q60","q70","q80","q90")
     for (name in pred_names1){ #Fold all quantiles into the prediction
-        PC1_name = paste("NWP_PC1_",name)
-        PC2_name = paste("NWP_PC2_",name)
+        PC1_name = paste0("NWP_PC1_",name)
+        PC2_name = paste0("NWP_PC2_",name)
         setnames(dt_test, old = PC1_name, new = "PC1")
         setnames(dt_test, old = PC2_name, new = "PC2")
         pred_demand_test = predict(mods[[1]], newdata = results)
