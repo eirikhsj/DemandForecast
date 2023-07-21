@@ -13,11 +13,11 @@ The package can be installed by:
 
 The files can roughly be divided up into 3 categories: 
 1) Convenience or helper functions, which loads and prepares data. 
-2) Model scripts, that takes this data, and perform 
+2) Model scripts, that takes this data, and runs forecasts.
 3) R_markdown scripts which provides an overview of test runs and results. 
 
 The data used in this project has a magnitude of over 100 GB, and is not stored on github. 
-It is accesible through UiO Data Science hub storage, (upon request, etc. )
+It is accesible through UiO Data Science hub storage (upon request, etc. ).
 
 
 # The Project
@@ -33,7 +33,7 @@ A detailed breakdown of tests run are found in the RMarkdown documents:
 Of course, in real life we don't know the future temperatures, which lead us into the second problem.
 
 Second: Can we utilize different temperature forecasts as inputs to our demand model?
-Here we focus on five different sub-seasonal(??) forecasting models, where our period of interest is the range 0-30 days. 
+Here we focus on five different seasonal forecasting models, where our period of interest is the range 0-30 days. 
 
 The models are:
 1) NWP forecast model
