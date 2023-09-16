@@ -9,7 +9,7 @@ The package can be installed by:
 2: Make sure devtools package is installed, or install it through CRAN by install.packages('devtools').
 3: Load devtools package by library(devtools).
 3: Then load this package using the command devtools::install('PATH/DemandForecast')in e.g. the RStudio console (PATH is the path to the local folder). 
-4: Load package by Library(DemandForecast)
+4: Load package by library(DemandForecast)
 
 The files can roughly be divided up into 3 categories: 
 1) Convenience or helper functions, which loads and prepares data. 
@@ -28,7 +28,7 @@ Our results show that by using a gam pca approach we can achieve subtantial impr
 This result holds for a structural model (e.g. under the assumption that we know the future temperature).
 
 The main functions used for this problem is demand_forecast.R, which is a rolling cv function which enables the testing and comparison of a host of different energy demand forecast models. 
-A detailed breakdown of tests run are found in the RMarkdown documents: 
+A detailed breakdown of tests run are found in the RMarkdown documents.
 
 Of course, in real life we don't know the future temperatures, which lead us into the second problem.
 
