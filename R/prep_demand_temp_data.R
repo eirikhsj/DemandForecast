@@ -29,7 +29,7 @@ prep_demand_temp_data = function(include_na_volume = TRUE, path = "/mn/kadingir/
     dt_date = data.table(expand.grid(hour = hours,date = days)) #track of dates for temp data
 
     ##----- 2) Load and extract demand volume data -----
-    f_demand = paste0(path, "/nordpool_volume.csv") #2013-2021
+    f_demand = paste0(path, "/nordpool_volume.csv") # 2013 - 2021
     dt_demand = fread(f_demand)
     dt_demand[, hour := hour + 1]
 
@@ -85,7 +85,35 @@ prep_demand_temp_data = function(include_na_volume = TRUE, path = "/mn/kadingir/
         out$X_mat = X_mat
         out$date_demand = date_demand
     }
-    ##----- 6) Final Check and Print-----
+    ##----- 6) Specify time covariates-----
+
+    date_demand[,week:= data.table::isoweek(date)] # jan 1st might get week nr 52 or 53
+    date_demand[,week1 := cos(2*pi * week/52) ]
+    date_demand[,week2 := sin(2*pi * week/52) ]
+
+    date_demand[,month:= month(date)]
+    date_demand[,month1 := cos(2*pi * month/12) ]
+    date_demand[,month2 := sin(2*pi * month/12) ]
+
+    date_demand[,hour1 := cos(2*pi * hour/24) ]
+    date_demand[,hour2 := sin(2*pi * hour/24) ]
+
+    date_demand[,year:= year(date)]
+
+    date_demand[,w_day:= as.numeric(format(date, "%u"))] # ISO 8601
+    date_demand[,w_day1 := cos(2*pi * w_day/7) ]
+    date_demand[,w_day2 := sin(2*pi * w_day/7) ]
+
+    date_demand[, season:= ifelse(month(date) %in% c(12,1,2), 1,
+                                  ifelse(month(date) %in% c(3,4,5), 2,
+                                         ifelse(month(date) %in% c(6,7,8), 3, 4)))]
+
+    date_demand[,season1 := round(cos(2*pi * season/4), digits = 7)]
+    date_demand[,season2 := round(sin(2*pi * season/4), digits = 7)]
+
+    date_demand[,hourly_mean_grid := rowMeans(X_mat)]
+
+    ##----- 7) Final Check and Print-----
     if (nrow(out$date_demand) == nrow(out$X_mat)){
         print(paste0('Demand volume data from ', dt_demand[1,date], ' to ', dt_demand[dim(dt_demand)[1],date],'.' ))
         print(paste0('Temperature data from ', out$date_demand[1,date], ' to ', out$date_demand[dim(out$date_demand)[1],date],'.'))

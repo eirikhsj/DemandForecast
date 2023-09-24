@@ -72,7 +72,7 @@ get_pca = function(X_mat, I_train, I_test, p_comps, NWP=NA,  U = NA, mu = NA){
                            ncol = dim(X_ensamble)[1] * dim(X_ensamble)[2], #lon time lat
                            byrow = TRUE)
             X_NWP_center = X_mat_500 - mu
-            PC_NWP = X_NWP_center %*% U        #Here we use U the information from the historical data
+            PC_NWP = X_NWP_center %*% U        # Using U (information from the historical data).
             NWP_PC_mat[,,ens_memb] = PC_NWP
         }
     } else{

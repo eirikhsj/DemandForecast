@@ -10,7 +10,7 @@
 #' @param p_comps Integer. Number of pc-comps in model.
 #' @param other_mods List of other models to run or default is NULL.
 #' @param comb Boolean. FALSE allows specific combination of PCs to be run without running all combinations.
-#' @param custom Boolean.Specifies a custom pc based model.
+#' @param custom Boolean. Specifies a custom pc based model.
 #' @param incl_climatology Boolean.Includes climatology model.
 #' @param no_pc Boolean.Includes basic (no pc) model.
 #'
@@ -22,7 +22,8 @@
 #' @import glmnet
 #' @import parallel
 #' @import data.table
-#' @examples  Mod1 = demand_forecast(forc_start ='2014-01-01',forc_end = '2021-03-01',pred_win = 30, train_y = 5, pred_lag = 15,reg_form = "volume ~ as.factor(hour) + as.factor(month) + year", p_comps = 3, other_mods= NULL,comb = TRUE)
+#' @import RhpcBLASctl
+#' @examples  Mod1 = demand_forecast(forc_start ='2014-01-01',forc_end = '2023-01-01',pred_win = 30, train_y = 5, pred_lag = 15,reg_form = "volume ~ as.factor(hour) + as.factor(month) + year", p_comps = 3, other_mods= NULL,comb = TRUE)
 #'
 #'
 demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 30, pred_lag= 15, train_y=5,
@@ -31,24 +32,24 @@ demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 
 
     last_poss_pred = range(date_demand$date)[2] - pred_win - pred_lag
 
-    #1) Fix dates
+    # **** Fix dates ****
     start = as.Date(forc_start)
     end = as.Date(forc_end)
     all_days = seq(start, end,  by = '1 days')
     init_days_all = all_days[mday(all_days)==1]
 
-    ## **** Run parallel cores ****
-    blas_set_num_threads(1)
-    omp_set_num_threads(1) #Set number of threads
+    # **** Run parallel cores ****
+    RhpcBLASctl::blas_set_num_threads(1)
+    RhpcBLASctl::omp_set_num_threads(1) #Set number of threads
 
-    detailed_results = mclapply(seq_along(init_days_all),
+    detailed_results = parallel::mclapply(seq_along(init_days_all),
                       "Rolling",
                       X_mat = X_mat, date_demand = date_demand,init_days= init_days_all, pred_win = pred_win, pred_lag= pred_lag, train_y=train_y,
                       reg_form= reg_form, p_comps= p_comps, other_mods= other_mods, comb = comb, custom = custom,
                       incl_climatology = incl_climatology, no_pc = no_pc,gam_lasso =gam_lasso,
-                      mc.cores = cores)
+                      mc.cores = cores, mc.silent= FALSE)
 
-    ## **** Return results ****
+    # **** Return results ****
     Results = rbindlist(detailed_results)
     out = list()
     out$Results = Results
@@ -59,7 +60,7 @@ demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 
 #' @export
 Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
                    reg_form, p_comps, other_mods, comb, custom,incl_climatology, no_pc,num_thread,gam_lasso){
-    ## ***** Step 1: Form the training and test datasets ****
+    ## **** Step 1: Form the training and test datasets ****
     init_day = init_days[i]
     target_days = seq(init_day+ pred_lag, length.out = pred_win,  by = '1 days')
     print(paste('Forecast made on:', init_day))
@@ -82,7 +83,7 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
     dt_test = dt_test[year > max_year_train, year := max_year_train] #pretend that new year is last year to avoid factor error
     n = nrow(dt_test)
 
-    ## ***** Step 2: Train models ****
+    ## **** Step 2: Train models ****
     mods = list()
     if (no_pc == TRUE){
         print(reg_form)
@@ -192,208 +193,3 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
     return(results)
 }
 
-#' @export
-lasso_just_temp = function(dt_train, X_mat, m){
-    #ls = sort(round(exp((1:1000)/2000)^14 -1, 2), decreasing = TRUE)
-    #ls = sort(round(exp((1:1000)/1000)^3 +1, 2), decreasing = TRUE)
-    ls = sort(seq(3,5,length.out = 1000), decreasing = TRUE)
-    #ls = sort(round(seq(0,20, length.out = 1000), 2), decreasing = TRUE)
-
-    dat = data.table(dt_train[,.(volume)], X_mat)
-    Y_inp = as.matrix(dat[,volume])
-    X_inp = as.matrix(dat[, .SD, .SDcols = -'volume'])
-    set.seed(100)
-    l1 = glmnet(x = X_inp, y =Y_inp, alpha = 1, lambda = ls)
-
-    return(l1)
-}
-
-#' @export
-lasso_temp_and_time = function(dt_train, X_mat, m){
-    #ls = sort(round(exp((1:1000)/2000)^14 -1, 2), decreasing = TRUE)
-    #ls = sort(round(seq(0,20, length.out = 1000), 2), decreasing = TRUE)
-    ls = sort(round(seq(3,5, length.out = 1000), 4), decreasing = TRUE)
-    #ls = sort(seq(0,8,length.out = 1000), decreasing = TRUE)
-    dt_train = dt_train[,.(volume, hour, month, year, season, week, w_day)]
-    dt_train$hour = factor(dt_train$hour)
-    dt_train$w_day = factor(dt_train$w_day)
-    dt_train$week = factor(dt_train$week)
-    dt_train$month = factor(dt_train$month)
-    dt_train$season = factor(dt_train$season)
-    dt_mod_train = model.matrix(~ . - 1, data = dt_train)
-    dat_train = data.table(dt_mod_train, X_mat)
-
-    Y_inp = as.matrix(dat_train[,volume])
-    X_inp = as.matrix(dat_train[, .SD, .SDcols = -'volume'])
-    set.seed(100)
-    l1 = glmnet(x = X_inp, y =Y_inp, alpha = 1, lambda = ls)
-
-    return(l1)
-}
-
-#' @export
-lasso_temp_and_time2 = function(dt_train, X_mat, m){
-    #ls = sort(round(exp((1:1000)/2000)^14 -1, 2), decreasing = TRUE)
-    ls = sort(round(seq(0,20, length.out = 1000), 2), decreasing = TRUE)
-    #ls = sort(round(seq(7,8, length.out = 1000), 4), decreasing = TRUE)
-    #ls = sort(seq(0,8,length.out = 1000), decreasing = TRUE)
-    dt_train = dt_train[,.(volume, hour, month, year, season, week, w_day)]
-    dt_train$hour = factor(dt_train$hour)
-    dt_train$w_day = factor(dt_train$w_day)
-    dt_train$week = factor(dt_train$week)
-    dt_train$month = factor(dt_train$month)
-    dt_train$season = factor(dt_train$season)
-    dt_mod_train = model.matrix(~ hour*week + w_day*month + week + month + season + year + volume, data = dt_train)
-    dat_train = data.table(dt_mod_train, X_mat)
-
-    Y_inp = as.matrix(dat_train[,volume])
-    X_inp = as.matrix(dat_train[, .SD, .SDcols = -'volume'])
-    set.seed(100)
-    l1 = glmnet(x = X_inp, y =Y_inp, alpha = 1, lambda = ls)
-
-    return(l1)
-}
-
-#' @export
-xgb_temp_factortime = function(dt_train, dt_demand, I_test, X_mat_train, X_mat_test, m){
-    dt_train = dt_train[,.(volume, hour, month, year, season, week, w_day)]
-    dt_train$hour = factor(dt_train$hour)
-    dt_train$w_day = factor(dt_train$w_day)
-    dt_train$week = factor(dt_train$week)
-    dt_train$month = factor(dt_train$month)
-    dt_train$season = factor(dt_train$season)
-    dt_mod_train = model.matrix(~ . - 1, data = dt_train)
-    xgb_train = data.table(dt_mod_train, X_mat_train)
-    #xgb_train = xgb.DMatrix(data = xgb_dat[,-c(2)], label = xgb_dat[,2])
-    #xgb_test = xgb.DMatrix(data = dt_test[,-c(2)], label = dt_test[,2])
-
-    Y_inp = as.matrix(xgb_train[,volume])
-
-    train_means = apply(xgb_train[, .SD, .SDcols = -'volume'], 2, mean)
-    train_sds = apply(xgb_train[, .SD, .SDcols = -'volume'], 2, sd)
-    X_inp = as.matrix(scale(xgb_train[, .SD, .SDcols = -'volume'], center = train_means, scale = train_sds))
-
-    mod_xgb = xgboost(data = X_inp,
-                      label = Y_inp,
-                      max.depth = 2,
-                      eta = 1,
-                      nthread = 1,
-                      verbose = 0,
-                      nrounds = 23,
-                      objective = "reg:squarederror")
-    print("Done with model")
-
-    dt_test = date_demand[,.(volume,hour, month, year, season, week, w_day)]
-    dt_test$hour = factor(dt_test$hour)
-    dt_test$w_day = factor(dt_test$w_day)
-    dt_test$week = factor(dt_test$week)
-    dt_test$month = factor(dt_test$month)
-    dt_test$season = factor(dt_test$season)
-    dt_test = dt_test[I_test,]
-    dt_mod_test = model.matrix(~ . - 1, data = dt_test)
-    xgb_test = data.table(dt_mod_test, X_mat_test)
-
-    X_inp = as.matrix(scale(xgb_test[, .SD, .SDcols = -'volume'], center = train_means, scale = train_sds))
-
-    pred_demand_test = date_demand[I_test, c("volume", "date", "hour")]
-    pred_demand_test[, pred_2 := predict(mod_xgb, as.matrix(X_inp))]
-    pred_demand_test[,SE_xgb := (volume-pred_2)^2]
-    print(pred_demand_test[,sqrt(mean(SE_xgb))])
-    out = list()
-    out$pred_demand_test = pred_demand_test
-    out$mod_xgb = mod_xgb
-    return(out)
-}
-
-
-#' @export
-xgb_temp_intertime = function(dt_train, dt_demand, I_test, X_mat_train, X_mat_test, m){
-    dt_train = dt_train[,.(volume, hour, month, year, season, week, w_day)]
-    dt_train$hour = factor(dt_train$hour)
-    dt_train$w_day = factor(dt_train$w_day)
-    dt_train$week = factor(dt_train$week)
-    dt_train$month = factor(dt_train$month)
-    dt_train$season = factor(dt_train$season)
-
-    dt_mod_train = model.matrix(~ hour:week + w_day:month + month + season + year + volume, data = dt_train)
-    xgb_train = data.table(dt_mod_train, X_mat_train)
-    #xgb_train = xgb.DMatrix(data = xgb_dat[,-c(2)], label = xgb_dat[,2])
-    #xgb_test = xgb.DMatrix(data = dt_test[,-c(2)], label = dt_test[,2])
-
-    Y_inp = as.matrix(xgb_train[,volume])
-
-    train_means = apply(xgb_train[, .SD, .SDcols = -'volume'], 2, mean)
-    train_sds = apply(xgb_train[, .SD, .SDcols = -'volume'], 2, sd)
-    X_inp = as.matrix(scale(xgb_train[, .SD, .SDcols = -'volume'], center = train_means, scale = train_sds))
-
-    mod_xgb = xgboost(data = X_inp,
-                      label = Y_inp,
-                      max.depth = 2,
-                      eta = 1,
-                      nthread = 1,
-                      verbose = 0,
-                      nrounds = 23,
-                      objective = "reg:squarederror")
-    print("Done with model")
-
-    dt_test = date_demand[,.(volume,hour, month, year, season, week, w_day)]
-    dt_test$hour = factor(dt_test$hour)
-    dt_test$w_day = factor(dt_test$w_day)
-    dt_test$week = factor(dt_test$week)
-    dt_test$month = factor(dt_test$month)
-    dt_test$season = factor(dt_test$season)
-    dt_test = dt_test[I_test,]
-    dt_mod_test = model.matrix(~ . - 1, data = dt_test)
-    xgb_test = data.table(dt_mod_test, X_mat_test)
-
-    X_inp = as.matrix(scale(xgb_test[, .SD, .SDcols = -'volume'], center = train_means, scale = train_sds))
-
-    pred_demand_test = date_demand[I_test, c("volume", "date", "hour")]
-    pred_demand_test[, pred_2 := predict(mod_xgb, as.matrix(X_inp))]
-    pred_demand_test[,SE_xgb := (volume-pred_2)^2]
-    print(pred_demand_test[,sqrt(mean(SE_xgb))])
-    out = list()
-    out$pred_demand_test = pred_demand_test
-    out$mod_xgb = mod_xgb
-    return(out)
-}
-
-
-xgb_temp = function(dt_train, dt_demand, I_test, X_mat_train, X_mat_test, m){
-    dt_train = dt_train[,.(volume)]
-    xgb_train = data.table(dt_train, X_mat_train)
-
-    Y_inp = as.matrix(xgb_train[,volume])
-
-    train_means = apply(xgb_train[, .SD, .SDcols = -'volume'], 2, mean)
-    train_sds = apply(xgb_train[, .SD, .SDcols = -'volume'], 2, sd)
-    X_inp = as.matrix(scale(xgb_train[, .SD, .SDcols = -'volume'], center = train_means, scale = train_sds))
-
-    mod_xgb = xgboost(data = X_inp,
-                      label = Y_inp,
-                      max.depth = 2,
-                      eta = 1,
-                      nthread = 1,
-                      verbose = 0,
-                      nrounds = 100,
-                      objective = "reg:squarederror")
-    print("Done with model")
-
-    dt_test = date_demand[,.(volume)]
-    dt_test = dt_test[I_test,]
-    xgb_test = data.table(dt_test, X_mat_test)
-
-    X_inp = as.matrix(scale(xgb_test[, .SD, .SDcols = -'volume'], center = train_means, scale = train_sds))
-
-    pred_demand_test = date_demand[I_test, c("volume", "date", "hour")]
-    pred_demand_test[, pred_2 := predict(mod_xgb, as.matrix(X_inp))]
-    pred_demand_test[,SE_xgb := (volume-pred_2)^2]
-    print(pred_demand_test[,sqrt(mean(SE_xgb))])
-    out = list()
-    out$pred_demand_test = pred_demand_test
-    out$mod_xgb = mod_xgb
-    return(out)
-}
-
-# res = pred_demand_test[, lapply(.SD, function(x) sqrt(mean((volume - x)^2)))]
-# pred_demand_test = pred_demand_test[,1]

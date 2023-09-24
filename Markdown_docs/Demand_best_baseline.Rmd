@@ -369,6 +369,7 @@ Week4$Result[,sqrt(mean((volume - pred_1)^2))] # week1 + week2
 Week5$Result[,sqrt(mean((volume - pred_1)^2))]
 Week6$Result[,sqrt(mean((volume - pred_1)^2))] 
 ```
+
 ## Looking at season
 ```{r, cache = TRUE}
 plot(Season1$Result[,sqrt(mean((volume - pred_1)^2)), keyby = init_date], type = 'l', ylim = c(2000, 13700))

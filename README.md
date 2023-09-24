@@ -8,7 +8,7 @@ The package can be installed by:
 1: Cloning this repo to a local folder. 
 2: Make sure devtools package is installed, or install it through CRAN by install.packages('devtools').
 3: Load devtools package by library(devtools).
-3: Then load this package using the command devtools::install('PATH/DemandForecast')in e.g. the RStudio console (PATH is the path to the local folder). 
+3: Then load this package using the command devtools::install('PATH/DemandForecast') in e.g. the RStudio console (PATH is the path to the local folder). 
 4: Load package by library(DemandForecast)
 
 The files can roughly be divided up into 3 categories: 
@@ -33,7 +33,7 @@ A detailed breakdown of tests run are found in the RMarkdown documents.
 Of course, in real life we don't know the future temperatures, which lead us into the second problem.
 
 Second: Can we utilize different temperature forecasts as inputs to our demand model?
-Here we focus on five different seasonal forecasting models, where our period of interest is the range 0-30 days. 
+Here we focus on different seasonal forecasting models, where our period of interest is the range 0-30 days. 
 
 The models are:
 1) NWP forecast model
