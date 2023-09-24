@@ -50,7 +50,6 @@ d) Should I try all combinations here and see which is best or is the more infor
 
 
 
-
 1) Set-up
 ```{r, cache=TRUE}
 #ssh eirikhsj@nam-shub-01.uio.no

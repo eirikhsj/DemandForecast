@@ -1,4 +1,4 @@
-#' @title Rolling model
+#' @title Rolling Temperature PC model using NWP forecasts
 #'
 #' @param q Float. Quantile of interest.
 #' @param ERA_NWP Data.table. Data of ERA observations and quantiles of NWP forecasts.
@@ -23,7 +23,7 @@
 #' @name rolling_mod_NWP
 
 #
-# forc_start=as.Date('2007-01-01'); forc_end=as.Date('2023-01-01'); q=0.9; ERA_NWP; predictors=1; model='spline'; window = 125; reweight = FALSE;
+# forc_start=as.Date('2012-01-01'); forc_end=as.Date('2023-01-01'); q=0.9; ERA_NWP; predictors=1; model='spline'; window = 125; reweight = FALSE;
 # incl_climatology =TRUE; formula = 'PC1 ~ 1'; incl_other = FALSE; skill_interval = 0; cores = 4;df_spline = 8
 
 #' @export
@@ -44,7 +44,7 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
     }
 
     #2) Build regression formula and fetch variables
-    incl_vars = c('date','PC1', 'hour', 'week', 'month', 'season', 'year', 'init_date', 'lead_time')
+    incl_vars = c('date','PC1', 'PC2','hour', 'week', 'month', 'season', 'year', 'init_date', 'lead_time')
     pred_vars = c()
 
     if (predictors > 0){
@@ -68,30 +68,17 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
                                               rollapply(NWP1_90, width = skill_interval*4, partial = TRUE, FUN = mean)), by = .(init_date)]
     }
 
-    arg1 = ERA_NWP_vars
-    arg2 = q
-    arg3 = init_days
-    arg4 = window
-    arg5 = reweight
-    arg6 = model
-    arg7 = predictors
-    arg8 = incl_climatology
-    arg9 = formula
-    arg10 = pred_vars
-    arg11 = df_spline
-    arg12 = cores
 
     ## **** Run parallel cores ****
     blas_set_num_threads(1)
     omp_set_num_threads(1) #Set number of threads
 
     #3) Forecast iteration
-    #mod = gam(Y ~X, data = data.table(X = rnorm(10), Y = rnorm(10)))
     detailed_results = mclapply(seq_along(init_days),
                                 "Rolling_nwp",
-                                ERA_NWP_vars = arg1, q = arg2, init_days= arg3, window = arg4, reweight = arg5, model = arg6,
-                                predictors = arg7, incl_climatology = arg8, formula = arg9, pred_vars = arg10, arg11=df_spline,
-                                mc.cores = arg12)
+                                ERA_NWP_vars = ERA_NWP_vars,q= q, init_days= init_days, window = window, reweight = reweight, model = model,
+                                predictors = predictors, incl_climatology = incl_climatology, formula = formula, pred_vars = pred_vars, df_spline= df_spline,
+                                mc.cores = cores)
 
     #4) Store and return
     Results = rbindlist(detailed_results,use.names=FALSE)
@@ -145,10 +132,10 @@ Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, p
 
     ## 3d) Register loss
     results[,'test_loss' := test_l]
-    print(paste0('Ave pinball loss for model', init_day, ' is = ', round(mean(test_l),digits = 2)))
+    print(paste0('Ave pinball loss for model issued on ', init_day, ' is = ', round(mean(test_l),digits = 2)))
 
     ## 3e) Register Beta coefficients
-    print(pred_vars)
+    #print(pred_vars)
     if(predictors >0 & model == 'qreg'){
         betas = data.table(t(coef(qreg)))[,..pred_vars]
         colnames(betas) = paste0('coef_',pred_vars)
