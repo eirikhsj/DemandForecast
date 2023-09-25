@@ -17,7 +17,7 @@ The files can roughly be divided up into 3 categories:
 3) R_markdown scripts which provides an overview of test runs and results. 
 
 The data used in this project has a magnitude of over 100 GB, and is not stored on github. 
-It is accesible through UiO Data Science hub storage (upon request, etc. ).
+It is accessible through UiO Data Science hub storage (upon request).
 
 
 # The Project
