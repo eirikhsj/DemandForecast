@@ -28,13 +28,13 @@ demand_forecast(
 
 \item{forc_end}{Date for last initialization date.}
 
-\item{pred_win}{Span of days in prediction window, default is 30.}
+\item{pred_win}{Integer. Span of days in prediction window, default is 30.}
 
-\item{pred_lag}{Days after initialization day the prediction window begins, default is 15.}
+\item{pred_lag}{Integer. Days after initialization day the prediction window begins, default is 15.}
 
-\item{train_y}{Years of training data.}
+\item{train_y}{Integer. Years of training data.}
 
-\item{reg_form}{Regression formula before PC covariates have been added.}
+\item{reg_form}{String. Regression formula before PC covariates have been added.}
 
 \item{p_comps}{Integer. Number of pc-comps in model.}
 
@@ -44,9 +44,13 @@ demand_forecast(
 
 \item{custom}{Boolean. Specifies a custom pc based model.}
 
-\item{incl_climatology}{Boolean.Includes climatology model.}
+\item{incl_climatology}{Boolean. TRUE includes climatology model.}
 
-\item{no_pc}{Boolean.Includes basic (no pc) model.}
+\item{no_pc}{Boolean. TRUE includes basic (no pc) model.}
+
+\item{gam_lasso}{Boolean. TRUE sets lasso penalty.}
+
+\item{cores}{Integer. Sets number of parallelized cores, default is 4.}
 }
 \value{
 A data.table with actual and predicted demand values.

@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_pca.R
 \name{get_pca}
 \alias{get_pca}
-\title{Multi-use function for getting principal-components.}
+\title{Multi-use function for getting principal components (PCs).}
 \usage{
 get_pca(X_mat, I_train, I_test, p_comps, NWP = NA, U = NA, mu = NA)
 }
