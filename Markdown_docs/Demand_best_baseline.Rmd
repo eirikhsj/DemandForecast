@@ -156,7 +156,7 @@ Wday8 = demand_forecast(X_mat,date_demand,forc_start = '2016-01-01', forc_end = 
                     p_comps = 0,  reg_form = "volume ~ as.factor(w_day):as.factor(season)", incl_climatology = FALSE)
 Wday9 = demand_forecast(X_mat,date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
                     p_comps = 0,  reg_form = "volume ~ as.factor(w_day):as.factor(month)", incl_climatology = FALSE)
-Wday10 = demand_forecast(X_mat,date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5, 
+Wday10 = demand_forecast(X_mat,date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5,
                     p_comps = 0,  reg_form = "volume ~ as.factor(w_day):as.factor(week)", incl_climatology = FALSE)
 ```
 
