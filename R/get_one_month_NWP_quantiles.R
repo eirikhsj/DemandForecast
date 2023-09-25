@@ -91,6 +91,18 @@ get_one_month_NWP_quantiles= function(files_i = "/mn/kadingir/datascience_000000
 }
 
 
+#' get weights
+#' Function which computes the reweighting of the NWP quantiles.
+#' @param k Integer. number in sequence of tuning values.
+#' @param pc_data NWP-data to be weighted.
+#' @param ERA_PC1_rew ERA data.
+#' @param init_day String. Init day
+#' @param target_date Used to store results
+#' @param rew_int Day and length of reweighting
+#' @param sq sequence of ks
+#'
+#' @examples
+#' @return
 #' @export
 get_weights = function(k, pc_data, ERA_PC1_rew,init_day,target_date, rew_int, sq){
     print(k)
@@ -124,7 +136,7 @@ get_weights = function(k, pc_data, ERA_PC1_rew,init_day,target_date, rew_int, sq
 }
 
 #' wquantile.generic
-#' Function which computes the reweighteing of the NWP quantiles.
+#' Function which computes the reweighting of the NWP quantiles.
 #' @param x
 #' @param probs Integer or list of quantiles of interest.
 #' @param cdf.gen
@@ -157,9 +169,9 @@ wquantile.generic <- function(x, probs, cdf.gen, weights = NA) {
 
 #' whdquantile
 #'
-#' @param x
-#' @param probs
-#' @param weights
+#' @param x Input
+#' @param probs Probabilities
+#' @param weights Weights
 #'
 #' @examples
 #' @return

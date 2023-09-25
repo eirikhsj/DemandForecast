@@ -3,7 +3,7 @@
 \name{wquantile.generic}
 \alias{wquantile.generic}
 \title{wquantile.generic
-Function which computes the reweighteing of the NWP quantiles.}
+Function which computes the reweighting of the NWP quantiles.}
 \usage{
 wquantile.generic(x, probs, cdf.gen, weights = NA)
 }
@@ -14,5 +14,5 @@ wquantile.generic(x, probs, cdf.gen, weights = NA)
 }
 \description{
 wquantile.generic
-Function which computes the reweighteing of the NWP quantiles.
+Function which computes the reweighting of the NWP quantiles.
 }

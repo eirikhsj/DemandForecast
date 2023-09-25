@@ -7,7 +7,11 @@
 whdquantile(x, probs, weights = NA)
 }
 \arguments{
-\item{weights}{}
+\item{x}{Input}
+
+\item{probs}{Probabilities}
+
+\item{weights}{Weights}
 }
 \description{
 whdquantile
