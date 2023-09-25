@@ -13,9 +13,6 @@ Main conclusions:
 
 volume ~ as.factor(hour):as.factor(season) + as.factor(season) + as.factor(w_day):as.factor(season) + s(week1) + s(week2) + month + year
 
-This is the result of a process that first tried to find a combination of the best covariates one by one, and some tinkering. 
-
-
 2) What we added right at the end here was the season term in addition to using it as an interaction. 
 The season term is motivated by the very different pattern in the pc temperature data in terms of daily variations between summer and winter. 
 Do we see this in the demand data as well?
@@ -72,31 +69,31 @@ date_demand = prep$date_demand
 #dt_unified = merge(dt_demand, dt_date, by = c("date", "hour"))
 
 #Specify time covariates
-date_demand[,week:= week(date)]
-date_demand[,week1 :=  round(cos(2*pi * week/52), digits = 7) ]
-date_demand[,week2 :=  round(sin(2*pi * week/52), digits = 7) ]
-
-date_demand[,month:= month(date)]
-date_demand[,month1 := round(cos(2*pi * month/12), digits = 7)]
-date_demand[,month2 := round(sin(2*pi * month/12), digits = 7)]
-
-date_demand[,hour1 := cos(2*pi * hour/24) ]
-date_demand[,hour2 := sin(2*pi * hour/24) ]
-
-date_demand[,year:= year(date)]
-
-date_demand[,w_day:= as.numeric(format(date, "%u"))]
-date_demand[,w_day1 := cos(2*pi * w_day/7) ]
-date_demand[,w_day2 := sin(2*pi * w_day/7) ]
-
-date_demand[,season:= ifelse(month(date) %in% c(12,1,2), 1, 
-                            ifelse(month(date) %in% c(3,4,5), 2,
-                            ifelse(month(date) %in% c(6,7,8), 3, 4)))]
-
-date_demand[,season1 := round(cos(2*pi * season/4), digits = 7)]
-date_demand[,season2 := round(sin(2*pi * season/4), digits = 7)]
-
-date_demand[,hourly_mean_grid := rowMeans(X_mat)]
+# date_demand[,week:= week(date)]
+# date_demand[,week1 :=  round(cos(2*pi * week/52), digits = 7) ]
+# date_demand[,week2 :=  round(sin(2*pi * week/52), digits = 7) ]
+# 
+# date_demand[,month:= month(date)]
+# date_demand[,month1 := round(cos(2*pi * month/12), digits = 7)]
+# date_demand[,month2 := round(sin(2*pi * month/12), digits = 7)]
+# 
+# date_demand[,hour1 := cos(2*pi * hour/24) ]
+# date_demand[,hour2 := sin(2*pi * hour/24) ]
+# 
+# date_demand[,year:= year(date)]
+# 
+# date_demand[,w_day:= as.numeric(format(date, "%u"))]
+# date_demand[,w_day1 := cos(2*pi * w_day/7) ]
+# date_demand[,w_day2 := sin(2*pi * w_day/7) ]
+# 
+# date_demand[,season:= ifelse(month(date) %in% c(12,1,2), 1, 
+#                             ifelse(month(date) %in% c(3,4,5), 2,
+#                             ifelse(month(date) %in% c(6,7,8), 3, 4)))]
+# 
+# date_demand[,season1 := round(cos(2*pi * season/4), digits = 7)]
+# date_demand[,season2 := round(sin(2*pi * season/4), digits = 7)]
+# 
+# date_demand[,hourly_mean_grid := rowMeans(X_mat)]
 
 # forc_start = '2016-01-01'; forc_end = '2023-01-01'; pred_win = 30; pred_lag = 15; train_y = 5;
 # p_comps = 0;  reg_form = "volume ~ as.factor(hour) + as.factor(month) + year"; custom = FALSE; incl_climatology=FALSE; cores = 8
@@ -110,18 +107,18 @@ First look at which of the 4 configurations of each of the 5 time covariates per
 We have a simple continuous, spline, as.factor(), and sinusoidal. 
 # 1) Climatology
 ```{r}
-Climatology = demand_forecast(forc_start = '2016-01-01', forc_end = '2023-01-01', pred_win = 30, pred_lag = 15, train_y = 5,
+Climatology = demand_forecast(X_mat=X_mat, date_demand = date_demand, forc_start = '2016-01-01', forc_end = '2023-01-01', 
+                              pred_win = 30, pred_lag = 15, train_y = 5,
                               p_comps = 0,  reg_form = "volume ~ 1", incl_climatology = TRUE, custom = FALSE,
-                              X_mat=X_mat, date_demand = date_demand, cores = 4)
+                              cores = 4)
 ```
-
 
 
 # 2) Single covariates
 ```{r, eval = FALSE}
-Year1 = demand_forecast(X_mat,date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', 
+Year1 = demand_forecast(X_mat=X_mat, date_demand = date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', 
             pred_win = 30, pred_lag = 15, train_y = 5, p_comps = 0,  reg_form = "volume ~ year", incl_climatology = FALSE)
-Year2 = demand_forecast(X_mat,date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', 
+Year2 = demand_forecast(X_mat=X_mat, date_demand = date_demand,forc_start = '2016-01-01', forc_end = '2023-01-01', 
             pred_win = 30, pred_lag = 15, train_y = 5, p_comps = 0,  reg_form = "volume ~ as.factor(year)", incl_climatology = FALSE)
 ```
 

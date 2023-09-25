@@ -3,16 +3,18 @@
 #'
 #' @param forc_start Date for first initalization date.
 #' @param forc_end Date for last initialization date.
-#' @param pred_win Span of days in prediction window, default is 30.
-#' @param pred_lag Days after initialization day the prediction window begins, default is 15.
-#' @param train_y Years of training data.
-#' @param reg_form Regression formula before PC covariates have been added.
+#' @param pred_win Integer. Span of days in prediction window, default is 30.
+#' @param pred_lag Integer. Days after initialization day the prediction window begins, default is 15.
+#' @param train_y Integer. Years of training data.
+#' @param reg_form String. Regression formula before PC covariates have been added.
 #' @param p_comps Integer. Number of pc-comps in model.
 #' @param other_mods List of other models to run or default is NULL.
 #' @param comb Boolean. FALSE allows specific combination of PCs to be run without running all combinations.
 #' @param custom Boolean. Specifies a custom pc based model.
-#' @param incl_climatology Boolean.Includes climatology model.
-#' @param no_pc Boolean.Includes basic (no pc) model.
+#' @param incl_climatology Boolean. TRUE includes climatology model.
+#' @param no_pc Boolean. TRUE includes basic (no pc) model.
+#' @param gam_lasso Boolean. TRUE sets lasso penalty.
+#' @param cores Integer. Sets number of parallelized cores, default is 4.
 #'
 #' @return A data.table with actual and predicted demand values.
 #' @export
@@ -78,6 +80,7 @@ Rolling = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
         dt_train = date_demand[I_train, ]
         dt_test  = date_demand[I_test, ]
     }
+    dt_train= dt_train[!is.na(volume)]
     print(paste('We are training on:', dim(dt_train)[1], 'observations'))
     max_year_train = dt_train[, max(year)]
     dt_test = dt_test[year > max_year_train, year := max_year_train] #pretend that new year is last year to avoid factor error

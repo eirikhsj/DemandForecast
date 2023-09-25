@@ -15,8 +15,8 @@ prep_demand_temp_data = function(include_na_volume = TRUE, path = "/mn/kadingir/
     ##----- 1) Load and extract temperature data -----
     #f_nc = paste0(path, "/temperature_data.nc4") #Old dataset 2013-2021 only
     f_nc = paste0(path, "era_historical_data.nc4") #New dataset 1978-2023
-    nc = nc_open(f_nc)
-    X = ncvar_get(nc, "2m_temperature")
+    nc = ncdf4::nc_open(f_nc)
+    X = ncdf4::ncvar_get(nc, "2m_temperature")
     hours = 1:24
     days = as.Date(ncvar_get(nc, "day"), origin = "1970-01-01")
     nc_close(nc)
@@ -75,17 +75,7 @@ prep_demand_temp_data = function(include_na_volume = TRUE, path = "/mn/kadingir/
 
     date_demand[,I:= 1:.N] #set index
 
-    ##----- 5) Do we want to return NA volume observations? -----
-    out = list()
-    if (include_na_volume== FALSE){
-        d_d = date_demand[!is.na(volume)] #Select only rows with volume obs
-        out$X_mat = X_mat[d_d$I,]
-        out$date_demand = d_d[,I:= 1:.N] #reset index
-    } else{
-        out$X_mat = X_mat
-        out$date_demand = date_demand
-    }
-    ##----- 6) Specify time covariates-----
+    ##----- 5) Specify time covariates-----
 
     date_demand[,week:= data.table::isoweek(date)] # jan 1st might get week nr 52 or 53
     date_demand[,week1 := cos(2*pi * week/52) ]
@@ -113,11 +103,24 @@ prep_demand_temp_data = function(include_na_volume = TRUE, path = "/mn/kadingir/
 
     date_demand[,hourly_mean_grid := rowMeans(X_mat)]
 
+    ##----- 6) Do we want to return NA volume observations? -----
+    out = list()
+    if (include_na_volume== FALSE){
+        d_d = date_demand[!is.na(volume)] #Select only rows with volume obs
+        out$X_mat = X_mat[d_d$I,]
+        out$date_demand = d_d[,I:= 1:.N] #reset index
+    } else{
+        out$X_mat = X_mat
+        out$date_demand = date_demand
+    }
+
     ##----- 7) Final Check and Print-----
     if (nrow(out$date_demand) == nrow(out$X_mat)){
         print(paste0('Demand volume data from ', dt_demand[1,date], ' to ', dt_demand[dim(dt_demand)[1],date],'.' ))
         print(paste0('Temperature data from ', out$date_demand[1,date], ' to ', out$date_demand[dim(out$date_demand)[1],date],'.'))
         print(paste0('We have ', dim(out$X_mat)[1], ' hourly observations at ', dim(out$X_mat)[2], ' grid points.'))
+    } else{
+        print("Something went wrong")
     }
     return(out)
 }

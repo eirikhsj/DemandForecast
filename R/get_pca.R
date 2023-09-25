@@ -1,4 +1,4 @@
-#' Multi-use function for getting principal-components.
+#' Multi-use function for getting principal components (PCs).
 #'
 #' Fetches the desired number of PCs and returns these within a data.table together with time covariates.
 #' If given an NWP-matrix, the U and mu from the decomposition of ERA-temperature (X_mat) is used to compute and select factor loading of NWP forecasts.
