@@ -17,6 +17,7 @@
 #' @return Model output with predictions, loss and model coefficients.
 #' @import quantreg
 #' @import data.table
+#' @import splines
 #' @import stats
 #'
 #' @examples mod = rolling_mod_NWP('2007-01-01', '2022-05-01', 0.9, ERA_NWP, 1, model = 'qreg', window = 60, reweight=FALSE)
@@ -125,7 +126,7 @@ Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, p
         spline_var = paste0("NWP1_",q*100)
         spline_form = paste0("test$PC1 ~ bs(test$",spline_var,", df=",df_spline,")")
         X_test = model.matrix(as.formula(spline_form))
-        qreg = rq(PC1 ~ bs(get(spline_var), df=df_spline), data=train, tau=c(q))
+        qreg = quantreg::rq(PC1 ~ splines::bs(get(spline_var), df=df_spline), data=train, tau=c(q))
         test_l = pinball_loss(q,  predict(qreg, newdata = test), test$PC1)
         results[, 'pred':= predict(qreg, newdata = test)]
     }
@@ -135,7 +136,7 @@ Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, p
     print(paste0('Ave pinball loss for model issued on ', init_day, ' is = ', round(mean(test_l),digits = 2)))
 
     ## 3e) Register Beta coefficients
-    #print(pred_vars)
+
     if(predictors >0 & model == 'qreg'){
         betas = data.table(t(coef(qreg)))[,..pred_vars]
         colnames(betas) = paste0('coef_',pred_vars)
