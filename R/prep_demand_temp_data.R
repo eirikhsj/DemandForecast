@@ -1,6 +1,7 @@
 #' Finds, checks and loads temperature and demand data.
 #'
-#' @param include_na_volume Boolean, include dates with temperature data but na volume data.
+#' @param include_na_volume Boolean. TRUE includes dates with na volume data. Use TRUE for creating historical PC data
+#' @param path String File path.
 #'
 #' @return Returns a matrix with grid temperature data and a data.table with demand data.
 #' @import ncdf4
@@ -8,6 +9,7 @@
 
 #' @examples prep = prep_demand_temp_data(include_na_volume = TRUE,path = "~/NR/ClimateFutures/RenewableEnergy/Data/DemandForecasting/")
 #' @examples prep = prep_demand_temp_data(include_na_volume = TRUE,path = "/Users/Eirik/Desktop/Master2023/Data/")
+#' @examples prep = prep_demand_temp_data(include_na_volume = TRUE,path = "/nr/samba/user/esjavik/DemandData/")
 #'
 #' @export
 prep_demand_temp_data = function(include_na_volume = TRUE, path = "/mn/kadingir/datascience_000000/eirikhsj/"){

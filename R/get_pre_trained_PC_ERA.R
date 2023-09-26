@@ -1,15 +1,16 @@
 #' Gets PCA matrix of temperature data for a specified time period.
 #'
-#' @param file File to store and look for PCA matrix.
+#' @param file String. File to store and look for PCA matrix.
 #' @param X_mat ERA temperature matrix.
-#' @param start_train Start date training.
-#' @param stop_train End date training.
-#' @param start_test Start date test.
-#' @param stop_test End date test.
+#' @param date_demand Date and demand matrix. We only care about the dates in this application. 
+#' @param start_train String. Start date training.
+#' @param stop_train String. End date training.
+#' @param start_test String. Start date test.
+#' @param stop_test String. End date test.
 #' @param NWP NWP matrix.
 #' @param run_again Boolean. If FALSE and file exist function loads pre-made pca matrix.
 #'
-#' @return A
+#' @return A list of data.tables 
 #' @export
 #'
 #' @examples get_pre_trained_PC_ERA(file='~/Desktop/Master2023/Data/PC_ERA', X_mat,
