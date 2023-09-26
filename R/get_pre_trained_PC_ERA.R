@@ -17,7 +17,7 @@
 #' NWP=NA,run_again =TRUE)
 #'
 #'
-get_pre_trained_PC_ERA = function(file='~/Desktop/Master2023/Data/PC_ERA', X_mat,
+get_pre_trained_PC_ERA = function(file='~/Desktop/Master2023/Data/PC_ERA', X_mat,date_demand = date_demand,
                                   start_train = '2013-01-01', stop_train='2013-12-31',
                                   start_test = '2014-01-01', stop_test='2014-12-31',
                                   NWP=NA,run_again =FALSE){
