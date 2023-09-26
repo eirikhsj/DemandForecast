@@ -71,8 +71,8 @@ rolling_mod_NWP = function(forc_start=as.Date('2007-01-01'), forc_end=as.Date('2
 
 
     ## **** Run parallel cores ****
-    blas_set_num_threads(1)
-    omp_set_num_threads(1) #Set number of threads
+    RhpcBLASctl::blas_set_num_threads(1)
+    RhpcBLASctl::omp_set_num_threads(1) #Set number of threads
 
     #3) Forecast iteration
     detailed_results = mclapply(seq_along(init_days),
@@ -108,9 +108,9 @@ Rolling_nwp = function(i, ERA_NWP_vars, q, init_days, window, reweight, model, p
         test = ERA_NWP_final[init_date == init_day, .SD, keyby = .(date,hour)] #Use of several preds means target_days selects to many dates
     }
     results = test
-    # if (max(train$year) > max(test$year)){
-    #     test = test[year > max(train$year), year := max(train$year)]
-    # }
+    if (max(test$year) > max(train$year) & grepl("as.factor(year)", formula, fixed = TRUE)){
+        test = test[year > max(train$year), year := max(train$year)]
+    }
 
     ## 3c) Run qr-reg
     if (model == 'qreg'){
