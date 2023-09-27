@@ -9,10 +9,16 @@ whdquantile(x, probs, weights = NA)
 \arguments{
 \item{x}{Input}
 
-\item{probs}{Probabilities}
+\item{probs}{Probabilities.}
 
-\item{weights}{Weights}
+\item{weights}{Weights.}
+}
+\value{
+function call on wquantile.generic
 }
 \description{
 whdquantile
+}
+\examples{
+whdquantile(x = pc_data$NWP_PC_mat[j,1,], p = seq(0.1, 0.9, 0.1), weights = w_n)
 }

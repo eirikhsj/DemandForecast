@@ -36,10 +36,10 @@ Data.table with data ready for input in rolling_mod function
 This function matches ERA and NWP data and readies data for use in prediction task in rolling_mod function.
 ERA contains the PC of ERA observed temperature (e.g. PC1) .
 NWP contains the PC of NWP forecasted temperature (e.g. NWP_1) .
-In rolling_mod we are building a rolling cross validation of PC1 ~ f(time) + NWP_PC1_t1 + NWP_PC1_t2
+In rolling_mod we are building a rolling cross validation of e.g. PC1 ~ f(time) + NWP_PC1_t1 + NWP_PC1_t2
+The function only works with one PC at a time.
 }
 \examples{
 ERA_NWP = get_ERA_NWP(NWP_preds = 2,reweight = FALSE)
-
 
 }

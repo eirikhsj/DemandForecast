@@ -7,6 +7,7 @@
 get_pre_trained_PC_ERA(
   file = "~/Desktop/Master2023/Data/PC_ERA",
   X_mat,
+  date_demand = date_demand,
   start_train = "2013-01-01",
   stop_train = "2013-12-31",
   start_test = "2014-01-01",
@@ -16,24 +17,26 @@ get_pre_trained_PC_ERA(
 )
 }
 \arguments{
-\item{file}{File to store and look for PCA matrix.}
+\item{file}{String. File to store and look for PCA matrix.}
 
 \item{X_mat}{ERA temperature matrix.}
 
-\item{start_train}{Start date training.}
+\item{date_demand}{Date and demand matrix. We only care about the dates in this application.}
 
-\item{stop_train}{End date training.}
+\item{start_train}{String. Start date training.}
 
-\item{start_test}{Start date test.}
+\item{stop_train}{String. End date training.}
 
-\item{stop_test}{End date test.}
+\item{start_test}{String. Start date test.}
+
+\item{stop_test}{String. End date test.}
 
 \item{NWP}{NWP matrix.}
 
 \item{run_again}{Boolean. If FALSE and file exist function loads pre-made pca matrix.}
 }
 \value{
-A
+A list of data.tables
 }
 \description{
 Gets PCA matrix of temperature data for a specified time period.

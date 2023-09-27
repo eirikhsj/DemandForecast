@@ -96,13 +96,13 @@ get_one_month_NWP_quantiles= function(files_i = "/mn/kadingir/datascience_000000
 #' @param k Integer. number in sequence of tuning values.
 #' @param pc_data NWP-data to be weighted.
 #' @param ERA_PC1_rew ERA data.
-#' @param init_day String. Init day
-#' @param target_date Used to store results
-#' @param rew_int Day and length of reweighting
-#' @param sq sequence of ks
+#' @param init_day String. Init day.
+#' @param target_date Used to store results.
+#' @param rew_int Day and length of reweighting.
+#' @param sq sequence of k's.
 #'
-#' @examples
-#' @return
+#' @examples get_weight(pc_data= pc_data, ERA_PC1_rew =ERA_PC1_rew,init_day=init_day,target_date= target_date, sq = sq, rew_int = rew_int)
+#' @return data.table
 #' @export
 get_weights = function(k, pc_data, ERA_PC1_rew,init_day,target_date, rew_int, sq){
     print(k)
@@ -118,9 +118,9 @@ get_weights = function(k, pc_data, ERA_PC1_rew,init_day,target_date, rew_int, sq
     s = sum( exp(w - mx) )
     w_n = exp(w - mx) / s
 
-    #Apply weight to remaining obs
+    #Apply weight to remaining obs.
     #When applying weights we are not dealing with actual values,
-    #so we must use a quant est function to get an actual values back
+    #so we use a quant est function to get an actual values back.
     reweight_results_temp = list()
     for (j in 1:500){
         reweights = t(whdquantile(pc_data$NWP_PC_mat[j,1,], p = seq(0.1, 0.9, 0.1), weights = w_n))
@@ -137,12 +137,12 @@ get_weights = function(k, pc_data, ERA_PC1_rew,init_day,target_date, rew_int, sq
 
 #' wquantile.generic
 #' Function which computes the reweighting of the NWP quantiles.
-#' @param x
+#' @param x NWP PC values.
 #' @param probs Integer or list of quantiles of interest.
-#' @param cdf.gen
+#' @param cdf.gen CDF.
 #' @param weights Add weights.
 #'
-#' @examples
+#' @examples wquantile.generic(x, probs, cdf.gen, weights)
 #' @return
 #' @export
 wquantile.generic <- function(x, probs, cdf.gen, weights = NA) {
@@ -170,11 +170,11 @@ wquantile.generic <- function(x, probs, cdf.gen, weights = NA) {
 #' whdquantile
 #'
 #' @param x Input
-#' @param probs Probabilities
-#' @param weights Weights
+#' @param probs Probabilities.
+#' @param weights Weights.
 #'
-#' @examples
-#' @return
+#' @examples whdquantile(x = pc_data$NWP_PC_mat[j,1,], p = seq(0.1, 0.9, 0.1), weights = w_n)
+#' @return function call on wquantile.generic
 #' @export
 whdquantile = function(x, probs, weights = NA) {
     cdf.gen = function(n, p){

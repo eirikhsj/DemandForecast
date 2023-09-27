@@ -14,15 +14,21 @@ get_weights(k, pc_data, ERA_PC1_rew, init_day, target_date, rew_int, sq)
 
 \item{ERA_PC1_rew}{ERA data.}
 
-\item{init_day}{String. Init day}
+\item{init_day}{String. Init day.}
 
-\item{target_date}{Used to store results}
+\item{target_date}{Used to store results.}
 
-\item{rew_int}{Day and length of reweighting}
+\item{rew_int}{Day and length of reweighting.}
 
-\item{sq}{sequence of ks}
+\item{sq}{sequence of k's.}
+}
+\value{
+data.table
 }
 \description{
 get weights
 Function which computes the reweighting of the NWP quantiles.
+}
+\examples{
+get_weight(pc_data= pc_data, ERA_PC1_rew =ERA_PC1_rew,init_day=init_day,target_date= target_date, sq = sq, rew_int = rew_int)
 }

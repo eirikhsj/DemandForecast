@@ -50,4 +50,6 @@ Output can then be merged with ERA-data using a get_ERA_NWP function to be used 
 \examples{
 NWP_quantiles_93_93 = get_all_NWP_quantiles(path = "~/Desktop/MasterNR/Prob2_data",start_month  = '01', start_year = 1993, forc_months = 4,
 PC_ERA = PC_ERA_79_92, pc_comp = 2,reweight = FALSE,rew_int = c(15,1))
+NWP_quantiles_93_93 = get_all_NWP_quantiles(path = "/nr/samba/user/esjavik//bigdisk3/pro/sfe_daily_nordic_temperature",start_month  = '01', start_year = 1993, forc_months = 4,
+PC_ERA_path = "/nr/samba/user/esjavik/DemandData/pc_era_79_93.Rda", pc_comp = 2,reweight = FALSE)
 }

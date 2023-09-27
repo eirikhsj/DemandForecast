@@ -10,7 +10,9 @@ prep_demand_temp_data(
 )
 }
 \arguments{
-\item{include_na_volume}{Boolean, include dates with temperature data but na volume data.}
+\item{include_na_volume}{Boolean. TRUE includes dates with na volume data. Use TRUE for creating historical PC data}
+
+\item{path}{String File path.}
 }
 \value{
 Returns a matrix with grid temperature data and a data.table with demand data.
@@ -21,5 +23,6 @@ Finds, checks and loads temperature and demand data.
 \examples{
 prep = prep_demand_temp_data(include_na_volume = TRUE,path = "~/NR/ClimateFutures/RenewableEnergy/Data/DemandForecasting/")
 prep = prep_demand_temp_data(include_na_volume = TRUE,path = "/Users/Eirik/Desktop/Master2023/Data/")
+prep = prep_demand_temp_data(include_na_volume = TRUE,path = "/nr/samba/user/esjavik/DemandData/")
 
 }

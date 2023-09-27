@@ -8,11 +8,18 @@ Function which computes the reweighting of the NWP quantiles.}
 wquantile.generic(x, probs, cdf.gen, weights = NA)
 }
 \arguments{
+\item{x}{NWP PC values.}
+
 \item{probs}{Integer or list of quantiles of interest.}
+
+\item{cdf.gen}{CDF.}
 
 \item{weights}{Add weights.}
 }
 \description{
 wquantile.generic
 Function which computes the reweighting of the NWP quantiles.
+}
+\examples{
+wquantile.generic(x, probs, cdf.gen, weights)
 }
