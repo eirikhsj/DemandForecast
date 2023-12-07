@@ -143,7 +143,7 @@ get_weights = function(k, pc_data, ERA_PC1_rew,init_day,target_date, rew_int, sq
 #' @param weights Add weights.
 #'
 #' @examples wquantile.generic(x, probs, cdf.gen, weights)
-#' @return
+#' @return weighted sum
 #' @export
 wquantile.generic <- function(x, probs, cdf.gen, weights = NA) {
     n = length(x)

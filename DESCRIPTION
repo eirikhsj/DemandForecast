@@ -1,12 +1,13 @@
 Package: DemandForecast
-Title: Predicts Energy Demand Volume in Norway based on weather data. 
+Title: Predicts Energy Demand Volume in Norway based on weather data 
 Version: 0.0.0.9000
 Authors@R: 
     person('Eirik', 'Sjåvik', , "eirikhsj@math.uio.no", role = c("aut", "cre"),
            comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: By using NWP temperature forecasts, normal or re-weighted as well as data on stratospheric wind and the north atlantic oscillation this package gives ernergy demand forecasts.
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a license
+Description: By using NWP temperature forecasts, normal or re-weighted this package gives energy demand forecasts for Nordic region.
+License: `use_mit_license()`, `use_gpl3_license()` 
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.1
-Depends: data.table, quantreg, ncdf4, forecast, glmnet, mgcv, xgboost, parallel, RhpcBLASctl, zoo, splines, MASS,lubridate
+RoxygenNote: 7.2.3
+Depends: data.table
+Imports: quantreg, ncdf4, forecast, glmnet, mgcv, xgboost, parallel, RhpcBLASctl, zoo, splines, MASS, lubridate
