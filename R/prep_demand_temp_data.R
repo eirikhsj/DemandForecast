@@ -28,7 +28,7 @@ prep_demand_temp_data = function(include_na_volume = TRUE, path = "/mn/kadingir/
                     ncol = dim(X)[1] * dim(X)[2], #lon time lat
                     byrow = TRUE)
 
-    dt_date = data.table(expand.grid(hour = hours,date = days)) #track of dates for temp data
+    dt_date = data.table(expand.grid(hour = hours, date = days)) #track of dates for temp data
 
     ##----- 2) Load and extract demand volume data -----
     f_demand = paste0(path, "/nordpool_volume.csv") # 2013 - 2021
@@ -102,6 +102,11 @@ prep_demand_temp_data = function(include_na_volume = TRUE, path = "/mn/kadingir/
 
     date_demand[,season1 := round(cos(2*pi * season/4), digits = 7)]
     date_demand[,season2 := round(sin(2*pi * season/4), digits = 7)]
+
+
+    date_demand[, year_day := as.integer(format(date, format ="%j"))]
+    date_demand[, paste0('yr_by_', seq(from = 1, to =14)) := lapply(1:14, function(c) floor(year_day/c))]
+
 
     date_demand[,hourly_mean_grid := rowMeans(X_mat)]
 

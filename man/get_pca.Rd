@@ -4,7 +4,16 @@
 \alias{get_pca}
 \title{Multi-use function for getting principal components (PCs).}
 \usage{
-get_pca(X_mat, I_train, I_test, p_comps, NWP = NA, U = NA, mu = NA)
+get_pca(
+  X_mat = X_mat,
+  date_demand = date_demand,
+  I_train,
+  I_test,
+  p_comps,
+  NWP = NA,
+  U = NA,
+  mu = NA
+)
 }
 \arguments{
 \item{X_mat}{Temperature grid matrix.}

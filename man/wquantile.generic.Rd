@@ -16,6 +16,9 @@ wquantile.generic(x, probs, cdf.gen, weights = NA)
 
 \item{weights}{Add weights.}
 }
+\value{
+weighted sum
+}
 \description{
 wquantile.generic
 Function which computes the reweighting of the NWP quantiles.

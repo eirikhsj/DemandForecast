@@ -21,7 +21,7 @@
 #'
 #' @export
 get_one_month_NWP_quantiles= function(files_i = "/mn/kadingir/datascience_000000/eirikhsj/sfe_nordic_temperature/sfe_nordic_temperature_1993_1.nc4",
-                                      PC_ERA, pc_comp=1, rew= FALSE, rew_int = c(15,2), date_fetch = dt_check){
+                                      PC_ERA, pc_comp=1, rew= FALSE, rew_int = c(15,2), date_fetch = dt_check, rew_type ='get_beta_weights' ){
 
     #Open nc4, assign file and close nc4
     nc = nc_open(files_i)
@@ -36,12 +36,12 @@ get_one_month_NWP_quantiles= function(files_i = "/mn/kadingir/datascience_000000
     #Get forecast and run pca- delete dt when done and store pca-results
     forecast = get(forc_name)
     print(dim(forecast))
-    pc_data = get_pca(X_mat, I_train, I_test, 2,
+    pc_data = get_pca(X_mat, date_demand= NULL, I_train, I_test, 2,
                       NWP = forecast[,,,1:dim(forecast)[4]],
                       U = PC_ERA$U,
                       mu = PC_ERA$mu)
     rm(forecast)
-    rm(forc_name)
+    gc()
 
     if (any(is.na(pc_data$NWP_PC_mat[,pc_comp,]))==TRUE){
         pc_nwp = t(na.omit(t(pc_data$NWP_PC_mat[,pc_comp,])))
@@ -68,13 +68,15 @@ get_one_month_NWP_quantiles= function(files_i = "/mn/kadingir/datascience_000000
 
         #1b find and apply weights
         sq = exp(seq(log(0.000001), log(0.01), length.out = 25))
-        blas_set_num_threads(1)
-        omp_set_num_threads(1)
-        reweight_results_final = mclapply(seq_along(sq),
-                                          'get_weights',
-                                          pc_data= pc_data, ERA_PC1_rew =ERA_PC1_rew,init_day=init_day,
-                                          target_date= target_date, sq = sq, rew_int = rew_int,
-                                        mc.cores = 25)
+        # **** Run parallel cores ****
+        RhpcBLASctl::blas_set_num_threads(1)
+        RhpcBLASctl::omp_set_num_threads(1) #Set number of threads
+
+        reweight_results_final = parallel::mclapply(seq_along(sq),
+                                                    rew_type,
+                                                    pc_nwp= pc_nwp, ERA_PC1_rew =ERA_PC1_rew,init_day=init_day,
+                                                    target_date= target_date, sq = sq, rew_int = rew_int,
+                                                    mc.cores = 25)
 
         #1c return
         NWP_quant_rew = rbindlist(reweight_results_final)
@@ -91,10 +93,108 @@ get_one_month_NWP_quantiles= function(files_i = "/mn/kadingir/datascience_000000
 }
 
 
-#' get weights
+#' get simple weights
 #' Function which computes the reweighting of the NWP quantiles.
 #' @param k Integer. number in sequence of tuning values.
-#' @param pc_data NWP-data to be weighted.
+#' @param pc_nwp NWP-data for 1 PC to be weighted.
+#' @param ERA_PC1_rew ERA data.
+#' @param init_day String. Init day.
+#' @param target_date List of dates. Used to store results.
+#' @param rew_int Day and length of reweighting.
+#' @param sq sequence of k's.
+#'
+#' @examples get_weight(pc_data= pc_data, ERA_PC1_rew =ERA_PC1_rew,init_day=init_day,target_date= target_date, sq = sq, rew_int = rew_int)
+#' @return data.table
+#' @export
+get_simple_weights = function(k, pc_nwp, ERA_PC1_rew,init_day,target_date, rew_int, sq){
+    print(k)
+    w = rep(0,dim(pc_nwp)[2])
+    indx = rev(seq(rew_int[1]*4, length.out = rew_int[2]*4, by = -1))
+    NWP_rew = pc_nwp[indx,] # time 57:60 is day 15 hours 6,12,18,24
+
+    #Find importance weights
+    for (m in 1:length(indx)){
+        w = w + -0.5*sq[k]*(ERA_PC1_rew[m] - NWP_rew[m,])^2
+    }
+
+    #Find normalized importance weights
+    mx = max(w)
+    s = sum( exp(w - mx) )
+    w_n = exp(w - mx) / s
+
+    #Apply weight to remaining obs.
+    #When applying weights we are not dealing with actual values,
+    #so we use a quant est function to get an actual values back.
+    reweight_results_temp = list()
+    weight_table = data.table(t(pc_nwp))
+    weight_table[, weight := w_n]
+    Check = data.table(quants = as.character(c(0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0))) #bc seq != to c()
+
+    for (j in 1:500){
+        #print(j)
+        cols = c(paste0('V',j), 'weight')
+        weight_temp = weight_table[,..cols]
+        setkeyv(weight_temp, paste0('V',j))
+        weight_temp[,cum_sum := cumsum(weight)]
+        weight_temp[nrow(weight_temp), c('cum_sum')] = 1 #bc the floor function thinks 1.000000 is less than 1
+        weight_temp[,quant := floor(cum_sum*10)*0.1 ]
+        Indexes = weight_temp[, min(.I), by = quant][,V1]
+
+        if(weight_temp[1, c('quant')] >0.0){weight_temp[1, c('quant')] = 0.0}
+
+        Indexes = weight_temp[, min(.I), by = quant][,V1]
+        Simple_quantiles = data.table(t(weight_temp[Indexes, .SD, .SDcols = cols[1]]))
+        known_quants =  as.character(weight_temp[, unique(quant)])
+
+        while (length(Simple_quantiles)< 11){
+            miss_quant = Check[!(quants %in%known_quants)]
+            diff_quant = diff(as.numeric(miss_quant$quants), differences = 1)
+
+            if(nrow(miss_quant) == 1| as.integer(diff_quant[1]*10)>1){
+                #print('Enter')
+                inx = as.numeric(miss_quant[1])*10
+                interpol_q = rowMeans(Simple_quantiles[1,.SD, .SDcols = inx:(inx+1)] )
+                Simple_quantiles = cbind(Simple_quantiles, interpol_q)
+                known_quants = c(known_quants, miss_quant[1])
+                Simple = data.table(t(Simple_quantiles))
+                setkey(Simple, V1)
+                Simple_quantiles = data.table(t(Simple))
+            }else{
+                inx = as.numeric(miss_quant[1])*10
+                a =  Simple_quantiles[1,.SD, .SDcols = inx]
+                b =  Simple_quantiles[1,.SD, .SDcols = (inx+1)]
+                dist = b-a
+
+                repeats = rle(as.character(diff_quant))$lengths[1]+1
+                for (i in 1:repeats){
+                    interpol_q = a + (dist/(repeats+1))*i
+                    Simple_quantiles = cbind(Simple_quantiles, interpol_q)
+                    known_quants = c(known_quants, miss_quant[i])
+                    Simple = data.table(t(Simple_quantiles))
+                    setkey(Simple, V1)
+                    Simple_quantiles = data.table(t(Simple))
+                }
+            }
+        }
+        #print(length(Simple_quantiles))
+        reweight_results_temp[[j]] = data.table(Simple_quantiles)
+    }
+    temp = rbindlist(reweight_results_temp)
+    reweight_results_final = data.table(k = rep(k, 500),
+                                        temp[,2:10],
+                                        hour = rep(c(6,12,18,24), 125),
+                                        init_date = init_day,
+                                        date = as.Date(target_date))
+    return(reweight_results_final)
+}
+
+
+
+
+#' get beta weights
+#' Function which computes the reweighting of the NWP quantiles.
+#' @param k Integer. number in sequence of tuning values.
+#' @param pc_nwp NWP-data for 1 PC to be weighted.
 #' @param ERA_PC1_rew ERA data.
 #' @param init_day String. Init day.
 #' @param target_date Used to store results.
@@ -104,16 +204,18 @@ get_one_month_NWP_quantiles= function(files_i = "/mn/kadingir/datascience_000000
 #' @examples get_weight(pc_data= pc_data, ERA_PC1_rew =ERA_PC1_rew,init_day=init_day,target_date= target_date, sq = sq, rew_int = rew_int)
 #' @return data.table
 #' @export
-get_weights = function(k, pc_data, ERA_PC1_rew,init_day,target_date, rew_int, sq){
+get_beta_weights = function(k, pc_nwp, ERA_PC1_rew,init_day,target_date, rew_int, sq){
     print(k)
-    w = rep(0,dim(pc_data$NWP_PC_mat)[3])
+    w = rep(0,dim(pc_nwp)[2])
     indx = rev(seq(rew_int[1]*4, length.out = rew_int[2]*4, by = -1))
-    NWP_rew = pc_data$NWP_PC_mat[indx,1,] # time 57:60 is day 15 hours 6,12,18,24
+    NWP_rew = pc_nwp[indx,] # time 57:60 is day 15 hours 6,12,18,24
 
+    #Find importance weights
     for (m in 1:length(indx)){
         w = w + -0.5*sq[k]*(ERA_PC1_rew[m] - NWP_rew[m,])^2
     }
 
+    #Find normalized importance weights
     mx = max(w)
     s = sum( exp(w - mx) )
     w_n = exp(w - mx) / s
@@ -123,7 +225,7 @@ get_weights = function(k, pc_data, ERA_PC1_rew,init_day,target_date, rew_int, sq
     #so we use a quant est function to get an actual values back.
     reweight_results_temp = list()
     for (j in 1:500){
-        reweights = t(whdquantile(pc_data$NWP_PC_mat[j,1,], p = seq(0.1, 0.9, 0.1), weights = w_n))
+        reweights = t(whdquantile(pc_nwp[j,], p = seq(0.1, 0.9, 0.1), weights = w_n))
         reweight_results_temp[[j]] = data.table(reweights)
     }
     temp = rbindlist(reweight_results_temp)

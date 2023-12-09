@@ -192,15 +192,3 @@ pop = data.table(pop[,,1])
 
 log_pop = pop[,names(pop):= lapply(.SD, function(x) log(replace(x, is.na(x), 1))), .SDcols = names(pop) ]
 
-
-
-a = Sys.time()
-New_inter3_smallgrid = demand_forecast(X_mat[,1:384], date_demand, forc_start = '2016-01-01', forc_end = '2023-01-01',
-                                       pred_win = 30, pred_lag = 0, train_y = 3, p_comps = 2, no_pc = TRUE, incl_climatology = FALSE,
-                                       reg_form = "volume~ as.factor(hour) + as.factor(w_day) + as.factor(month) + as.factor(season) + as.factor(week) + year + as.factor(w_day):as.factor(month) +as.factor(hour):as.factor(week) + as.factor(hour):as.factor(w_day) " ,
-                                       cores = 22, custom = FALSE, Setup = "Rolling")
-print( Sys.time()-a)
-
-
-
-
