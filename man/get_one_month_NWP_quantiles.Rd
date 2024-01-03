@@ -11,7 +11,8 @@ get_one_month_NWP_quantiles(
   pc_comp = 1,
   rew = FALSE,
   rew_int = c(15, 2),
-  date_fetch = dt_check
+  date_fetch = dt_check,
+  rew_type = "get_beta_weights"
 )
 }
 \arguments{

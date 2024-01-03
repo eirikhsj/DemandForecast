@@ -68,15 +68,29 @@ get_one_month_NWP_quantiles= function(files_i = "/mn/kadingir/datascience_000000
 
         #1b find and apply weights
         sq = exp(seq(log(0.000001), log(0.01), length.out = 25))
+
         # **** Run parallel cores ****
         RhpcBLASctl::blas_set_num_threads(1)
         RhpcBLASctl::omp_set_num_threads(1) #Set number of threads
 
-        reweight_results_final = parallel::mclapply(seq_along(sq),
-                                                    rew_type,
-                                                    pc_nwp= pc_nwp, ERA_PC1_rew =ERA_PC1_rew,init_day=init_day,
-                                                    target_date= target_date, sq = sq, rew_int = rew_int,
-                                                    mc.cores = 25)
+        if (all(reweight_days %in% PC_ERA$dt_test[, date]) ==TRUE){
+            reweight_results_final = parallel::mclapply(seq_along(sq),
+                                                        rew_type,
+                                                        pc_nwp= pc_nwp, ERA_PC1_rew =ERA_PC1_rew,init_day=init_day,
+                                                        target_date= target_date, sq = sq, rew_int = rew_int,
+                                                        mc.cores = 25)
+        } else{
+            print(paste0('Could not find ERA-data for reweighting period: ', reweight_days))
+            reweight_results_final = list()
+            cols = c('Tuning_k', paste0('NWP_PC',pc_comp, '_rew_q', seq(10, 90, 10)), 'hour', 'init_date', 'date')
+            reweight_temp = data.table(matrix(nrow = 0, ncol = 13))
+            names(reweight_temp) = cols
+            reweight_temp = reweight_temp[ , c('init_date', 'date') := lapply(.SD, as.Date),  .SDcols =c('init_date', 'date') ]
+            reweight_temp = reweight_temp[ , c(paste0('NWP_PC',pc_comp, '_rew_q', seq(10, 90, 10))) := lapply(.SD, as.numeric),  .SDcols =c(paste0('NWP_PC',pc_comp, '_rew_q', seq(10, 90, 10))) ]
+            reweight_temp = reweight_temp[ , c('Tuning_k') := lapply(.SD, as.integer),  .SDcols =c('Tuning_k')  ]
+
+            reweight_results_final[[1]] = reweight_temp
+            }
 
         #1c return
         NWP_quant_rew = rbindlist(reweight_results_final)
@@ -180,11 +194,17 @@ get_simple_weights = function(k, pc_nwp, ERA_PC1_rew,init_day,target_date, rew_i
         reweight_results_temp[[j]] = data.table(Simple_quantiles)
     }
     temp = rbindlist(reweight_results_temp)
+
     reweight_results_final = data.table(k = rep(k, 500),
                                         temp[,2:10],
                                         hour = rep(c(6,12,18,24), 125),
                                         init_date = init_day,
                                         date = as.Date(target_date))
+
+    if(dim(reweight_results_final)[1]!=500 | dim(reweight_results_final)[2]!=13){
+        stop(print(paste0('Dimensions are ', dim(reweight_results_final)[1], ' and ', dim(reweight_results_final)[2], ' for ', k )))
+    }
+
     return(reweight_results_final)
 }
 

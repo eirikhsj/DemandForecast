@@ -3,7 +3,7 @@
 library(DemandForecast)
 
 #prep = prep_demand_temp_data(include_na_volume = FALSE)
-prep= prep_demand_temp_data(include_na_volume = FALSE,path = "/Users/Eirik/Desktop/Master2023/Data/")
+prep= prep_demand_temp_data(include_na_volume = FALSE, path = "/Users/Eirik/Desktop/Master2023/Data/")
 X_mat = prep$X_mat                                      #Temperature field as columns
 date_demand = prep$date_demand                          #Demand data with time covariates
 

@@ -7,12 +7,17 @@ output: html_document
 
 # First Produce re-weighted data: 
 ```{r}
-NWP_quant_rew25_1993_2023_1 = get_all_NWP_quantiles(path = "/mn/kadingir/datascience_000000/eirikhsj/sfe_nordic_temperature/",
+# dir  ='/mn/kadingir/datascience_000000/eirikhsj/'
+# file_path = paste0(dir,'sfe_nordic_temperature/')
+dir = '/nr/samba/user/esjavik/DemandModels/'
+file_path = '/nr/samba/user/esjavik//bigdisk3/pro/sfe_daily_nordic_temperature/'
+
+NWP_quant_rew25_1993_2023_1 = get_all_NWP_quantiles(path = file_path,
                                                     pattern = 'sfe_nordic_temperature_',
                                                     start_month  = '01', start_year = 1993, forc_months = 362,
-                                                    PC_ERA_path = "/mn/kadingir/datascience_000000/eirikhsj/PC_ERA_79_92.Rda",
+                                                    PC_ERA_path = paste0(dir,"PC_ERA_79_92.Rda"),
                                                     pc_comp = 1,
-                                                    reweight = TRUE, rew_int =c(15, 1)) # 1 day, last day 15th
+                                                    reweight = TRUE, rew_int =c(15, 1), rew_type = 'get_beta_weights') # 1 day, last day 15th
 
 NWP_quant_rew25_1993_2023_2 = get_all_NWP_quantiles(path = "/mn/kadingir/datascience_000000/eirikhsj/sfe_nordic_temperature/",
                                                     pattern = 'sfe_nordic_temperature_',
@@ -31,7 +36,7 @@ NWP_quant_rew25_1993_2023_3 = get_all_NWP_quantiles(path = "/mn/kadingir/datasci
 
 
 
-# Run models:  y = B NWP1
+# Run models: QR-NWP1: y = B NWP1
 ```{r}
 #For 1 days of re-weighting
 for (k in 1:25){
@@ -49,7 +54,6 @@ for (k in 1:25){
     assign(paste0('mod_', k), mod_k)
     save(list =paste0('mod_', k), file = paste0('~/rew_k_',k,'_1.Rda'))
 }
-
 
 #For 2 days of re-weighting
 for (k in 1:25){
@@ -85,12 +89,10 @@ for (k in 1:25){
     save(list =paste0('mod_', k), file = paste0('~/rew_k_',k,'_3.Rda'))
 }
 
-
 ```
 
 
-
-# Run models:  y = B interactions
+# Run models: QR-combined:  y = B interactions
 ```{r}
 #For 1 days of re-weighting
 for (k in 1:25){
@@ -110,7 +112,6 @@ for (k in 1:25){
     assign(paste0('mod_int1_', k), mod_int1_k)
     save(list =paste0('mod_int1_', k), file = paste0('~/rew_k_',k,'_int1.Rda'))
 }
-
 
 #For 2 days of re-weighting
 for (k in 1:25){
@@ -152,8 +153,7 @@ for (k in 1:25){
 
 ```
 
-# Run models:  y = NWP_re
-
+# Run models: NWP-RQE:  y = NWP_re
 ```{r}
 #For 1 days of re-weighting
 ERA_NWP = get_ERA_NWP(ERA_path = "/mn/kadingir/datascience_000000/eirikhsj/PC_ERA_79_92.Rda",
@@ -182,6 +182,9 @@ for (k in 2:25){
     ERA_NWP_loss[,NWP1_re90 := NULL]
     ERA_NWP_RQE = merge(ERA_NWP_RQE, ERA_NWP_loss, by = c("date", "hour", "lead_time", "init_date","PC1"))
 }
+
+ERA_NWP_RQE1 = ERA_NWP_RQE
+
 
 #For 2 days of re-weighting
 ERA_NWP = get_ERA_NWP(ERA_path = "/mn/kadingir/datascience_000000/eirikhsj/PC_ERA_79_92.Rda",
@@ -212,6 +215,9 @@ for (k in 2:25){
     
 }
 
+ERA_NWP_RQE2 = ERA_NWP_RQE
+
+
 #For 3 days of re-weighting
 ERA_NWP = get_ERA_NWP(ERA_path = "/mn/kadingir/datascience_000000/eirikhsj/PC_ERA_79_92.Rda",
                           NWP_path ="/mn/kadingir/datascience_000000/eirikhsj/NWP_quant_rew25_1993_2023_3.Rda",
@@ -233,12 +239,16 @@ for (k in 2:25){
                               ifelse(month(date) %in% c(3,4,5), 2,
                                      ifelse(month(date) %in% c(6,7,8), 3, 4)))]
     print(paste0('Got data for tuning param K = ',k))
-    ERA_NWPvars = ERA_NWP[,.(date, hour, lead_time, init_date, PC1,NWP1_re90)]
+    ERA_NWPvars = ERA_NWP[,.(date, hour, lead_time, init_date, PC1, NWP1_re90)]
     
     ERA_NWP_loss = ERA_NWPvars[,paste0("mean_loss_3_",k) := pinball_loss(0.9, NWP1_re90, PC1),]
     ERA_NWP_loss[,NWP1_re90 := NULL]
     ERA_NWP_RQE = merge(ERA_NWP_RQE, ERA_NWP_loss, by = c("date", "hour", "lead_time", "init_date","PC1"))
 }
+
+ERA_NWP_RQE3 = ERA_NWP_RQE
+
+
 ```
 
 #Best RQE-models
@@ -285,14 +295,19 @@ for (k in 1:25){
 ```{r}
 pdf("/Users/Eirik/Desktop/Master2023/ExportedPlots/Reweighting.pdf", height = 5, width = 7, pointsize = 12)
 p = ggplot() +
-    geom_line(data = ERA_NWP_RQE1[date>=as.Date("2007-01-01") & lead_time>60 & lead_time<=120, .(mean_test_loss = mean(mean_loss_1_5)), keyby = lead_time], aes(x = lead_time, y = mean_test_loss, col = 'K5'),alpha = 1)+
-    geom_line(data = ERA_NWP_RQE1[date>=as.Date("2007-01-01") & lead_time>60 & lead_time<=120, .(mean_test_loss = mean(mean_loss_1_10)), keyby = lead_time], aes(x = lead_time, y = mean_test_loss, col = 'K10'),alpha = 1)+
-    geom_line(data = ERA_NWP_RQE1[date>=as.Date("2007-01-01") & lead_time>60 & lead_time<=120, .(mean_test_loss = mean(mean_loss_1_15)), keyby = lead_time], aes(x = lead_time, y = mean_test_loss, col = 'K15'),alpha = 1)+
-    
-    geom_line(data = ERA_NWP_RQE1[date>=as.Date("2007-01-01") & lead_time>60 & lead_time<=120, .(mean_test_loss = mean(mean_loss_1_25)), keyby = lead_time], aes(x = lead_time, y = mean_test_loss, col = 'K25'),alpha = 1)+
-    geom_line(data = Clima[lead_time <121, mean(pinball_loss(0.9, clima_pred90, PC1)), by = lead_time], aes(x = lead_time, y = V1, col = 'Climatology'),alpha = 1)+
+    geom_line(data = ERA_NWP_RQE1[date>=as.Date("2007-01-01") & lead_time>60 & lead_time<=120, 
+                                  .(mean_test_loss = mean(mean_loss_1_5)), keyby = lead_time], aes(x = lead_time, y = mean_test_loss, col = 'K5'),alpha = 1)+
+    geom_line(data = ERA_NWP_RQE1[date>=as.Date("2007-01-01") & lead_time>60 & lead_time<=120, 
+                                  .(mean_test_loss = mean(mean_loss_1_10)), keyby = lead_time], aes(x = lead_time, y = mean_test_loss, col = 'K10'),alpha = 1)+
+    geom_line(data = ERA_NWP_RQE1[date>=as.Date("2007-01-01") & lead_time>60 & lead_time<=120, 
+                                  .(mean_test_loss = mean(mean_loss_1_15)), keyby = lead_time], aes(x = lead_time, y = mean_test_loss, col = 'K15'),alpha = 1)+
+    geom_line(data = ERA_NWP_RQE1[date>=as.Date("2007-01-01") & lead_time>60 & lead_time<=120, 
+                                  .(mean_test_loss = mean(mean_loss_1_25)), keyby = lead_time], aes(x = lead_time, y = mean_test_loss, col = 'K25'),alpha = 1)+
+    geom_line(data = Clima[lead_time <121,
+                                mean(pinball_loss(0.9, clima_pred90, PC1)), by = lead_time], aes(x = lead_time, y = V1, col = 'Climatology'),alpha = 1)+
     geom_line(data = ERA_NWP_raw_loss[lead_time <121, mean(raw_loss_09), by = lead_time], aes(x = lead_time, y = V1, col = 'NWP'),alpha = 1)+
-    geom_line(data = ERA_NWP_RQE1[date>=as.Date("2007-01-01") & lead_time>60 & lead_time<=120, .(mean_test_loss = mean(mean_loss_1_19)), keyby = lead_time], aes(x = lead_time, y = mean_test_loss, col = 'K19'),alpha = 1)+
+    geom_line(data = ERA_NWP_RQE1[date>=as.Date("2007-01-01") & lead_time>60 & lead_time<=120, 
+                                  .(mean_test_loss = mean(mean_loss_1_19)), keyby = lead_time], aes(x = lead_time, y = mean_test_loss, col = 'K19'),alpha = 1)+
     ylim(2, 12.1)+
     scale_x_continuous(breaks=seq(0, 30, by = 5)*4,labels=c(0,5,10,15, 20,25,30))+
     labs(color = "Model:", x = "Lead Time (Days)", y = "Mean Pinball Loss",title = "Mean Pinball Loss for NWP-RQE Model by Lead Time")+

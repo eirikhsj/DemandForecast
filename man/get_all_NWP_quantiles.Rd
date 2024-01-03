@@ -17,7 +17,8 @@ get_all_NWP_quantiles(
   PC_ERA_path = "/mn/kadingir/datascience_000000/eirikhsj/PC_ERA_79_92.Rda",
   pc_comp = 1,
   reweight = FALSE,
-  rew_int = c(15, 1)
+  rew_int = c(15, 1),
+  rew_type = "get_beta_weights"
 )
 }
 \arguments{

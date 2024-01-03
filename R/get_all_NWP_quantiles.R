@@ -30,6 +30,9 @@ get_all_NWP_quantiles = function(path = "/mn/kadingir/datascience_000000/eirikhs
                                  rew_int = c(15,1),
                                  rew_type ='get_beta_weights'){
 
+    # Timing
+    Start_clock = Sys.time()
+    print(paste0('Starting Forecast on: ', Start_clock))
     #Get dates
     first_start_date = as.Date(paste0(start_year, '-', start_month, '-', '01'))
     add_months = forc_months - 1
@@ -50,12 +53,16 @@ get_all_NWP_quantiles = function(path = "/mn/kadingir/datascience_000000/eirikhs
     #Loop over monthly forecast files
     for (y in start_year:stop_year){
         for (m in 1:12){
+            Start_round = Sys.time()
             dt_file = paste0(y,'_',m)
             dt_check = as.Date(paste0(y, '-', m,'-01'))
             if (dt_check %in% init_dates){
                 c = c + 1
                 print(c)
                 file = paste0(path, pattern,dt_file, '.nc4')
+
+
+
                 out = get_one_month_NWP_quantiles(file, PC_ERA, pc_comp, rew = reweight, rew_int = rew_int, date_fetch = dt_check, rew_type =rew_type)   #Using get_one_month_NWP_quantiles function
 
                 print(dim(out$NWP_quant_rew))
@@ -71,8 +78,11 @@ get_all_NWP_quantiles = function(path = "/mn/kadingir/datascience_000000/eirikhs
                                      out$NWP_quantiles)
                 NWP_results[[c]] = temp_dt
                 NWP_results_rew[[c]] = out$NWP_quant_rew
+                print(paste0('We have now used: ', Sys.time()-Start_clock))
+                print(paste0('This round took ', Sys.time()-Start_round))
             }
         }
+
     }
     NWP_all_quantiles = rbindlist(NWP_results)
 
@@ -87,25 +97,6 @@ get_all_NWP_quantiles = function(path = "/mn/kadingir/datascience_000000/eirikhs
     print('Get quantiles completed')
     return(out)
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

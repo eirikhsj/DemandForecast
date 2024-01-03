@@ -9,7 +9,7 @@
 #' @param cores Integer. Number of cores to be used.
 #' @param formula String. Regression formula.
 #' @param coef_to_print List of coefficients to include in output.
-#' @param interval_k Integer Number of days in traning interval
+#' @param interval_k Integer Number of days in training interval
 #' @param skill_interval
 #'
 #'
@@ -43,13 +43,14 @@ rolling_mod_NWP_interval = function(forc_start=as.Date('2007-01-01'), forc_end=a
 
 
     ## **** Run parallel cores ****
-    blas_set_num_threads(1)
-    omp_set_num_threads(1) #Set number of threads
+    RhpcBLASctl::blas_set_num_threads(1)
+    RhpcBLASctl::omp_set_num_threads(1) #Set number of threads
+
 
     #3) Forecast iteration
     print("Forecast ready to begin!")
     #mod = gam(Y ~X, data = data.table(X = rnorm(10), Y = rnorm(10)))
-    detailed_results = mclapply(seq_along(init_days),
+    detailed_results = parallel::mclapply(seq_along(init_days),
                                 "Rolling_nwp_interval",
                                 ERA_NWP_vars = ERA_NWP_vars, q = q, init_days= init_days, window = window, reweight = reweight, model = model,
                                 incl_climatology = incl_climatology, formula = formula,coef_to_print=coef_to_print,
@@ -61,7 +62,7 @@ rolling_mod_NWP_interval = function(forc_start=as.Date('2007-01-01'), forc_end=a
     Results = rbindlist(detailed_results,use.names=FALSE)
     out = c()
     out$Results = Results
-    print('Temperature forecast has completed')
+    print('Temperature forecast has been completed')
     print('温度预报完成')
     return(out)
 }
@@ -75,7 +76,7 @@ Rolling_nwp_interval = function(i, ERA_NWP_vars, q, init_days, window, reweight,
     print(paste('Forecast made on:', init_day))
     ERA_NWP_time = ERA_NWP_vars[date <= target_days[length(target_days)],]
     ERA_NWP_final= na.omit(ERA_NWP_time)
-    l_times = lapply(seq(1, length(target_days)*4, by = interval_k), function(i) {
+    l_times = lapply(seq(1, length(target_days)*4, by = interval_k), function(i) { #Divides up forecast window into intervals of length interval_k.
         seq(i, length.out = interval_k, by = 1) })
     detailed_results = list()
     for (lead in 1:(length(l_times))){
