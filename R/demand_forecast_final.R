@@ -19,7 +19,7 @@
 #' @export
 demand_forecast_final = function(X_mat, date_demand, NWP_pred, forc_start, forc_end, pred_win = 31,
                                  pred_lag= 0, train_y=3,reg_form, p_comps, other_mods= NULL,
-                                 comb = TRUE, custom = FALSE,incl_climatology = FALSE, no_pc = TRUE, cores = 44){
+                                 comb = TRUE, custom = FALSE,incl_climatology = FALSE, no_pc = TRUE, cores = 20){
 
     last_poss_pred = range(date_demand$date)[2] - pred_win - pred_lag
 
@@ -30,14 +30,14 @@ demand_forecast_final = function(X_mat, date_demand, NWP_pred, forc_start, forc_
     init_days_all = all_days[mday(all_days)==1]
 
     ## **** Run parallel cores ****
-    blas_set_num_threads(1)
-    omp_set_num_threads(1) #Set number of threads
+    RhpcBLASctl::blas_set_num_threads(1)
+    RhpcBLASctl::omp_set_num_threads(1) #Set number of threads
 
-    detailed_results = mclapply(seq_along(init_days_all),
+    detailed_results = parallel::mclapply(seq_along(init_days_all),
                                 "Rolling_final",
                                 X_mat = X_mat, date_demand = date_demand,init_days= init_days_all, pred_win = pred_win, pred_lag= pred_lag, train_y=train_y,
                                 reg_form= reg_form, p_comps= p_comps, other_mods= other_mods, comb = comb, custom = custom,
-                                incl_climatology = incl_climatology, no_pc = no_pc,gam_lasso =gam_lasso,NWP_pred = NWP_pred,
+                                incl_climatology = incl_climatology, no_pc = no_pc,gam_lasso =gam_lasso, NWP_pred = NWP_pred,
                                 mc.cores = cores)
 
     ## **** Return results ****
@@ -49,8 +49,9 @@ demand_forecast_final = function(X_mat, date_demand, NWP_pred, forc_start, forc_
 }
 
 #' @export
-Rolling_final = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
+Rolling_final = function(i, X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
                    reg_form, p_comps, other_mods, comb, custom,incl_climatology, no_pc,num_thread,gam_lasso,NWP_pred = NWP_pred){
+
     ## ***** Step 1: Form the training and test datasets ****
     init_day = init_days[i]
     days_in_m = days_in_month(init_day)
@@ -123,4 +124,51 @@ Rolling_final = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, tra
     }
     return(final_results)
 }
+
+
+
+#' @export
+Rolling_final_ensamble = function(i, X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
+                         reg_form, p_comps, other_mods, comb, custom,incl_climatology, no_pc,num_thread,gam_lasso,NWP_pred = NWP_pred){
+
+    ## ***** Step 1: Form the training and test datasets ****
+    init_day = init_days[i]
+    days_in_m = days_in_month(init_day)
+    target_days = seq(init_day+ pred_lag, length.out = as.integer(days_in_m),  by = '1 days')
+    print(paste('Forecast made on:', init_day))
+
+    train_cutoff = seq(init_day,  length.out = 2, by = paste0('-',train_y, ' year'))[2]
+
+    I_train = date_demand[(date > train_cutoff) & (date < init_day), I]
+    I_test = date_demand[date %in% target_days, I]
+
+    if (p_comps > 0){
+        pc_data  = get_pca(X_mat, I_train, I_test, p_comps) # **** SVD ****
+        dt_train = pc_data$dt_train
+        dt_test  = pc_data$dt_test
+    } else{
+        dt_train = date_demand[I_train, ]
+        dt_test  = date_demand[I_test, ]
+    }
+    print(paste('We are training on:', dim(dt_train)[1], 'observations'))
+    max_year_train = dt_train[, max(year)]
+    dt_test = dt_test[year > max_year_train, year := max_year_train] #pretend that new year is last year to avoid factor error
+    n = nrow(dt_test)
+
+    ## ***** Step 2: Train models ****
+
+    if (p_comps > 0){                              #PC GAM MODELS
+        mod = mgcv::gam(as.formula(sprintf("%s + %s", reg_form, custom)), data = dt_train)
+    }
+
+    ## **** Step 3: Select Temperature Input ****
+
+
+    ## **** Step 4:  ****
+
+    return(final_results)
+}
+
+
+
 
