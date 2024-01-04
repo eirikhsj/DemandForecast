@@ -7,6 +7,7 @@
 #' X_mat is supplied by prep_demand_temp_data.R, while I_train and I_test are normally chosen by the rolling cv function (e.g. demand_forecast.R).
 #'
 #' @param X_mat Temperature grid matrix.
+#' @param date_demand data.table. Demand volume and date information.
 #' @param I_train Indexes of training set.
 #' @param I_test Indexes of test set.
 #' @param p_comps Number of principle components to return.
@@ -72,7 +73,7 @@ get_pca = function(X_mat= X_mat, date_demand = date_demand, I_train, I_test, p_c
                            ncol = dim(X_ensamble)[1] * dim(X_ensamble)[2], #lon time lat
                            byrow = TRUE)
             X_NWP_center = X_mat_500 - mu
-            PC_NWP = X_NWP_center %*% U        # Using U (information from the historical data).
+            PC_NWP = X_NWP_center %*% U[,1:p_comps]        # Using U (information from the historical data).
             NWP_PC_mat[,,ens_memb] = PC_NWP
         }
     } else{
