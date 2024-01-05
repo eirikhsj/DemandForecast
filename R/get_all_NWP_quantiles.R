@@ -61,8 +61,6 @@ get_all_NWP_quantiles = function(path = "/mn/kadingir/datascience_000000/eirikhs
                 print(c)
                 file = paste0(path, pattern,dt_file, '.nc4')
 
-
-
                 out = get_one_month_NWP_quantiles(file, PC_ERA, pc_comp, rew = reweight, rew_int = rew_int, date_fetch = dt_check, rew_type =rew_type)   #Using get_one_month_NWP_quantiles function
 
                 print(dim(out$NWP_quant_rew))

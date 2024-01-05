@@ -37,7 +37,7 @@ rolling_mod_NWP_interval(
 
 \item{coef_to_print}{List of coefficients to include in output.}
 
-\item{interval_k}{Integer Number of days in traning interval}
+\item{interval_k}{Integer Number of days in training interval}
 
 \item{skill_interval}{}
 

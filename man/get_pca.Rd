@@ -18,6 +18,8 @@ get_pca(
 \arguments{
 \item{X_mat}{Temperature grid matrix.}
 
+\item{date_demand}{data.table. Demand volume and date information.}
+
 \item{I_train}{Indexes of training set.}
 
 \item{I_test}{Indexes of test set.}

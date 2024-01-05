@@ -167,12 +167,72 @@ Rolling_final_ensamble = function(i, X_mat, date_demand, init_days,pred_win, pre
 
 
     ## **** Step 4: NWP ****
+    y = year(init_day)
+    m = month(init_day)
+    date_fetch = as.Date(paste0(y, '-', m,'-01'))
+    path = "~/bigdisk3/pro/sfe_daily_nordic_temperature/"
+    pattern = 'sfe_nordic_temperature_'
+    dt_file = paste0(y,'_',m)
 
-    "How to find the correct test month and year"
+    files_i = paste0(path, pattern, dt_file, '.nc4')
+    nc = nc_open(files_i)
+    forec = ncvar_get(nc, attributes(nc$var)$names[1])
+    year_nwp = year(date_fetch) #year
+    month_nwp = month(date_fetch) #month
+    forc_name = paste0('forc_', year_nwp, '_', month_nwp)
+    assign(forc_name, forec)
+    print(c(year_nwp,month_nwp))
+    nc_close(nc)
 
+    #Get forecast and run pca- delete dt when done and store pca-results
+    forecast = get(forc_name)
+    print(dim(forecast))
+    pc_data = get_pca(X_mat, date_demand= NULL, I_train, I_test, p_comps =p_comps,
+                      NWP = forecast[,,,1:dim(forecast)[4]],
+                      U = PC_ERA$U,
+                      mu = PC_ERA$mu)
+    rm(forecast)
+    gc()
+
+    if (any(is.na(pc_data$NWP_PC_mat[,pc_comp,]))==TRUE){
+        pc_nwp = t(na.omit(t(pc_data$NWP_PC_mat[,pc_comp,])))
+    } else{
+        pc_nwp = pc_data$NWP_PC_mat[,pc_comp,]
+    }
+    ## **** Step 3: Check fit ****
+    dt_test = dt_test[hour %in% c(6,12,18,24)]
+    dt_results = cbind(dt_test, pc_nwp[1:dim(dt_test)[1],])
+
+    #dt_results[,lapply(predict(mod, newdata = dt_test))]
+    col_name = paste0('V',1:dim(pc_nwp)[2])
+    col_out = paste0('pred_', col_name, sep = "")
+
+    dt_results[, c(col_out) := lapply(.SD, multi_col_pred), .SDcols = col_name]
+    dt_results[, pred_obs_temp := lapply(.SD, multi_col_pred), .SDcols = 'PC1']
+
+    ## **** Step 4: Find Quantile ****
+    dt_quant = data.table(t(dt_results[,.SD, .SDcols = col_out]))
+    dt_quant_expand = replicate(1000, dt_quant, simplify = FALSE)
+    dt_quant = rbindlist(dt_quant_expand)
+    dt_quant_err = dt_quant[,.SD + matrix(rnorm(.N*dim(.SD)[2], 0, mod$sig2^(0.5)), nrow = .N, ncol = dim(.SD)[2])]
+
+    dt_quant = data.table(t(dt_quant[,lapply(.SD ,  function(x) quantile(x, seq(0.1, 0.9, 0.1)))]))
+    setnames(dt_quant, paste0('pred_q_',seq(0.1, 0.9, 0.1)))
+    final_results = cbind(dt_results, dt_quant)
     return(final_results)
 }
 
 
+#' @export
+multi_col_pred = function(col_name){
+    res = data.table(hour = dt_results$hour,
+                     w_day = dt_results$w_day,
+                     week = dt_results$week,
+                     month = dt_results$month,
+                     season = dt_results$season,
+                     year = dt_results$year,
+                     PC1 = col_name)
 
+    return(predict(mod, newdata = res))
+}
 
