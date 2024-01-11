@@ -33,25 +33,30 @@ demand_forecast = function(X_mat, date_demand, forc_start, forc_end, pred_win = 
     start = as.Date(forc_start)
     end = as.Date(forc_end)
     all_days = seq(start, end,  by = '1 days')
-    init_days_all = all_days[mday(all_days)==1]
+    init_days = all_days[mday(all_days)==1]
 
     # **** Run parallel cores ****
     RhpcBLASctl::blas_set_num_threads(1)
     RhpcBLASctl::omp_set_num_threads(1) #Set number of threads
 
-    detailed_results = parallel::mclapply(seq_along(init_days_all),
+    detailed_results = parallel::mclapply(seq_along(init_days),
                       Setup,
-                      X_mat = X_mat, date_demand = date_demand,init_days= init_days_all, pred_win = pred_win, pred_lag= pred_lag, train_y=train_y,
+                      X_mat = X_mat, date_demand = date_demand,init_days= init_days, pred_win = pred_win, pred_lag= pred_lag, train_y=train_y,
                       reg_form= reg_form, p_comps= p_comps, other_mods= other_mods, comb = comb, custom = custom,
                       incl_climatology = incl_climatology, no_pc = no_pc, gam_lasso =gam_lasso, int = int,
                       mc.cores = cores, mc.silent= FALSE, mc.preschedule = FALSE)
 
     # **** Return results ****
-    Results = rbindlist(detailed_results)
+    Results = tryCatch({rbindlist(detailed_results, fill = TRUE)},
+                       error = function(cond){print('Could not use rbind, there probably was an error in a core')
+                           print(cond)
+                           Results = detailed_results
+                       })
     out = list()
     out$Results = Results
-    print('Demand forecast has completed')
+    print('Demand forecast is completed')
     return(out)
+
 }
 
 #' Basic Model function for Demand prediction
@@ -75,7 +80,8 @@ Rolling = function(i,X_mat, date_demand, init_days, pred_win, pred_lag, train_y,
                    reg_form, p_comps, other_mods, comb, custom, incl_climatology, no_pc,gam_lasso, int){
     ## **** Step 1: Form the training and test datasets ****
     init_day = init_days[i]
-    target_days = seq(init_day+ pred_lag, length.out = pred_win,  by = '1 days')
+    days_in_m = lubridate::days_in_month(init_day)
+    target_days = seq(init_day+ pred_lag, length.out = as.integer(days_in_m),  by = '1 days')
     print(paste('Forecast made on:', init_day))
 
     train_cutoff = seq(init_day,  length.out = 2, by = paste0('-',train_y, ' year'))[2]
@@ -107,6 +113,9 @@ Rolling = function(i,X_mat, date_demand, init_days, pred_win, pred_lag, train_y,
     max_week_train = dt_train[, max(week)]
     dt_test = dt_test[year > max_year_train, year := max_year_train] #pretend that new year is last year to avoid factor error
     dt_test = dt_test[week > max_week_train, week := max_week_train] #amounts to pretending that week 53 = week 52  to avoid factor error
+
+    dt_train = dt_train[!is.na(volume)]
+    dt_test = dt_test[!is.na(volume)]
 
     n = nrow(dt_test)
 
@@ -151,24 +160,26 @@ Rolling = function(i,X_mat, date_demand, init_days, pred_win, pred_lag, train_y,
     }
     ## **** Step 4: Climatology ****
     if(incl_climatology == TRUE){
-        # climatology = dt_train[, .(ave_vol = mean(volume)), by = .(month_day = format(date, format ="%m-%d"), hour)]
-        #
-        # if ("02-29" %in% format(dt_test$date, format ="%m-%d") & !("02-29" %in%climatology$month_day)){ #Leap year issue
-        #     leap = climatology[month_day=="02-28",]
-        #     leap[,month_day:=  rep("02-29", 24)]
-        #     climatology = rbind(climatology, leap)
-        # }
-        # clima_pred = climatology[month_day %in% format(dt_test$date, format ="%m-%d"), ave_vol]
-        # results[,'clima_pred' := clima_pred]
-        # print(paste0("Climatology: ", sqrt(sum((dt_test$volume - clima_pred)^2)/n) ))
+        climatology = dt_train[, .(clima_pred = mean(volume)), by = .(month_day = format(date, format ="%m-%d"), hour)]
 
-        for (j in 1:14){
-            print(j)
-            climatology = dt_train[, .(ave_vol = mean(volume)), by = c(paste0('yr_by_',j), "hour")]
-            results = merge(climatology, results, by= c(paste0('yr_by_',j), 'hour') )
-            setnames(results, "ave_vol", paste0('clim_pred_',j))
-            print(paste0("Climatology: ", results[,sqrt(mean( (volume- get(paste0('clim_pred_',j)) )^2))]  ))
+        if ("02-29" %in% format(dt_test$date, format ="%m-%d") & !("02-29" %in%climatology$month_day)){ #Leap year issue
+            leap = climatology[month_day=="02-28",]
+            leap[,month_day:=  rep("02-29", 24)]
+            climatology = rbind(climatology, leap)
         }
+
+        results[,month_day := format(date, format ="%m-%d")]
+        results = climatology[results, on = c('month_day', 'hour')]
+
+        print(paste0("Climatology: ", results[,sqrt(sum((volume - clima_pred)^2)/n)] ))
+
+        # for (j in 1:14){
+        #     print(j)
+        #     climatology = dt_train[, .(ave_vol = mean(volume)), by = c(paste0('yr_by_',j), "hour")]
+        #     results = merge(climatology, results, by= c(paste0('yr_by_',j), 'hour') )
+        #     setnames(results, "ave_vol", paste0('clim_pred_',j))
+        #     print(paste0("Climatology: ", results[,sqrt(mean( (volume- get(paste0('clim_pred_',j)) )^2))]  ))
+        # }
     }
 
     ## **** Step 5: Other Models ****
@@ -279,7 +290,8 @@ Rolling_time = function(i,X_mat, date_demand, init_days, pred_win, pred_lag, tra
     max_week_train = dt_train[, max(week)]
     dt_test = dt_test[year > max_year_train, year := max_year_train] #pretend that new year is last year to avoid factor error
     dt_test = dt_test[week > max_week_train, week := max_week_train] #amounts to pretending that week 53 = week 52  to avoid factor error
-
+    dt_train = dt_train[!is.na(volume)]
+    dt_test = dt_test[!is.na(volume)]
 
     results = dt_test
     results[,'init_date' := rep(init_day, length(dt_test$date))]
@@ -382,7 +394,8 @@ Rolling_anomaly = function(i,X_mat, date_demand, init_days,pred_win, pred_lag, t
     max_week_train = dt_train[, max(week)]
     dt_test = dt_test[year > max_year_train, year := max_year_train] #pretend that new year is last year to avoid factor error
     dt_test = dt_test[week > max_week_train, week := max_week_train] #amounts to pretending that week 53 = week 52  to avoid factor error
-
+    dt_train = dt_train[!is.na(volume)]
+    dt_test = dt_test[!is.na(volume)]
 
     results = dt_test
     results[,'init_date' := rep(init_day, length(dt_test$date))]
@@ -482,7 +495,8 @@ Rolling_test = function(i, X_mat, date_demand, init_days,pred_win, pred_lag, tra
         dt_train = date_demand[I_train, ]
         dt_test  = date_demand[I_test, ]
     }
-    dt_train= dt_train[!is.na(volume)]
+    dt_train = dt_train[!is.na(volume)]
+    dt_test = dt_test[!is.na(volume)]
     print(paste('We are training on:', dim(dt_train)[1], 'observations ', 'on iteration ', i))
     max_year_train = dt_train[, max(year)]
     dt_test = dt_test[year > max_year_train, year := max_year_train] #pretend that new year is last year to avoid factor error

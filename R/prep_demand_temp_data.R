@@ -1,6 +1,7 @@
 #' Finds, checks and loads temperature and demand data.
 #'
-#' @param include_na_volume Boolean. TRUE includes dates with na volume data. Use TRUE for creating historical PC data
+#' @param include_na_volume TRUE includes dates with na volume data. Use TRUE for creating historical PC data.
+#' "Some" will not remove sequences of missing within the scope of the demand volume. Use some so that creation of PC will not be affected.
 #' @param path String File path.
 #'
 #' @return Returns a matrix with grid temperature data and a data.table with demand data.
@@ -9,14 +10,15 @@
 
 #' @examples prep = prep_demand_temp_data(include_na_volume = TRUE,path = "~/NR/ClimateFutures/RenewableEnergy/Data/DemandForecasting/")
 #' @examples prep = prep_demand_temp_data(include_na_volume = TRUE,path = "/Users/Eirik/Desktop/Master2023/Data/")
-#' @examples prep = prep_demand_temp_data(include_na_volume = TRUE,path = "/nr/samba/user/esjavik/DemandData/")
+#' @examples prep = prep_demand_temp_data(include_na_volume = TRUE,path = "/nr/samba/user/esjavik/EnergyDemandData/")
 #'
 #' @export
 prep_demand_temp_data = function(include_na_volume = TRUE, path = "/mn/kadingir/datascience_000000/eirikhsj/"){
 
     ##----- 1) Load and extract temperature data -----
     #f_nc = paste0(path, "/temperature_data.nc4") #Old dataset 2013-2021 only
-    f_nc = paste0(path, "era_historical_data.nc4") #New dataset 1978-2023
+    #f_nc = paste0(path, "era_historical_data.nc4") #New dataset 1978-2023
+    f_nc = paste0(path, "era_historical_data_1979_2024.nc") #New dataset 1978-2023
     nc = ncdf4::nc_open(f_nc)
     X = ncdf4::ncvar_get(nc, "2m_temperature")
     hours = 1:24
@@ -31,14 +33,34 @@ prep_demand_temp_data = function(include_na_volume = TRUE, path = "/mn/kadingir/
     dt_date = data.table(expand.grid(hour = hours, date = days)) #track of dates for temp data
 
     ##----- 2) Load and extract demand volume data -----
-    f_demand = paste0(path, "/nordpool_volume.csv") # 2013 - 2021
+    f_demand = paste0(path, "/nordpool_volume_2013_2023.csv") # 2013 - 2023
     dt_demand = fread(f_demand)
     dt_demand[, hour := hour + 1]
+
 
     ##----- 3) Debug Demand volume (Summer/Winter time problem)-----
     nas = which(is.na(dt_demand$volume))           #Find missing bc we skip 1 hour ahead -> summertime
     dt_demand[, rowCount:= .N, by = .(date, hour)] #Find doubles bc we jump back 1 h -> wintertime
     doubles= which(dt_demand$rowCount >1)[seq(from = 1, to = length(which(dt_demand$rowCount >1)), by = 2)]
+
+
+    if(any(dt_demand[nas,hour]!=3)){
+        print("We haves na's in the demand data not related to summer time/winter time.")
+
+        if(any(diff(nas)==1)){
+            print("The na's form a sequence.")
+            sq_nas = which(diff(nas)==1)
+            if(nas[length(nas)-1]+1==nas[length(nas)]){
+                sq_nas = c(sq_nas, length(nas))
+            }
+            nas_sq = nas[sq_nas]
+            na_dates = dt_demand[nas_sq,unique(date)]
+            nas = nas[-sq_nas]
+            missing_seq = TRUE
+        } else{
+            missing_seq = FALSE
+        }
+    }
 
     if ( length(nas) == length(doubles) ){ #if data-cutoff in winter
         volume = dt_demand$volume[-nas]
@@ -48,10 +70,11 @@ prep_demand_temp_data = function(include_na_volume = TRUE, path = "/mn/kadingir/
         volume = dt_demand$volume[-nas]
         date = dt_demand$date[-c(doubles, length(dt_demand$date))]
         hour = dt_demand$hour[-c(doubles, length(dt_demand$date))]
-        print("I guess we cut off demand observations sometime during summer time, and didn't go back to winter time")
+        print("I guess we cut off demand observations sometime during summer time, and didn't go back to winter time.")
     } else{
-        print("We have other sources of na's in the demand data than summer time/winter time")
+        print("We have other sources of na's in the demand data than summer time/winter time.")
     }
+
     dt_demand = data.table(volume, date, hour)
     date_demand = dt_demand[dt_date, on=c("hour", "date")]  #Combine information
 
@@ -116,6 +139,10 @@ prep_demand_temp_data = function(include_na_volume = TRUE, path = "/mn/kadingir/
         d_d = date_demand[!is.na(volume)] #Select only rows with volume obs
         out$X_mat = X_mat[d_d$I,]
         out$date_demand = d_d[,I:= 1:.N] #reset index
+    } else if (include_na_volume== 'Some'){
+        d_d = date_demand[first(dt_demand[,date])<= date & last(dt_demand[,date])>= date] #Keep NAs if they are in time period with demand data.
+        out$X_mat = X_mat[d_d$I,]
+        out$date_demand = d_d[,I:= 1:.N]
     } else{
         out$X_mat = X_mat
         out$date_demand = date_demand
@@ -126,6 +153,19 @@ prep_demand_temp_data = function(include_na_volume = TRUE, path = "/mn/kadingir/
         print(paste0('Demand volume data from ', dt_demand[1,date], ' to ', dt_demand[dim(dt_demand)[1],date],'.' ))
         print(paste0('Temperature data from ', out$date_demand[1,date], ' to ', out$date_demand[dim(out$date_demand)[1],date],'.'))
         print(paste0('We have ', dim(out$X_mat)[1], ' hourly observations at ', dim(out$X_mat)[2], ' grid points.'))
+        if(missing_seq == TRUE){
+            print(paste0('We have a sequence of ', length(nas_sq), ' missing energy volume values.'))
+            if (include_na_volume ==FALSE){
+
+                print(paste0('Since include_na_volume = FALSE, we have not included these or any other NAs in the volume data'))
+            } else if( include_na_volume == 'Some'){
+                print(paste0('Since include_na_volume = `Some`, we have included these, which are found on ',na_dates,' but not other NAs'))
+            } else{
+                print(paste0('Since include_na_volume = TRUE, we have included these missing data, which are found on ',na_dates))
+            }
+        }
+
+
     } else{
         print("Something went wrong")
     }

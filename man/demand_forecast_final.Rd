@@ -21,7 +21,7 @@ demand_forecast_final(
   incl_climatology = FALSE,
   no_pc = TRUE,
   cores = 20,
-  setup = "Rolling_final_ensamble"
+  setup = "Rolling_final_ensemble"
 )
 }
 \arguments{

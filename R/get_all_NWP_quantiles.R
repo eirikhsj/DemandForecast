@@ -23,7 +23,7 @@
 
 get_all_NWP_quantiles = function(path = "/mn/kadingir/datascience_000000/eirikhsj/sfe_nordic_temperature/",
                                  pattern = 'sfe_nordic_temperature_',
-                                 start_month  = '01', start_year = 1993, forc_months = 362,
+                                 start_month  = '01', start_year = 1993, forc_months = 372,
                                  PC_ERA_path = "/mn/kadingir/datascience_000000/eirikhsj/PC_ERA_79_92.Rda",
                                  pc_comp = 1,
                                  reweight = FALSE,
@@ -78,7 +78,10 @@ get_all_NWP_quantiles = function(path = "/mn/kadingir/datascience_000000/eirikhs
                 NWP_results_rew[[c]] = out$NWP_quant_rew
                 print(paste0('We have now used: ', Sys.time()-Start_clock))
                 print(paste0('This round took ', Sys.time()-Start_round))
+            } else{
+                print(paste0('We overestimated the number of forecast months ', forecast_year, ' ', forecast_month))
             }
+
         }
 
     }

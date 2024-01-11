@@ -1,0 +1,239 @@
+---
+title: "Final Article Run"
+output: html_document
+date: "2024-01-10"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Running Models for Energy Article
+
+This document describes all the final model runs made for the Energy Demand Article based on the master thesis Energy Demand Forecasting.
+
+
+
+In this document we present to main categories of models: 
+First: Energy Demand Models that utilizes temperature and time information. 
+Second: Temperature Forecasting Models that utilize NWP seasonal forecasts. 
+
+
+## Load Data
+First we load the desired data for the Energy Demand Models. We need the demand data and the temperature data, both provided by the prep_demand_temp_data() function. The reference PC_ERA data is needed for the NWP data. 
+
+```{r Load, include=TRUE}
+    
+library(DemandForecast)
+
+##### 1. Get demand volume and ERA observed temperature data #################
+PATH = "/nr/samba/user/esjavik/EnergyDemandData/"
+
+MODPATH = "/nr/samba/user/esjavik/DemandModels/"
+
+prep = prep_demand_temp_data(include_na_volume = "Some", path = PATH) #Include NA to get pre-trained
+#
+X_mat = prep$X_mat #Temperature field
+date_demand = prep$date_demand
+
+
+##### 2. Get PC of ERA observed temperature data #################
+if (file.exists(paste0(MODPATH,'PC_ERA_79_92.Rda'))){
+  print('File exists - Loading file')
+  load(paste0(MODPATH,'PC_ERA_79_92_23.Rda'))
+} else {
+  print('File does NOT exists - Creating file')
+  PC_ERA = get_pre_trained_PC_ERA(file=PATH, X_mat,date_demand= date_demand,
+                                  start_train = "1979-01-01", stop_train="1992-12-31", start_test = "1993-01-01", stop_test="2023-12-31",
+                                  NWP=NA,run_again =TRUE)
+  save(PC_ERA, file = paste0(MODPATH,'PC_ERA_79_92_23.Rda'))
+}
+```
+
+
+## Basic Models
+We first start by assessing the quality of the PC-GAM model framework by contrasting it with other frameworks. 
+
+### Climatology
+The first contrast model is the climatology model. Here we use 3 years of training data 
+
+```{r Climatology, include=TRUE}
+
+```
+
+
+### Models with only Time Information
+A lot of choices has to be made in order to choose which models to be run. 
+We start by using 3 years of training data, a reduced grid (i.e. we cut out some parts of northern Scandinavia), we use simple non-interaction time covariates, and we use no time information. 
+
+
+```{r inter, include=TRUE}
+
+Complete_Grid_no_int_no_pc = demand_forecast(X_mat[,], date_demand, forc_start = '2016-01-01', forc_end = '2023-12-01',
+                                                    pred_win = 31, pred_lag = 0, train_y = 3, p_comps = 0, no_pc = TRUE, incl_climatology = TRUE,
+                                                    reg_form = "volume~ as.factor(hour) + as.factor(w_day) + as.factor(month) + as.factor(season) + as.factor(week) + year" ,
+                                                    cores = 10, custom = FALSE, Setup = "Rolling")
+
+
+
+Small_Grid_no_int_no_pc = demand_forecast(X_mat[,1:220], date_demand, forc_start = '2016-01-01', forc_end = '2023-12-01',
+                                                    pred_win = 31, pred_lag = 0, train_y = 3, p_comps = 0, no_pc = TRUE, incl_climatology = TRUE,
+                                                    reg_form = "volume~ as.factor(hour) + as.factor(w_day) + as.factor(month) + as.factor(season) + as.factor(week) + year" ,
+                                                    cores = 10, custom = FALSE, Setup = "Rolling")
+```
+
+
+
+```{r inter, include=TRUE}
+
+Small_Grid_all_int_no_pc = demand_forecast(X_mat[,1:220], date_demand, forc_start = '2016-01-01', forc_end = '2023-12-01',
+                                                    pred_win = 31, pred_lag = 0, train_y = 3, p_comps = 0, no_pc = TRUE, incl_climatology = TRUE,
+                                                    reg_form = "volume~ as.factor(hour) + as.factor(w_day) + as.factor(month) + as.factor(season) + as.factor(week) + year + as.factor(w_day):as.factor(month)+as.factor(hour):as.factor(week) + as.factor(hour):as.factor(w_day) " ,
+                                                    cores = 10, custom = FALSE, Setup = "Rolling")
+```
+
+
+
+
+### Mean Grid Model
+```{r Mean_Grid, include=TRUE}
+
+Small_Grid_all_int_no_pc = demand_forecast(X_mat[,1:220], date_demand, forc_start = '2016-01-01', forc_end = '2023-12-01',
+                                                    pred_win = 31, pred_lag = 0, train_y = 3, p_comps = 0, no_pc = TRUE, incl_climatology = TRUE,
+                                                    reg_form = "volume~ as.factor(hour) + as.factor(w_day) + as.factor(month) + as.factor(season) + as.factor(week) + year + as.factor(w_day):as.factor(month)+as.factor(hour):as.factor(week) + as.factor(hour):as.factor(w_day) " ,
+                                                    cores = 10, custom = FALSE, Setup = "Rolling")
+```
+
+
+
+### PC Temperature Models
+```{r PC_Models, include=TRUE}
+
+Small_Grid_all_int_PC_1_10 = demand_forecast(X_mat[,1:220], date_demand, forc_start = '2016-01-01', forc_end = '2023-12-01',
+                                                    pred_win = 31, pred_lag = 0, train_y = 3, p_comps = 10, no_pc = TRUE, incl_climatology = TRUE,
+                                                    reg_form = "volume~ as.factor(hour) + as.factor(w_day) + as.factor(month) + as.factor(season) + as.factor(week) + year + as.factor(w_day):as.factor(month)+as.factor(hour):as.factor(week) + as.factor(hour):as.factor(w_day) " ,
+                                                    cores = 10, custom = FALSE, Setup = "Rolling")
+
+load("Small_Grid_all_int_PC_1_10.Rda")
+
+Small_Grid_all_int_PC_1_10$Results[!is.na(volume) & year(date) == 2023,lapply(.SD, function(x) {sqrt(mean((volume-x)**2))}), .SDcols = paste0('pred_', seq(1:11))]
+Small_Grid_all_int_PC_1_10$Results[!is.na(volume) ,lapply(.SD, function(x) {sqrt(mean((volume-x)**2))}), .SDcols = paste0('pred_', seq(1:4)), by = .(month(date), year(date))]
+
+```
+
+The surprising thing here is the very poor performance for the PC1+2 model for 2023, we would have had a better model if we had modelled especially months 8-9-10-11 better. We try below with the old grid
+
+```{r inter, include=TRUE}
+
+Complete_Grid_all_int_PC_1_3 = demand_forecast(X_mat[,], date_demand, forc_start = '2016-01-01', forc_end = '2023-12-01',
+                                                    pred_win = 31, pred_lag = 0, train_y = 3, p_comps = 3, no_pc = TRUE, incl_climatology = TRUE,
+                                                    reg_form = "volume~ as.factor(hour) + as.factor(w_day) + as.factor(month) + as.factor(season) + as.factor(week) + year + as.factor(w_day):as.factor(month)+as.factor(hour):as.factor(week) + as.factor(hour):as.factor(w_day) " ,
+                                                    cores = 10, custom = FALSE, Setup = "Rolling")
+
+
+Complete_Grid_all_int_PC_1_3$Results[!is.na(volume) & year(date) == 2023,lapply(.SD, function(x) {sqrt(mean((volume-x)**2))}), .SDcols = paste0('pred_', seq(1:11))]
+Complete_Grid_all_int_PC_1_3$Results[!is.na(volume) ,lapply(.SD, function(x) {sqrt(mean((volume-x)**2))}), .SDcols = paste0('pred_', seq(1:4)), by = .(month(date), year(date))]
+```
+
+
+forc_start = '2016-01-01'; forc_end = '2016-05-01';
+                                                    pred_win = 31; pred_lag = 0; train_y = 3; p_comps = 2; no_pc = TRUE; incl_climatology = FALSE;
+                                                    reg_form = "volume~ as.factor(hour) + as.factor(w_day) + as.factor(month) + as.factor(season) + as.factor(week) 
+                                                    + year + as.factor(w_day):as.factor(month)+as.factor(hour):as.factor(week) + as.factor(hour):as.factor(w_day) " ;
+                                                    cores = 1; custom = FALSE; Setup = "Rolling"
+
+
+### Contrast Models
+The contrast models are included to see if there are any modifications to be done with regard to the basic set-up. 
+
+Changing grid size
+```{r PC_Models, include=TRUE}
+
+```
+Changing training years
+```{r PC_Models, include=TRUE}
+
+```
+Special Days
+```{r PC_Models, include=TRUE}
+
+```
+
+
+## Performance of Demand Models
+
+
+
+## Different Temperature Inputs
+
+Having found a good structural demand model we now turn toward the question of how 
+How do we utilize temperature? 
+
+There are 4 different ways: 
+1) We use the climatology input 
+
+
+```{r PC_Models, include=TRUE}
+Ensemble_Full_Grid_PC1 = demand_forecast_final(X_mat = X_mat, date_demand = date_demand,forc_start ='2016-01-01', p_comps = 1,
+                                 forc_end = '2023-12-01', 
+                                 reg_form = "volume ~ as.factor(hour) + as.factor(w_day) + as.factor(week) + as.factor(month) + as.factor(season) + year + as.factor(w_day):as.factor(month) +as.factor(hour):as.factor(week) + as.factor(hour):as.factor(w_day)",
+                                 custom = "s(PC1)",cores = 12, setup = "Rolling_final_ensemble")
+save(Ensemble_Full_Grid_PC1, file = "~/DemandModelsFinal/Ensemble_Full_Grid_PC1.Rda")
+
+
+Ensemble_Small_Grid_PC1 = demand_forecast_final(X_mat = X_mat[,1:220], date_demand = date_demand,forc_start ='2016-01-01',p_comps = 1,
+                                 forc_end = '2023-12-01', 
+                                 reg_form = "volume ~ as.factor(hour) + as.factor(w_day) + as.factor(week) + as.factor(month) + as.factor(season) + year + as.factor(w_day):as.factor(month) +as.factor(hour):as.factor(week) + as.factor(hour):as.factor(w_day)",
+                                 custom = "s(PC1)",cores = 12, setup = "Rolling_final_ensemble")
+save(Ensemble_Small_Grid_PC1, file = "~/DemandModelsFinal/Ensemble_Small_Grid_PC1.Rda")
+
+```
+
+
+
+
+
+
+#### Seasonal forecasting
+```{r Re-weight Data Creation, include=TRUE}
+a = Sys.time()
+NWP_quant_rew_simple_25_1993_2023_12 = get_all_NWP_quantiles(path = "/nr/samba/user/esjavik//bigdisk3/pro/sfe_daily_nordic_temperature/",
+                                                            pattern = 'sfe_nordic_temperature_',
+                                                            start_month  = '01',
+                                                            start_year = 1993,
+                                                            forc_months = 372,
+                                                            PC_ERA_path = "/nr/samba/user/esjavik/DemandModels/PC_ERA_79_92_23.Rda",
+                                                            pc_comp = 1,
+                                                            reweight = TRUE,
+                                                            rew_int =c(15, 1),
+                                                            rew_type ='get_simple_weights')
+print( Sys.time()-a)
+
+a = Sys.time()
+NWP_quant_rew_beta_25_1993_2023_12 = get_all_NWP_quantiles(path = "/nr/samba/user/esjavik//bigdisk3/pro/sfe_daily_nordic_temperature/",
+                                                    pattern = 'sfe_nordic_temperature_',
+                                                    start_month  = '01', 
+                                                    start_year = 1993, 
+                                                    forc_months = 372,
+                                                    PC_ERA_path = "/nr/samba/user/esjavik/DemandModels/PC_ERA_79_92_23.Rda",
+                                                    pc_comp = 1,
+                                                    reweight = TRUE, 
+                                                    rew_int =c(15, 1), 
+                                                    rew_type = 'get_beta_weights') 
+print( Sys.time()-a)
+
+a = Sys.time()                                                                                          
+NWP_quant_rew_beta_25_1993_2023_12_2 = get_all_NWP_quantiles(path = "/nr/samba/user/esjavik//bigdisk3/pro/sfe_daily_nordic_temperature/",
+                                                    pattern = 'sfe_nordic_temperature_',
+                                                    start_month  = '01', start_year = 1993, forc_months = 372,
+                                                    PC_ERA_path = "/nr/samba/user/esjavik/DemandModels/PC_ERA_79_92_23.Rda",
+                                                    pc_comp = 1,                                                            
+                                                    reweight = TRUE, 
+                                                    rew_int =c(15, 2), 
+                                                    rew_type = 'get_beta_weights') 
+print( Sys.time()-a)
+save(NWP_quant_rew_beta_25_1993_2023_12_2, file = "~/DemandModelsFinal/NWP_quant_rew_beta_25_1993_2023_12_2.Rda")
+
+
+```
+

@@ -19,8 +19,8 @@
 #' reg_form = "volume ~ as.factor(hour) + as.factor(month) + year", p_comps = 3, other_mods= NULL,comb = TRUE)
 #' @export
 demand_forecast_final = function(X_mat, date_demand, NWP_pred, forc_start, forc_end, pred_win = 31,
-                                 pred_lag= 0, train_y=3,reg_form, p_comps, other_mods= NULL,
-                                 comb = TRUE, custom = FALSE,incl_climatology = FALSE, no_pc = TRUE, cores = 20, setup = "Rolling_final_ensamble"){
+                                 pred_lag= 0, train_y=3, reg_form, p_comps, other_mods= NULL,
+                                 comb = TRUE, custom = FALSE, incl_climatology = FALSE, no_pc = TRUE, cores = 20, setup = "Rolling_final_ensemble"){
 
     last_poss_pred = range(date_demand$date)[2] - pred_win - pred_lag
 
@@ -34,15 +34,19 @@ demand_forecast_final = function(X_mat, date_demand, NWP_pred, forc_start, forc_
     RhpcBLASctl::blas_set_num_threads(1)
     RhpcBLASctl::omp_set_num_threads(1) #Set number of threads
 
-    detailed_results = parallel::mclapply(seq_along(init_days_all),
+    detailed_results = parallel::mclapply(seq_along(init_days),
                                 setup,
                                 X_mat = X_mat, date_demand = date_demand,init_days= init_days, pred_win = pred_win, pred_lag= pred_lag, train_y=train_y,
                                 reg_form= reg_form, p_comps= p_comps, other_mods= other_mods, comb = comb, custom = custom,
                                 incl_climatology = incl_climatology, no_pc = no_pc,gam_lasso =gam_lasso, NWP_pred = NWP_pred,
-                                mc.cores = cores)
+                                mc.cores = cores, mc.silent= FALSE, mc.preschedule = FALSE)
 
     ## **** Return results ****
-    Results = rbindlist(detailed_results)
+    Results = tryCatch({rbindlist(detailed_results, fill = TRUE)},
+                       error = function(cond){print('Could not use rbind, there probably was an error in a core')
+                                                print(cond)
+                                                Results = detailed_results
+                                            })
     out = list()
     out$Results = Results
     print('Demand forecast is completed')
@@ -55,7 +59,7 @@ Rolling_final = function(i, X_mat, date_demand, init_days,pred_win, pred_lag, tr
 
     ## ***** Step 1: Form the training and test datasets ****
     init_day = init_days[i]
-    days_in_m = days_in_month(init_day)
+    days_in_m = lubridate::days_in_month(init_day)
     target_days = seq(init_day+ pred_lag, length.out = as.integer(days_in_m),  by = '1 days')
     print(paste('Forecast made on:', init_day))
 
@@ -74,8 +78,11 @@ Rolling_final = function(i, X_mat, date_demand, init_days,pred_win, pred_lag, tr
     }
     print(paste('We are training on:', dim(dt_train)[1], 'observations'))
     max_year_train = dt_train[, max(year)]
+    max_week_train = dt_train[, max(week)]
     dt_test = dt_test[year > max_year_train, year := max_year_train] #pretend that new year is last year to avoid factor error
-    n = nrow(dt_test)
+    dt_test = dt_test[week > max_week_train, week := max_week_train] #amounts to pretending that week 53 = week 52  to avoid factor error
+    dt_train = dt_train[!is.na(volume)]
+    dt_test = dt_test[!is.na(volume)]
 
     ## ***** Step 2: Train models ****
 
@@ -129,7 +136,7 @@ Rolling_final = function(i, X_mat, date_demand, init_days,pred_win, pred_lag, tr
 
 
 #' @export
-Rolling_final_ensamble = function(i, X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
+Rolling_final_ensemble = function(i, X_mat, date_demand, init_days,pred_win, pred_lag, train_y,
                          reg_form, p_comps, other_mods, comb, custom,incl_climatology, no_pc,num_thread,gam_lasso,NWP_pred = NWP_pred){
 
     ## ***** Step 1: Form the training and test datasets ****
@@ -153,8 +160,12 @@ Rolling_final_ensamble = function(i, X_mat, date_demand, init_days,pred_win, pre
     }
     print(paste('We are training on:', dim(dt_train)[1], 'observations'))
     max_year_train = dt_train[, max(year)]
+    max_week_train = dt_train[, max(week)]
     dt_test = dt_test[year > max_year_train, year := max_year_train] #pretend that new year is last year to avoid factor error
-    n = nrow(dt_test)
+    dt_test = dt_test[week > max_week_train, week := max_week_train] #amounts to pretending that week 53 = week 52  to avoid factor error
+
+    dt_train = dt_train[!is.na(volume)]
+    dt_test = dt_test[!is.na(volume)]
 
     ## ***** Step 2: Train models ****
     if (p_comps > 0){                        #PC GAM MODELS
@@ -164,7 +175,8 @@ Rolling_final_ensamble = function(i, X_mat, date_demand, init_days,pred_win, pre
     }
 
     ## **** Step 3: Select Temperature Input ****
-
+    rm(dt_train)
+    gc()
 
     ## **** Step 4: NWP ****
     y = year(init_day)
@@ -194,11 +206,13 @@ Rolling_final_ensamble = function(i, X_mat, date_demand, init_days,pred_win, pre
     rm(forecast)
     gc()
 
-    if (any(is.na(pc_data$NWP_PC_mat[,pc_comp,]))==TRUE){
-        pc_nwp = t(na.omit(t(pc_data$NWP_PC_mat[,pc_comp,])))
+    if (any(is.na(pc_data$NWP_PC_mat[,p_comps,]))==TRUE){
+        pc_nwp = t(na.omit(t(pc_data$NWP_PC_mat[,p_comps,])))
     } else{
-        pc_nwp = pc_data$NWP_PC_mat[,pc_comp,]
+        pc_nwp = pc_data$NWP_PC_mat[,p_comps,]
     }
+    rm(pc_data)
+    gc()
     ## **** Step 3: Check fit ****
     dt_test = dt_test[hour %in% c(6,12,18,24)]
     dt_results = cbind(dt_test, pc_nwp[1:dim(dt_test)[1],])
@@ -207,16 +221,19 @@ Rolling_final_ensamble = function(i, X_mat, date_demand, init_days,pred_win, pre
     col_name = paste0('V',1:dim(pc_nwp)[2])
     col_out = paste0('pred_', col_name, sep = "")
 
-    dt_results[, c(col_out) := lapply(.SD, multi_col_pred), .SDcols = col_name]
-    dt_results[, pred_obs_temp := lapply(.SD, multi_col_pred), .SDcols = 'PC1']
+    dt_results[, c(col_out) := lapply(.SD, function(x)  multi_col_pred(x, mod = mod, dt_results = dt_results)), .SDcols = col_name]
+    dt_results[, pred_obs_temp := lapply(.SD,  function(x)  multi_col_pred(x, mod = mod, dt_results = dt_results)), .SDcols = 'PC1']
+    dt_results[, init_day := init_day]
+    dt_results[, lead_time := seq(1:.N)*6]
 
     ## **** Step 4: Find Quantile ****
+    print('Finding quantiles')
     dt_quant = data.table(t(dt_results[,.SD, .SDcols = col_out]))
     dt_quant_expand = replicate(1000, dt_quant, simplify = FALSE)
     dt_quant = rbindlist(dt_quant_expand)
     dt_quant_err = dt_quant[,.SD + matrix(rnorm(.N*dim(.SD)[2], 0, mod$sig2^(0.5)), nrow = .N, ncol = dim(.SD)[2])]
 
-    dt_quant = data.table(t(dt_quant[,lapply(.SD ,  function(x) quantile(x, seq(0.1, 0.9, 0.1)))]))
+    dt_quant = data.table(t(dt_quant_err[,lapply(.SD ,  function(x) quantile(x, seq(0.1, 0.9, 0.1)))]))
     setnames(dt_quant, paste0('pred_q_',seq(0.1, 0.9, 0.1)))
     final_results = cbind(dt_results, dt_quant)
     return(final_results)
@@ -224,7 +241,7 @@ Rolling_final_ensamble = function(i, X_mat, date_demand, init_days,pred_win, pre
 
 
 #' @export
-multi_col_pred = function(col_name){
+multi_col_pred = function(col_name, mod, dt_results){
     res = data.table(hour = dt_results$hour,
                      w_day = dt_results$w_day,
                      week = dt_results$week,

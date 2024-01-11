@@ -10,7 +10,8 @@ prep_demand_temp_data(
 )
 }
 \arguments{
-\item{include_na_volume}{Boolean. TRUE includes dates with na volume data. Use TRUE for creating historical PC data}
+\item{include_na_volume}{TRUE includes dates with na volume data. Use TRUE for creating historical PC data.
+"Some" will not remove sequences of missing within the scope of the demand volume. Use some so that creation of PC will not be affected.}
 
 \item{path}{String File path.}
 }
@@ -23,6 +24,6 @@ Finds, checks and loads temperature and demand data.
 \examples{
 prep = prep_demand_temp_data(include_na_volume = TRUE,path = "~/NR/ClimateFutures/RenewableEnergy/Data/DemandForecasting/")
 prep = prep_demand_temp_data(include_na_volume = TRUE,path = "/Users/Eirik/Desktop/Master2023/Data/")
-prep = prep_demand_temp_data(include_na_volume = TRUE,path = "/nr/samba/user/esjavik/DemandData/")
+prep = prep_demand_temp_data(include_na_volume = TRUE,path = "/nr/samba/user/esjavik/EnergyDemandData/")
 
 }

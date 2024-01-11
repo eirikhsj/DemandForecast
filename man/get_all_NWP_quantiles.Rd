@@ -13,7 +13,7 @@ get_all_NWP_quantiles(
   pattern = "sfe_nordic_temperature_",
   start_month = "01",
   start_year = 1993,
-  forc_months = 362,
+  forc_months = 372,
   PC_ERA_path = "/mn/kadingir/datascience_000000/eirikhsj/PC_ERA_79_92.Rda",
   pc_comp = 1,
   reweight = FALSE,

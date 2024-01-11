@@ -94,7 +94,6 @@ NWP_quant_rew25_1993_2023_3 = get_all_NWP_quantiles(path = "/nr/samba/user/esjav
                                                     reweight = TRUE, rew_int =c(15, 3)) # 3 days
 
 
-
 # ERA_path = '/nr/samba/user/esjavik/DemandData/PC_ERA_79_92.Rda'
 # NWP_path = '/nr/samba/user/esjavik/DemandData/NWP_quantiles_0193_0523.Rda'
 # quant = '90'
@@ -102,8 +101,6 @@ NWP_quant_rew25_1993_2023_3 = get_all_NWP_quantiles(path = "/nr/samba/user/esjav
 # NWP_preds = 2
 # reweight = FALSE
 # tuning_k = 10
-
-
 
 t(Good_model[, lapply(.SD, function(x) {sqrt(mean( (x - volume)^2 ))}), .SDcols = c(paste0("clim_pred_", 1:14), paste0("pred_mod_clim1_", 1:14), paste0("pred_mod_clim2_", 7:14),paste0("pred_mod_clim3_", 7:14))])
 
