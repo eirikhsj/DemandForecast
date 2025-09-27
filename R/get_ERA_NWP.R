@@ -4,7 +4,7 @@
 #' ERA contains the PC of ERA observed temperature (e.g. PC1) .
 #' NWP contains the PC of NWP forecasted temperature (e.g. NWP_1) .
 #' In rolling_mod we are building a rolling cross validation of e.g. PC1 ~ f(time) + NWP_PC1_t1 + NWP_PC1_t2
-#' The function only works with one PC at a time. 
+#' The function only works with one PC at a time.
 #'
 #' @name get_ERA_NWP
 #'
@@ -13,7 +13,7 @@
 #' @param NWP_quant String. Name NWP quantile of interest. Uses the form: NWP_PC1_q90
 #' @param PC String. Principle component
 #' @param NWP_preds Integer. Number of NWP predictors
-#' @param reweight Boolean. TRUE gives reweighteg NWP quantiles.
+#' @param reweight Boolean. TRUE gives reweighted NWP quantiles.
 #' @param tuning_k Integer. Tuning parameter to select.
 #'
 #' @return Data.table with data ready for input in rolling_mod function
