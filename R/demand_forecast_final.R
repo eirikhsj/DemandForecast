@@ -182,7 +182,8 @@ Rolling_final_ensemble = function(i, X_mat, date_demand, init_days,pred_win, pre
     y = year(init_day)
     m = month(init_day)
     date_fetch = as.Date(paste0(y, '-', m,'-01'))
-    path = "~/bigdisk3/pro/sfe_daily_nordic_temperature/"
+    #path = "~/bigdisk3/pro/sfe_daily_nordic_temperature/"
+    path = config::get('sfe_daily_nordic_temperature_folder')
     pattern = 'sfe_nordic_temperature_'
     dt_file = paste0(y,'_',m)
 
